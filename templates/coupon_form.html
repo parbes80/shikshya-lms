@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Create Coupon{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 3rem auto; padding: 1rem;">
+  <div class="card" style="padding: 2.5rem;">
+    <h2 style="font-size: 1.4rem; margin-bottom: 2rem;"><i class="fas fa-tag"></i> Create Coupon</h2>
+
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label">Coupon Code *</label>
+        <input type="text" name="code" class="form-control" placeholder="e.g. SAVE20" style="text-transform: uppercase;" required>
+        <small style="color: var(--text-muted); font-size: 0.75rem;">Code will be auto-capitalized.</small>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label">Discount (%)</label>
+          <input type="number" name="discount_percent" class="form-control" value="10" min="1" max="100">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Max Uses</label>
+          <input type="number" name="max_uses" class="form-control" value="100" min="1">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label">Min Amount (Rs.)</label>
+          <input type="number" step="0.01" name="min_amount" class="form-control" value="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Expires On</label>
+          <input type="date" name="expires_at" class="form-control">
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+        <i class="fas fa-save"></i> Create Coupon
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{% if evaluation %}Edit{% else %}Create{% endif %} {{ eval_label }} - {{ course.title }}{% endblock %}
+{% block content %}
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1><i class="fas fa-{% if evaluation %}edit{% else %}plus-circle{% endif %}"></i> {% if evaluation %}Edit{% else %}Create{% endif %} {{ eval_label }}</h1>
+    <p style="color: var(--text-muted);">{{ course.title }}</p>
+  </div>
+
+  <div class="card" style="max-width: 700px;">
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="eval_type" value="{{ selected_type }}">
+        <div class="form-group">
+          <label class="form-label" for="title">Title</label>
+          <input type="text" name="title" id="title" class="form-control" value="{{ evaluation.title if evaluation else '' }}" placeholder="e.g. Midterm {{ eval_label }} - Chapter 4" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="description">Description (optional)</label>
+          <textarea name="description" id="description" class="form-control" rows="3" placeholder="Instructions, topics covered, etc.">{{ evaluation.description if evaluation else '' }}</textarea>
+        </div>
+
+        {% if selected_type == 'test_paper' %}
+        <div class="form-group">
+          <label class="form-label" for="question_pdf">Upload Question Paper (PDF)</label>
+          <input type="file" name="question_pdf" id="question_pdf" class="form-control" accept=".pdf">
+          {% if evaluation and evaluation.question_pdf_url %}
+            <small style="color: var(--text-muted);">Current: <a href="{{ url_for('static', filename=evaluation.question_pdf_url) }}" target="_blank">{{ evaluation.question_pdf_url.split('/')[-1] }}</a></small>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="question_pdf_link">Or paste a PDF link (URL)</label>
+          <input type="url" name="question_pdf_link" id="question_pdf_link" class="form-control" value="{{ evaluation.question_pdf_url if evaluation and evaluation.question_pdf_url and evaluation.question_pdf_url.startswith('http') else '' }}" placeholder="https://drive.google.com/...">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="meet_link">Google Meet Link for Proctoring</label>
+          <input type="url" name="meet_link" id="meet_link" class="form-control" value="{{ evaluation.meet_link if evaluation else '' }}" placeholder="https://meet.google.com/...">
+          <small style="color: var(--text-muted);">Students must join with video & mic on during the exam.</small>
+        </div>
+        {% endif %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label" for="scheduled_at">Schedule Date & Time</label>
+            <input type="datetime-local" name="scheduled_at" id="scheduled_at" class="form-control" value="{{ evaluation.scheduled_at.strftime('%Y-%m-%dT%H:%M') if evaluation and evaluation.scheduled_at else '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="duration_minutes">Duration (minutes)</label>
+            <input type="number" name="duration_minutes" id="duration_minutes" class="form-control" value="{{ evaluation.duration_minutes if evaluation else '' }}" placeholder="e.g. 60" min="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="max_score">Maximum Score</label>
+          <input type="number" name="max_score" id="max_score" class="form-control" value="{{ evaluation.max_score if evaluation else 100 }}" min="1" step="0.5">
+        </div>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> {% if evaluation %}Update{% else %}Create{% endif %} {{ eval_label }}
+          </button>
+          <a href="{{ url_for('eval.index', course_id=course.id) }}" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

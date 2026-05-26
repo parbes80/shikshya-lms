@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Manage Membership Plans{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; padding: 2rem 1rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1 class="section-title"><i class="fas fa-crown"></i> Membership Plans</h1>
+    <a href="{{ url_for('payment.create_plan') }}" class="btn btn-primary"><i class="fas fa-plus"></i> New Plan</a>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
+          <th style="padding: 0.75rem; text-align: left;">Name</th>
+          <th style="padding: 0.75rem; text-align: right;">Price</th>
+          <th style="padding: 0.75rem; text-align: center;">Duration</th>
+          <th style="padding: 0.75rem; text-align: center;">Active</th>
+          <th style="padding: 0.75rem; text-align: center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for plan in plans %}
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 0.75rem;"><strong>{{ plan.name }}</strong></td>
+            <td style="padding: 0.75rem; text-align: right;">Rs. {{ "{:,.0f}".format(plan.price) }}</td>
+            <td style="padding: 0.75rem; text-align: center;">{{ plan.duration_days }} days</td>
+            <td style="padding: 0.75rem; text-align: center;">
+              {% if plan.is_active %}<i class="fas fa-check-circle" style="color: var(--secondary);"></i>{% else %}<i class="fas fa-times-circle" style="color: #ef4444;"></i>{% endif %}
+            </td>
+            <td style="padding: 0.75rem; text-align: center;">
+              <a href="{{ url_for('payment.edit_plan', plan_id=plan.id) }}" class="btn btn-outline" style="padding: 0.3rem 0.5rem; font-size: 0.75rem;"><i class="fas fa-edit"></i></a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

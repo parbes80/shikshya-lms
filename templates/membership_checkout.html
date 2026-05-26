@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}Subscribe{% endblock %}
+
+{% block content %}
+<div style="max-width: 520px; margin: 3rem auto; padding: 1rem;">
+  <div class="card" style="padding: 2.5rem;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, var(--primary), var(--accent));"></div>
+
+    <h2 style="font-size: 1.5rem; text-align: center; margin-bottom: 1.5rem;"><i class="fas fa-crown"></i> Subscribe to {{ plan.name }}</h2>
+
+    <div style="background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+        <span>{{ plan.name }} ({{ plan.duration_days }} days)</span>
+        <strong>Rs. {{ "{:,.0f}".format(plan.price) }}</strong>
+      </div>
+      <div id="coupon-discount" style="display: none; justify-content: space-between; color: var(--secondary); font-weight: bold; margin-bottom: 0.5rem;">
+        <span>Discount</span>
+        <span id="discount-amount">-Rs. 0</span>
+      </div>
+      <hr style="border-color: var(--border-color); margin: 0.5rem 0;">
+      <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.1rem;">
+        <span>Total</span>
+        <span id="final-amount">Rs. {{ "{:,.0f}".format(plan.price) }}</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Coupon Code (optional)</label>
+      <div style="display: flex; gap: 0.5rem;">
+        <input type="text" id="coupon-input" class="form-control" placeholder="Enter code" style="text-transform: uppercase;">
+        <button id="apply-coupon" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Apply</button>
+      </div>
+      <small id="coupon-message" style="font-size: 0.75rem;"></small>
+    </div>
+
+    <!-- QR Payment Section -->
+    <div style="text-align: center; margin: 1.5rem 0; padding: 1.5rem; background: var(--bg-app); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+      <p style="font-weight: bold; margin-bottom: 0.75rem;">Scan to Pay with any App</p>
+      <div id="qr-container">
+        <div style="width: 180px; height: 180px; margin: 0 auto; background: white; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
+          <div id="qr-placeholder" style="text-align: center; color: var(--text-muted);">
+            <i class="fas fa-qrcode" style="font-size: 4rem; display: block; margin-bottom: 0.5rem;"></i>
+            <small>Select provider to see QR</small>
+          </div>
+          <canvas id="qr-canvas" style="display: none; width: 180px; height: 180px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <form method="POST" id="payment-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="plan_id" value="{{ plan.id }}">
+      <input type="hidden" name="coupon_code" id="hidden-coupon" value="">
+
+      <div class="form-group">
+        <label class="form-label">Payment Method *</label>
+        <select name="payment_method" id="payment-method" class="form-control" required>
+          <option value="">-- Select --</option>
+          <option value="eSewa QR">eSewa (QR)</option>
+          <option value="Khalti QR">Khalti (QR)</option>
+          <option value="Stripe">Stripe (Card)</option>
+          <option value="PayPal">PayPal</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Transaction ID *</label>
+        <input type="text" name="transaction_id" class="form-control" placeholder="Enter transaction ID from your payment app" required>
+        <small style="color: var(--text-muted); font-size: 0.75rem;">After scanning the QR and paying, enter the reference/transaction ID here.</small>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+        <i class="fas fa-check-circle"></i> Verify & Subscribe
+      </button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const planPrice = {{ plan.price }};
+  let currentDiscount = 0;
+  let qrInstance = null;
+
+  const methodSelect = document.getElementById('payment-method');
+  const qrPlaceholder = document.getElementById('qr-placeholder');
+  const qrCanvas = document.getElementById('qr-canvas');
+
+  function generateQR() {
+    const val = methodSelect.value;
+    qrPlaceholder.style.display = 'none';
+    qrCanvas.style.display = 'none';
+
+    if (!val) {
+      qrPlaceholder.style.display = 'block';
+      qrPlaceholder.querySelector('small').textContent = 'Select provider to see QR';
+      return;
+    }
+
+    var upiId = '';
+    if (val === 'eSewa QR') {
+      upiId = 'esewa@shikshya.edu.np';
+    } else if (val === 'Khalti QR') {
+      upiId = 'khalti@shikshya.edu.np';
+    } else if (val === 'Stripe') {
+      upiId = 'stripe@shikshya.edu.np';
+    } else if (val === 'PayPal') {
+      upiId = 'paypal@shikshya.edu.np';
+    }
+
+    if (upiId) {
+      qrCanvas.style.display = 'block';
+      var amt = planPrice - currentDiscount;
+      if (qrInstance) { qrInstance.clear(); }
+      qrInstance = new QRCode(qrCanvas, {
+        text: 'upi://pay?pa=' + upiId + '&pn=Shikshya&am=' + amt + '&tn=' + encodeURIComponent('{{ plan.name|e }}'),
+        width: 180,
+        height: 180
+      });
+    }
+  }
+
+  methodSelect.addEventListener('change', generateQR);
+
+  document.getElementById('apply-coupon').addEventListener('click', function() {
+    const code = document.getElementById('coupon-input').value.trim();
+    if (!code) return;
+    fetch('{{ url_for("payment.validate_coupon") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content },
+      body: JSON.stringify({ code: code, amount: planPrice })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      const msg = document.getElementById('coupon-message');
+      if (data.valid) {
+        currentDiscount = data.discount_amount;
+        document.getElementById('coupon-discount').style.display = 'flex';
+        document.getElementById('discount-amount').textContent = '-Rs. ' + data.discount_amount.toLocaleString();
+        document.getElementById('final-amount').textContent = 'Rs. ' + data.final_amount.toLocaleString();
+        document.getElementById('hidden-coupon').value = code;
+        msg.style.color = 'var(--secondary)';
+        msg.textContent = 'Coupon applied! ' + data.discount_percent + '% off';
+        document.getElementById('apply-coupon').textContent = 'Applied';
+        document.getElementById('apply-coupon').disabled = true;
+        generateQR();
+      } else {
+        msg.style.color = '#ef4444';
+        msg.textContent = data.message;
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

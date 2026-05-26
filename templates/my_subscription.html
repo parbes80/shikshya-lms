@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}My Membership{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 3rem auto; padding: 1rem;">
+  <h1 class="section-title"><i class="fas fa-crown"></i> My Membership</h1>
+
+  {% if subscription and subscription.is_active %}
+    <div class="card" style="padding: 2.5rem; text-align: center;">
+      <i class="fas fa-check-circle" style="font-size: 3rem; color: var(--secondary); margin-bottom: 1rem;"></i>
+      <h2 style="font-size: 1.5rem; font-weight: 800;">{{ subscription.plan.name }}</h2>
+      <p style="color: var(--text-muted); margin-bottom: 1.5rem;">{{ subscription.plan.description }}</p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="background: var(--bg-app); padding: 1rem; border-radius: var(--radius-md);">
+          <small style="color: var(--text-muted);">Started</small>
+          <div style="font-weight: bold;">{{ subscription.start_date.strftime('%b %d, %Y') }}</div>
+        </div>
+        <div style="background: var(--bg-app); padding: 1rem; border-radius: var(--radius-md);">
+          <small style="color: var(--text-muted);">Expires</small>
+          <div style="font-weight: bold;">{{ subscription.end_date.strftime('%b %d, %Y') }}</div>
+        </div>
+      </div>
+
+      <div style="background: var(--bg-app); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+        <small style="color: var(--text-muted);">Days Remaining</small>
+        <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">
+          {{ (subscription.end_date - now()).days if now() < subscription.end_date else 0 }}
+        </div>
+      </div>
+
+      <a href="{{ url_for('payment.plans') }}" class="btn btn-primary"><i class="fas fa-sync"></i> Change Plan</a>
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 4rem 2rem;">
+      <i class="fas fa-crown" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+      <h3>No Active Membership</h3>
+      <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Subscribe to a plan to unlock premium features.</p>
+      <a href="{{ url_for('payment.plans') }}" class="btn btn-primary"><i class="fas fa-crown"></i> View Plans</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

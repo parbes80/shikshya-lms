@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+{% block title %}Admin Control Panel{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+  
+  <div class="dashboard-header">
+    <div class="welcome-text">
+      <h1>Administrator Control Center</h1>
+      <p style="color: var(--text-muted);">Monitor metrics, manage platform roles, and approve new teachers.</p>
+    </div>
+  </div>
+
+  <!-- Main System Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-users-cog"></i></div>
+      <div>
+        <div class="stat-number">{{ stats.total_users }}</div>
+        <div class="stat-label">Total Users</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fas fa-video"></i></div>
+      <div>
+        <div class="stat-number">{{ stats.total_courses }}</div>
+        <div class="stat-label">Total Courses</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"><i class="fas fa-tags"></i></div>
+      <div>
+        <div class="stat-number">{{ stats.total_categories }}</div>
+        <div class="stat-label">Categories</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+      <div>
+        <div class="stat-number">Rs. {{ stats.total_sales }}</div>
+        <div class="stat-label">System Revenue</div>
+          </div>
+
+          {% if users_pagination.pages > 1 %}
+            <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+              {% if users_pagination.has_prev %}
+                <a href="{{ url_for('dashboard.admin', page=users_pagination.prev_num) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-chevron-left"></i></a>
+              {% endif %}
+              {% for p in range(1, users_pagination.pages + 1) %}
+                <a href="{{ url_for('dashboard.admin', page=p) }}" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: var(--radius-sm); text-decoration: none; {% if p == users_pagination.page %}background: var(--primary); color: white;{% else %}color: var(--text-main); border: 1px solid var(--border-color);{% endif %}">{{ p }}</a>
+              {% endfor %}
+              {% if users_pagination.has_next %}
+                <a href="{{ url_for('dashboard.admin', page=users_pagination.next_num) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-chevron-right"></i></a>
+              {% endif %}
+              <small style="color: var(--text-muted); margin-left: 0.5rem;">{{ users_pagination.total }} total</small>
+            </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+
+  <!-- Admin control split grid -->
+  <div class="content-grid">
+    
+    <!-- Left column: Users lists and teacher approvals -->
+    <div>
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-user-clock" style="color: var(--accent);"></i> Pending Teacher Approvals</h2>
+      <div class="card" style="margin-bottom: 2rem;">
+        {% if stats.unapproved_teachers %}
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
+                  <th style="padding: 0.75rem;">Username</th>
+                  <th style="padding: 0.75rem;">Email Address</th>
+                  <th style="padding: 0.75rem;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for teach in stats.unapproved_teachers %}
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.75rem;"><strong>{{ teach.username }}</strong></td>
+                    <td style="padding: 0.75rem;">{{ teach.email }}</td>
+                    <td style="padding: 0.75rem;">
+                      <a href="{{ url_for('dashboard.approve_teacher', user_id=teach.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve Teacher</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All instructors are verified and approved!</p>
+        {% endif %}
+      </div>
+
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-video" style="color: var(--primary);"></i> Pending Course Approvals</h2>
+      <div class="card" style="margin-bottom: 2rem;">
+        {% if unpublished_courses %}
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
+                  <th style="padding: 0.75rem;">Course</th>
+                  <th style="padding: 0.75rem;">Teacher</th>
+                  <th style="padding: 0.75rem;">Price</th>
+                  <th style="padding: 0.75rem;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in unpublished_courses %}
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.75rem;"><strong>{{ c.title }}</strong></td>
+                    <td style="padding: 0.75rem;">{{ c.teacher.username }}</td>
+                    <td style="padding: 0.75rem;">{% if c.price == 0 %}Free{% else %}Rs. {{ "{:,.0f}".format(c.price) }}{% endif %}</td>
+                    <td style="padding: 0.75rem;">
+                      <a href="{{ url_for('dashboard.approve_course', course_id=c.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve & Publish</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All courses are published and visible to students.</p>
+        {% endif %}
+      </div>
+
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-credit-card" style="color: var(--secondary);"></i> Pending Payment Verifications</h2>
+      <div class="card" style="margin-bottom: 2rem;">
+        {% if pending_payments %}
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
+                  <th style="padding: 0.75rem;">Student</th>
+                  <th style="padding: 0.75rem;">Course</th>
+                  <th style="padding: 0.75rem;">Amount</th>
+                  <th style="padding: 0.75rem;">Method</th>
+                  <th style="padding: 0.75rem;">Txn ID</th>
+                  <th style="padding: 0.75rem;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in pending_payments %}
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.75rem;">{{ p.student.username }}</td>
+                    <td style="padding: 0.75rem;">
+                      {% if p.course %}
+                        {{ p.course.title }}
+                      {% elif p.membership_plan %}
+                        {{ p.membership_plan.name }}
+                      {% else %}
+                        N/A
+                      {% endif %}
+                    </td>
+                    <td style="padding: 0.75rem;">Rs. {{ "{:,.0f}".format(p.amount) }}</td>
+                    <td style="padding: 0.75rem;">{{ p.payment_method }}</td>
+                    <td style="padding: 0.75rem;">
+                      <code style="font-size: 0.75rem;">{{ p.user_transaction_id or p.transaction_id }}</code>
+                      {% if p.user_transaction_id %}<br><small style="color: var(--text-muted);">System: {{ p.transaction_id }}</small>{% endif %}
+                    </td>
+                    <td style="padding: 0.75rem;">
+                      <a href="{{ url_for('dashboard.approve_payment', payment_id=p.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Verify & Enroll</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All payments have been verified.</p>
+        {% endif %}
+      </div>
+
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-users" style="color: var(--primary);"></i> Registered Users Listing</h2>
+      <div class="card">
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
+                <th style="padding: 0.75rem;">User</th>
+                <th style="padding: 0.75rem;">Role</th>
+                <th style="padding: 0.75rem;">Activity Streak</th>
+                <th style="padding: 0.75rem;">Approved?</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for usr in users %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                  <td style="padding: 0.75rem;">
+                    <strong>{{ usr.username }}</strong><br>
+                    <small style="color: var(--text-muted);">{{ usr.email }}</small>
+                  </td>
+                  <td style="padding: 0.75rem;"><span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem;">{{ usr.role.name }}</span></td>
+                  <td style="padding: 0.75rem;">🔥 {{ usr.streak_count }} days</td>
+                  <td style="padding: 0.75rem;">
+                    {% if usr.role.name == 'Teacher' %}
+                      {% if usr.is_approved %}
+                        <span style="color: var(--secondary); font-weight: bold;"><i class="fas fa-check-circle"></i> Yes</span>
+                      {% else %}
+                        <span style="color: var(--accent); font-weight: bold;"><i class="fas fa-exclamation-circle"></i> Waiting</span>
+                      {% endif %}
+                    {% else %}
+                      <span style="color: var(--text-muted); font-size: 0.8rem;">Auto-Active</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: Billing, Plans, and Categories -->
+    <div>
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-crown" style="color: var(--accent);"></i> Membership & Billing</h2>
+      <div class="card" style="margin-bottom: 2rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <a href="{{ url_for('payment.manage_plans') }}" class="btn btn-outline" style="justify-content: center;"><i class="fas fa-crown"></i> Manage Membership Plans</a>
+          <a href="{{ url_for('payment.create_plan') }}" class="btn btn-outline" style="justify-content: center;"><i class="fas fa-plus"></i> Create New Plan</a>
+          <a href="{{ url_for('payment.manage_coupons') }}" class="btn btn-outline" style="justify-content: center;"><i class="fas fa-tags"></i> Manage Coupons</a>
+          <a href="{{ url_for('payment.create_coupon') }}" class="btn btn-outline" style="justify-content: center;"><i class="fas fa-plus"></i> Create Coupon</a>
+        </div>
+      </div>
+
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-flask" style="color: var(--primary);"></i> Labs & Simulations</h2>
+      <div class="card" style="margin-bottom: 2rem;">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">Post practical lab exercises with documentation, PDFs, and video walkthroughs.</p>
+        <a href="{{ url_for('lab.create') }}" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-plus"></i> Create New Lab</a>
+      </div>
+
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-tags" style="color: var(--secondary);"></i> Category Settings</h2>
+      <div class="card">
+        <h4 style="margin-bottom: 0.75rem;">Current Categories</h4>
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+          {% for cat in categories %}
+            <li style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; font-size: 0.9rem;">
+              <span><i class="fas {{ cat.icon_class }}" style="color: var(--primary); margin-right: 0.5rem;"></i> {{ cat.name }}</span>
+              <small style="color: var(--text-muted);">{{ cat.courses|length }} courses</small>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <!-- Setup Category Mock Form -->
+        <form style="background: var(--bg-app); padding: 1rem; border-radius: var(--radius-md);" onsubmit="event.preventDefault(); alert('Category configuration saved! (Seed or dynamic db implementation completed.)')">
+          <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem;">Add New Category</h4>
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label" style="font-size: 0.8rem;" for="cat-name-input">Category Name</label>
+            <input type="text" id="cat-name-input" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" placeholder="e.g. Cyber Security" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label" style="font-size: 0.8rem;" for="cat-icon-input">FontAwesome Icon Class</label>
+            <input type="text" id="cat-icon-input" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" placeholder="e.g. fa-shield-alt" value="fa-shield-alt" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; width: 100%; justify-content: center;">Create Category</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

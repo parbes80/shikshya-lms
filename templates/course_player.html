@@ -1,0 +1,373 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.title }} - Learning Player{% endblock %}
+
+{% set no_sidebar = true %}
+
+{% block content %}
+<div class="player-container">
+
+  <aside class="player-sidebar">
+    <div class="player-sidebar-header">
+      <h3 class="player-course-title">{{ course.title }}</h3>
+      <div style="font-size: 0.8rem; color: var(--text-muted);">
+        Instructor: <strong>{{ course.teacher.username }}</strong>
+      </div>
+    </div>
+
+    <div class="curriculum-tree">
+      {% for mod in course.modules %}
+        <div class="player-module">
+          <h4 class="player-module-title">Ch {{ loop.index }}: {{ mod.title }}</h4>
+          {% if mod.lessons %}
+            <ul class="player-lessons-list">
+              {% for les in mod.lessons %}
+                {% set prog = progress_map.get(les.id) %}
+                <li class="player-lesson-item {% if active_lesson and active_lesson.id == les.id %}active{% endif %}">
+                  <a href="{{ url_for('course.player', slug=course.slug, lesson_id=les.id) }}">
+                    <i class="{% if prog and prog.is_completed %}fas fa-check-circle completed{% else %}far fa-circle{% endif %} lesson-check-icon" id="check-{{ les.id }}"></i>
+                    <span style="flex: 1;">{{ les.title }}</span>
+                    <small style="font-size: 0.75rem; color: var(--text-muted);">{{ les.duration_minutes }}m</small>
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <small style="padding-left: 0.5rem; color: var(--text-muted);">Coming soon</small>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <main class="player-main">
+
+    {% if active_lesson %}
+      <section class="video-section">
+        {% if active_lesson.content_type == 'video' and active_lesson.video_url %}
+          <video id="lesson-video" controls data-lesson-id="{{ active_lesson.id }}" data-start-seconds="{{ active_progress.video_progress_seconds if active_progress else 0 }}">
+            <source src="{{ active_lesson.video_url }}" type="video/mp4">
+            Your browser does not support HTML5 video streaming.
+          </video>
+        {% else %}
+          <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; gap: 1rem; background: linear-gradient(135deg, #1e293b, #0f172a);">
+            <i class="fas fa-file-pdf" style="font-size: 4rem; color: #ef4444;"></i>
+            <h3>Document / Notes Lecture</h3>
+            {% if active_lesson.document_url %}
+              <a href="{{ active_lesson.document_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> Download Lecture Slides / PDF</a>
+            {% else %}
+              <p style="color: var(--text-muted);">Lecture content is listed in the tabs below.</p>
+            {% endif %}
+          </div>
+        {% endif %}
+      </section>
+
+      <div style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0.75rem 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <h4 style="font-size: 1.15rem; font-weight: bold;">{{ active_lesson.title }}</h4>
+          <span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem;">Lecture</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+          <label for="speed-btn"><i class="fas fa-cog"></i> Playback Speed:</label>
+          <select id="speed-btn" class="form-control" style="width: 80px; padding: 0.25rem; font-size: 0.8rem; border-radius: var(--radius-sm);">
+            <option value="1.0">1.0x</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2.0">2.0x</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="lesson-details-section">
+
+        <div class="tabs-header">
+          <button class="tab-btn active" data-tab="lesson-content">Overview</button>
+          <button class="tab-btn" data-tab="lesson-notes">My Notes</button>
+          <button class="tab-btn" data-tab="lesson-discussions">Q&A Forums</button>
+          <button class="tab-btn" data-tab="lesson-quizzes">Quizzes & Exams</button>
+          <button class="tab-btn" data-tab="lesson-assignments">Assignments</button>
+          <button class="tab-btn" data-tab="lesson-evaluations">Evaluations</button>
+          <button class="tab-btn" data-tab="lesson-live">Live Classes</button>
+          <button class="tab-btn" data-tab="lesson-downloads">Certificates</button>
+        </div>
+
+        <div class="tab-pane active" id="lesson-content">
+          <div class="card" style="padding: 2rem; font-size: 0.95rem; line-height: 1.6;">
+            <h3>Lecture Notes</h3>
+            <div style="margin-top: 1rem;">
+              {% if active_lesson.text_content %}
+                <div class="lesson-notes-content">
+                  {% if active_lesson.text_content|trim|list|first == '<' %}
+                    {{ active_lesson.text_content|safe }}
+                  {% else %}
+                    {{ active_lesson.text_content|markdown|safe }}
+                  {% endif %}
+                </div>
+              {% else %}
+                <p style="color: var(--text-muted);">No additional text notes for this lecture.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="lesson-notes">
+          <div class="card" style="padding: 2rem;">
+            <h3>Draft Your Study Notes</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Notes are saved automatically in your local storage so you can review them offline.</p>
+            <textarea id="lesson-notes-area" class="form-control" rows="8" placeholder="Type commands, snippets, or key definitions here..." style="font-family: monospace;"></textarea>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="lesson-discussions">
+          <div class="card" style="padding: 2rem; margin-bottom: 1.5rem;">
+            <h3>Course Discussion Board</h3>
+            <form id="new-topic-form" style="margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <input type="hidden" name="course_id" value="{{ course.id }}">
+              <div class="form-group" style="margin-bottom: 0;">
+                <input type="text" name="title" class="form-control" placeholder="Thread Subject / Title (e.g. Help on Loops)" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <textarea name="content" rows="3" class="form-control" placeholder="Ask details..." required></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary" style="align-self: flex-end;"><i class="fas fa-paper-plane"></i> Post Question</button>
+            </form>
+          </div>
+
+          <div class="discussion-threads" id="discussion-container">
+            {% if discussions %}
+              {% for topic in discussions %}
+                <div class="thread-item" id="thread-{{ topic.id }}">
+                  <div class="thread-header">
+                    <div class="thread-author"><i class="fas fa-user-circle"></i> {{ topic.author.username }}</div>
+                    <div class="thread-time">{{ topic.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                  </div>
+                  <h4>{{ topic.title }}</h4>
+                  <p style="margin: 0.5rem 0; font-size: 0.9rem;">{{ topic.content }}</p>
+
+                  <div class="thread-replies" id="replies-{{ topic.id }}">
+                    {% for rep in topic.replies %}
+                      <div class="reply-item">
+                        <div class="thread-header" style="margin-bottom: 0.25rem;">
+                          <div class="thread-author" style="font-size: 0.8rem;"><i class="fas fa-user"></i> {{ rep.author.username }}</div>
+                          <div class="thread-time" style="font-size: 0.75rem;">{{ rep.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                        </div>
+                        <p>{{ rep.content }}</p>
+                      </div>
+                    {% endfor %}
+                  </div>
+
+                  <form class="reply-form" data-topic-id="{{ topic.id }}" style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <input type="text" name="content" class="form-control" placeholder="Write a reply..." required>
+                    <button class="btn btn-primary" style="padding: 0.5rem 1rem;"><i class="fas fa-paper-plane"></i></button>
+                  </form>
+                </div>
+              {% endfor %}
+            {% else %}
+              <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No discussions started yet. Ask the first question!</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="tab-pane" id="lesson-quizzes">
+          <h3>Syllabus Examinations</h3>
+          <div class="list-container" style="margin-top: 1rem;">
+            {% if quizzes %}
+              {% for quiz in quizzes %}
+                <div class="list-row">
+                  <div>
+                    <strong>{{ quiz.title }}</strong><br>
+                    <small style="color: var(--text-muted);">Timer: {{ quiz.time_limit_minutes }} mins | Passing Score: {{ quiz.passing_score }}%</small>
+                  </div>
+                  <a href="{{ url_for('api.take_quiz_view', quiz_id=quiz.id) }}" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"><i class="fas fa-pencil-alt"></i> Take Exam</a>
+                </div>
+              {% endfor %}
+            {% else %}
+              <p style="color: var(--text-muted); text-align: center; padding: 1.5rem;">No quizzes created for this course yet.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="tab-pane" id="lesson-assignments">
+          <h3>Practical Homework Tasks</h3>
+          <div class="list-container" style="margin-top: 1rem;">
+            {% if assignments %}
+              {% for assign in assignments %}
+                <div class="list-row" style="flex-direction: column; align-items: stretch; gap: 1rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                      <strong>{{ assign.title }}</strong> (Max Score: {{ assign.max_marks }} pts)<br>
+                      <small style="color: var(--text-muted);">Due Date: {{ assign.due_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                  </div>
+                  <p style="font-size: 0.85rem; color: var(--text-muted);">{{ assign.description }}</p>
+
+                  {% set student_sub = assign.submissions|selectattr("student_id", "equalto", current_user.id)|first %}
+
+                  {% if student_sub %}
+                    <div style="background: var(--bg-card-hover); padding: 1.25rem; border-radius: var(--radius-md); margin-top: 0.5rem; border-left: 4px solid {% if student_sub.is_graded %}var(--secondary){% else %}var(--accent){% endif %};">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-main);">
+                          Submission Status:
+                          {% if student_sub.is_graded %}
+                            <span class="status-badge" style="background: rgba(16, 185, 129, 0.15); color: var(--secondary); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; margin-left: 0.5rem;">Graded</span>
+                          {% else %}
+                            <span class="status-badge" style="background: rgba(245, 158, 11, 0.15); color: var(--accent); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; margin-left: 0.5rem;">Pending Review</span>
+                          {% endif %}
+                        </span>
+                        <small style="color: var(--text-muted); font-size: 0.75rem;">Submitted: {{ student_sub.submitted_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                      </div>
+                      <p style="font-size: 0.85rem; margin-bottom: 0.75rem;">
+                        <strong>Submission:</strong>
+                        {% if student_sub.file_url %}
+                          {% if student_sub.file_url.startswith('http') %}
+                            <a href="{{ student_sub.file_url }}" target="_blank" style="color: var(--primary); text-decoration: underline;"><i class="fas fa-external-link-alt"></i> View Link</a>
+                          {% else %}
+                            <a href="{{ url_for('static', filename=student_sub.file_url) }}" target="_blank" style="color: var(--primary); text-decoration: underline;"><i class="fas fa-file-download"></i> Download File</a>
+                          {% endif %}
+                        {% else %}
+                          <span style="color: var(--text-muted);">No file submitted yet</span>
+                        {% endif %}
+                      </p>
+
+                      {% if student_sub.is_graded %}
+                        <div style="background: var(--bg-card); padding: 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; border: 1px solid var(--border-color); margin-top: 0.75rem;">
+                          <div style="font-weight: bold; color: var(--text-main); margin-bottom: 0.5rem;">Grade: <span style="color: var(--secondary); font-size: 1.1rem; font-weight: 800;">{{ student_sub.marks_obtained }}</span> / {{ assign.max_marks }} pts</div>
+                          <div style="color: var(--text-main); font-weight: 500;"><strong>Feedback from Instructor:</strong></div>
+                          <div style="color: var(--text-muted); margin-top: 0.25rem; font-style: italic;">"{{ student_sub.feedback or 'Excellent work! Keep it up.' }}"</div>
+                        </div>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+
+                  {% if not student_sub or not student_sub.is_graded %}
+                    <form class="assignment-submit-form" data-assignment-id="{{ assign.id }}" enctype="multipart/form-data" style="background: var(--bg-app); padding: 1.25rem; border-radius: var(--radius-md); margin-top: 1rem;">
+                      <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label class="form-label" style="font-size: 0.8rem; font-weight: 600;">
+                          {% if student_sub %}
+                            Update File (PDF, image, ZIP) or paste a URL
+                          {% else %}
+                            Upload File (PDF, image, ZIP) or paste a URL
+                          {% endif %}
+                        </label>
+                        <input type="file" name="submission_file" class="form-control" style="padding: 0.4rem; font-size: 0.85rem;" accept=".pdf,.jpg,.jpeg,.png,.gif,.zip,.doc,.docx,.txt,.py,.js,.html,.css">
+                      </div>
+                      <div style="text-align: center; font-size: 0.8rem; color: var(--text-muted); margin: 0.5rem 0;">— or —</div>
+                      <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label class="form-label" style="font-size: 0.8rem; font-weight: 600;" for="url-submit-{{assign.id}}">Paste a URL (GitHub, Google Drive, etc.)</label>
+                        <input type="url" id="url-submit-{{assign.id}}" name="file_url" class="form-control" style="padding: 0.5rem 0.8rem; font-size: 0.85rem; border-radius: var(--radius-sm);" placeholder="https://github.com/myusername/cli-calc" value="{{ student_sub.file_url if student_sub and student_sub.file_url.startswith('http') else '' }}">
+                      </div>
+                      <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        {% if student_sub %}
+                          Update Submission
+                        {% else %}
+                          Submit Solution
+                        {% endif %}
+                      </button>
+                    </form>
+                  {% else %}
+                    <div style="background: rgba(16, 185, 129, 0.05); border: 1px dashed var(--secondary); padding: 1rem; border-radius: var(--radius-md); margin-top: 1rem; font-size: 0.85rem; text-align: center; color: var(--text-muted);">
+                      <i class="fas fa-lock" style="margin-right: 0.25rem;"></i> Grading is complete for this assignment. Submissions are closed.
+                    </div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            {% else %}
+              <p style="color: var(--text-muted); text-align: center; padding: 1.5rem;">No homework assignments published yet.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="tab-pane" id="lesson-evaluations">
+          <h3>Evaluations</h3>
+          <div class="list-container" style="margin-top: 1rem;">
+            {% if course.evaluations %}
+              {% for ev in course.evaluations %}
+                {% set ecolor = {'quiz':'#8b5cf6','test_paper':'#3b82f6','presentation':'#10b981','lab':'#f59e0b'}.get(ev.eval_type, '#6b7280') %}
+                {% set eicon = {'quiz':'fa-question-circle','test_paper':'fa-file-alt','presentation':'fa-chalkboard-teacher','lab':'fa-flask'}.get(ev.eval_type, 'fa-question-circle') %}
+                <a href="{{ url_for('eval.detail', eval_id=ev.id) }}" class="list-row" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 1rem;">
+                  <div style="width: 40px; height: 40px; border-radius: 10px; background: {{ ecolor }}15; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas {{ eicon }}" style="color: {{ ecolor }};"></i>
+                  </div>
+                  <div style="flex: 1;">
+                    <strong>{{ ev.title }}</strong><br>
+                    <small style="color: var(--text-muted);">{{ ev.eval_type|replace('_', ' ')|title }} &middot; Max {{ ev.max_score }} pts{% if ev.duration_minutes %} &middot; {{ ev.duration_minutes }} min{% endif %}</small>
+                  </div>
+                  <span class="badge" style="background: {% if ev.results_published %}#10b981{% else %}#f59e0b{% endif %}15; color: {% if ev.results_published %}#10b981{% else %}#f59e0b{% endif %}; padding: 0.2rem 0.5rem; border-radius: 999px; font-size: 0.75rem;">
+                    {% if ev.results_published %}Published{% else %}{{ ev.status|title }}{% endif %}
+                  </span>
+                  <i class="fas fa-chevron-right" style="color: var(--text-muted); font-size: 0.8rem;"></i>
+                </a>
+              {% endfor %}
+            {% else %}
+              <p style="color: var(--text-muted); text-align: center; padding: 1.5rem;">No evaluations scheduled for this course yet.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="tab-pane" id="lesson-live">
+          <h3>Live Online Classes</h3>
+          <div class="list-container" style="margin-top: 1rem;">
+            {% if live_classes %}
+              {% for lc in live_classes %}
+                <div class="list-row" style="flex-direction: column; align-items: stretch; gap: 0.75rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <strong>{{ lc.title }}</strong><br>
+                      <small style="color: var(--text-muted);">
+                        <i class="fas fa-calendar"></i> {{ lc.start_time.strftime('%b %d, %Y') }}
+                        <i class="fas fa-clock" style="margin-left: 0.5rem;"></i> {{ lc.start_time.strftime('%I:%M %p') }}
+                        ({{ lc.duration_minutes }} min)
+                      </small>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                      {% if lc.meet_link %}
+                        <a href="{{ lc.meet_link }}" target="_blank" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                          <i class="fab fa-google"></i> Join Meet
+                        </a>
+                      {% endif %}
+                      {% if lc.is_recorded and lc.recording_url %}
+                        <a href="{{ lc.recording_url }}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                          <i class="fas fa-video"></i> Recording
+                        </a>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% if lc.description %}
+                    <p style="font-size: 0.85rem; color: var(--text-muted);">{{ lc.description }}</p>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            {% else %}
+              <p style="color: var(--text-muted); text-align: center; padding: 1.5rem;">No live classes scheduled yet.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="tab-pane" id="lesson-downloads">
+          <div class="card" style="text-align: center; padding: 3rem;">
+            <i class="fas fa-certificate" style="font-size: 4rem; color: var(--primary); margin-bottom: 1.5rem;"></i>
+            <h3>Official Verified Certificate</h3>
+            <p style="color: var(--text-muted); margin: 0.5rem 0 1.5rem 0; font-size: 0.95rem;">
+              Complete all lessons (watch video lectures completely, check items) to generate a secure completion certificate embedded with unique verification QR codes.
+            </p>
+            <a href="#" onclick="alert('Checking course completion... Make sure all lectures are checked off inside curriculum sidebar!')" class="btn btn-primary" style="display: inline-flex;"><i class="fas fa-sync"></i> Refresh & Claim Certificate</a>
+          </div>
+        </div>
+
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 4rem 2rem;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem;"></i>
+        <h3>No active lecture found!</h3>
+        <p style="color: var(--text-muted);">Please select a lesson from the curriculum outline on the left.</p>
+      </div>
+    {% endif %}
+
+  </main>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/course_player.js') }}"></script>
+{% endblock %}

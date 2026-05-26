@@ -1,0 +1,541 @@
+import os
+import re
+import uuid
+from datetime import datetime
+from werkzeug.utils import secure_filename
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, current_app
+from flask_login import login_required, current_user
+from database import db
+from models.course import Course, Category, Module, Lesson, Review
+from models.learning import Enrollment, LessonProgress, Quiz, Question, Choice, Assignment, LiveClass
+from models.interaction import Payment, DiscussionTopic, Attendance, Coupon, Notification
+
+course_bp = Blueprint('course', __name__)
+
+
+def slugify(text):
+    text = text.lower().strip()
+    text = re.sub(r'[^\w\s-]', '', text)
+    text = re.sub(r'[-\s]+', '-', text)
+    return text.strip('-')
+
+
+@course_bp.route('/courses')
+def index():
+    query = request.args.get('q', '')
+    cat_slug = request.args.get('category', '')
+    difficulty = request.args.get('difficulty', '')
+
+    courses_query = Course.query.filter_by(is_published=True)
+
+    if query:
+        courses_query = courses_query.filter(
+            Course.title.ilike(f'%{query}%') |
+            Course.description.ilike(f'%{query}%')
+        )
+    if cat_slug:
+        courses_query = courses_query.join(Category).filter(Category.slug == cat_slug)
+    if difficulty:
+        courses_query = courses_query.filter(Course.difficulty_level == difficulty)
+
+    courses = courses_query.all()
+    categories = Category.query.all()
+
+    return render_template('courses.html', courses=courses, categories=categories, query=query, cat_slug=cat_slug, difficulty=difficulty)
+
+
+@course_bp.route('/courses/<slug>')
+def details(slug):
+    course = Course.query.filter_by(slug=slug).first_or_404()
+
+    is_enrolled = False
+    enrollment = None
+    if current_user.is_authenticated:
+        enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=course.id).first()
+        is_enrolled = enrollment is not None
+
+    reviews = Review.query.filter_by(course_id=course.id).all()
+    avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 0.0
+
+    return render_template(
+        'course_details.html',
+        course=course,
+        is_enrolled=is_enrolled,
+        enrollment=enrollment,
+        reviews=reviews,
+        avg_rating=avg_rating
+    )
+
+
+@course_bp.route('/courses/<slug>/enroll', methods=['GET', 'POST'])
+@login_required
+def enroll(slug):
+    course = Course.query.filter_by(slug=slug).first_or_404()
+
+    if current_user.role.name == 'Teacher' and course.teacher_id == current_user.id:
+        return redirect(url_for('course.player', slug=slug))
+
+    existing = Enrollment.query.filter_by(student_id=current_user.id, course_id=course.id).first()
+    if existing:
+        flash('You are already enrolled in this course!', 'info')
+        return redirect(url_for('course.player', slug=slug))
+
+    if course.price == 0.0:
+        new_enrollment = Enrollment(student_id=current_user.id, course_id=course.id)
+        db.session.add(new_enrollment)
+        db.session.flush()
+
+        for m in course.modules:
+            for l in m.lessons:
+                prog = LessonProgress(enrollment_id=new_enrollment.id, lesson_id=l.id)
+                db.session.add(prog)
+        db.session.commit()
+
+        flash(f'Successfully enrolled in {course.title}! Start learning now.', 'success')
+        return redirect(url_for('course.player', slug=slug))
+
+    if request.method == 'POST':
+        method = request.form.get('payment_method')
+        user_tx_id = request.form.get('transaction_id', '').strip()
+        coupon_code = request.form.get('coupon_code', '').strip()
+
+        if not method:
+            flash('Please select a payment method.', 'danger')
+            return render_template('checkout.html', course=course)
+
+        if not user_tx_id:
+            flash('Please enter the transaction ID from your payment app.', 'danger')
+            return render_template('checkout.html', course=course)
+
+        amount = course.price
+        discount = 0.0
+        coupon = None
+
+        if coupon_code:
+            coupon = Coupon.query.filter_by(code=coupon_code.upper(), is_active=True).first()
+            if not coupon:
+                flash('Invalid coupon code.', 'danger')
+                return render_template('checkout.html', course=course)
+            if coupon.expires_at and coupon.expires_at < datetime.utcnow():
+                flash('This coupon has expired.', 'danger')
+                return render_template('checkout.html', course=course)
+            if coupon.current_uses >= coupon.max_uses:
+                flash('This coupon has reached its usage limit.', 'danger')
+                return render_template('checkout.html', course=course)
+            if amount < coupon.min_amount:
+                flash(f'Minimum Rs. {coupon.min_amount:,.0f} required.', 'danger')
+                return render_template('checkout.html', course=course)
+            discount = round(amount * coupon.discount_percent / 100, 2)
+            coupon.current_uses += 1
+
+        final_amount = round(amount - discount, 2)
+        tx_id = f"TXN-{uuid.uuid4().hex[:10].upper()}"
+
+        payment = Payment(
+            student_id=current_user.id,
+            course_id=course.id,
+            amount=final_amount,
+            discount_amount=discount,
+            coupon_id=coupon.id if coupon else None,
+            payment_method=method,
+            transaction_id=tx_id,
+            user_transaction_id=user_tx_id,
+            description=f'Course: {course.title}',
+            status='pending'
+        )
+        db.session.add(payment)
+        db.session.commit()
+
+        flash(f'Payment submitted! Amount: Rs. {final_amount:,.0f} via {method}. Admin will verify your payment and grant access shortly.', 'warning')
+        return redirect(url_for('dashboard.student'))
+
+    return render_template('checkout.html', course=course)
+
+
+@course_bp.route('/courses/<slug>/player')
+@login_required
+def player(slug):
+    course = Course.query.filter_by(slug=slug).first_or_404()
+
+    is_teacher = current_user.role.name == 'Teacher' and course.teacher_id == current_user.id
+
+    enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=course.id).first()
+    if not enrollment and not is_teacher:
+        flash('Please enroll in the course to access lessons.', 'warning')
+        return redirect(url_for('course.details', slug=slug))
+
+    lesson_id = request.args.get('lesson_id', type=int)
+    active_lesson = None
+
+    progress_map = {p.lesson_id: p for p in enrollment.lesson_progresses}
+
+    if lesson_id:
+        active_lesson = Lesson.query.get_or_404(lesson_id)
+    else:
+        for m in course.modules:
+            for l in m.lessons:
+                p = progress_map.get(l.id)
+                if p and not p.is_completed:
+                    active_lesson = l
+                    break
+            if active_lesson:
+                break
+
+        if not active_lesson and course.modules and course.modules[0].lessons:
+            active_lesson = course.modules[0].lessons[0]
+
+    active_progress = progress_map.get(active_lesson.id) if active_lesson else None
+
+    discussions = DiscussionTopic.query.filter_by(course_id=course.id).order_by(DiscussionTopic.created_at.desc()).all()
+    quizzes = Quiz.query.filter_by(course_id=course.id).all()
+    assignments = Assignment.query.filter_by(course_id=course.id).all()
+    live_classes = LiveClass.query.filter_by(course_id=course.id).order_by(LiveClass.start_time.desc()).all()
+
+    return render_template(
+        'course_player.html',
+        course=course,
+        active_lesson=active_lesson,
+        active_progress=active_progress,
+        progress_map=progress_map,
+        discussions=discussions,
+        quizzes=quizzes,
+        assignments=assignments,
+        live_classes=live_classes
+    )
+
+
+@course_bp.route('/courses/create', methods=['GET', 'POST'])
+@login_required
+def create():
+    if current_user.role.name != 'Teacher' or not current_user.is_approved:
+        flash('Unauthorized. Only approved teachers can create courses.', 'danger')
+        return redirect(url_for('dashboard.teacher'))
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        if not title:
+            flash('Course title is required.', 'danger')
+            return redirect(url_for('course.create'))
+
+        base_slug = slugify(title)
+        slug = f"{base_slug}-{uuid.uuid4().hex[:4]}"
+
+        description = request.form.get('description', '').strip()
+        price = float(request.form.get('price', 0))
+        difficulty = request.form.get('difficulty_level', 'Beginner')
+        category_id = int(request.form.get('category_id'))
+
+        thumbnail = 'course_default.jpg'
+        file = request.files.get('thumbnail_file')
+        if file and file.filename:
+            filename = secure_filename(file.filename)
+            ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'jpg'
+            unique_name = f'course_{uuid.uuid4().hex[:8]}.{ext}'
+            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'thumbnails', unique_name)
+            file.save(upload_path)
+            thumbnail = f'uploads/thumbnails/{unique_name}'
+
+        course = Course(
+            title=title,
+            slug=slug,
+            description=description,
+            price=price,
+            difficulty_level=difficulty,
+            category_id=category_id,
+            teacher_id=current_user.id,
+            thumbnail_url=thumbnail,
+            is_published=False
+        )
+        db.session.add(course)
+
+        notif = Notification(
+            user_id=current_user.id,
+            title="Course submitted for review",
+            message=f'"{title}" has been submitted to admin for approval. You will be notified once it is published.',
+            notif_type="info"
+        )
+        db.session.add(notif)
+
+        db.session.commit()
+
+        flash('Course created successfully! It is now pending admin approval.', 'warning')
+        return redirect(url_for('dashboard.teacher'))
+
+    categories = Category.query.all()
+    return render_template('course_form.html', categories=categories, action='create')
+
+
+@course_bp.route('/courses/<int:course_id>/add-module', methods=['POST'])
+@login_required
+def add_module(course_id):
+    course = Course.query.get_or_404(course_id)
+    if course.teacher_id != current_user.id:
+        abort(403)
+
+    title = request.form.get('module_title', '').strip()
+    if not title:
+        flash('Module title is required.', 'danger')
+        return redirect(url_for('dashboard.teacher'))
+
+    order = len(course.modules) + 1
+
+    new_module = Module(course_id=course.id, title=title, sort_order=order)
+    db.session.add(new_module)
+    db.session.commit()
+
+    flash('Module added successfully!', 'success')
+    return redirect(url_for('dashboard.teacher'))
+
+
+@course_bp.route('/modules/<int:module_id>/add-lesson', methods=['GET', 'POST'])
+@login_required
+def add_lesson(module_id):
+    module = Module.query.get_or_404(module_id)
+    if module.course.teacher_id != current_user.id:
+        abort(403)
+
+    if request.method == 'GET':
+        return render_template('lesson_form.html', module=module, action='create')
+
+    title = request.form.get('lesson_title', '').strip()
+    if not title:
+        flash('Lesson title is required.', 'danger')
+        return redirect(url_for('dashboard.teacher'))
+
+    content_type = request.form.get('content_type')
+    video_url = request.form.get('video_url', '')
+    duration = int(request.form.get('duration', 10))
+    text_content = request.form.get('text_content', '')
+
+    order = len(module.lessons) + 1
+
+    lesson = Lesson(
+        module_id=module.id,
+        title=title,
+        content_type=content_type,
+        video_url=video_url,
+        text_content=text_content,
+        sort_order=order,
+        duration_minutes=duration
+    )
+    db.session.add(lesson)
+    db.session.commit()
+
+    flash('Lesson added successfully!', 'success')
+    return redirect(url_for('dashboard.teacher'))
+
+
+@course_bp.route('/courses/<int:course_id>/quiz/create', methods=['GET', 'POST'])
+@login_required
+def create_quiz(course_id):
+    course = Course.query.get_or_404(course_id)
+    if course.teacher_id != current_user.id:
+        abort(403)
+
+    from_eval = request.args.get('from_eval')
+    eval_type = request.args.get('type', 'quiz')
+    is_test_paper = eval_type == 'test_paper'
+    redirect_back = url_for('eval.index', course_id=course_id) if from_eval else url_for('dashboard.teacher')
+    label = 'Test Paper' if is_test_paper else 'Quiz'
+
+    if request.method == 'POST':
+        from_eval = request.form.get('from_eval')
+        redirect_back = url_for('eval.index', course_id=course_id) if from_eval else url_for('dashboard.teacher')
+
+        title = request.form.get('title', '').strip()
+        time_limit = int(request.form.get('time_limit_minutes', 10))
+        passing_score = int(request.form.get('passing_score', 60))
+
+        if not title:
+            flash(f'{label} title is required.', 'danger')
+            return redirect(url_for('course.create_quiz', course_id=course_id, from_eval=from_eval, type=eval_type))
+
+        quiz = Quiz(
+            course_id=course.id,
+            title=title,
+            time_limit_minutes=time_limit,
+            passing_score=passing_score
+        )
+        db.session.add(quiz)
+        db.session.flush()
+
+        question_texts = request.form.getlist('question_text[]')
+        question_types = request.form.getlist('question_type[]')
+        question_points = request.form.getlist('points[]')
+
+        for i in range(len(question_texts)):
+            q_text = question_texts[i].strip()
+            if not q_text:
+                continue
+
+            q_type = question_types[i] if i < len(question_types) else 'MCQ'
+            points = int(question_points[i]) if i < len(question_points) else 10
+
+            question = Question(
+                quiz_id=quiz.id,
+                text=q_text,
+                question_type=q_type,
+                points=points
+            )
+            db.session.add(question)
+            db.session.flush()
+
+            choice_texts = request.form.getlist(f'choice_text_{i}[]')
+            correct_idx = request.form.get(f'correct_choice_{i}')
+            for j in range(len(choice_texts)):
+                c_text = choice_texts[j].strip()
+                if not c_text:
+                    continue
+                is_correct = (str(j) == correct_idx)
+                choice = Choice(
+                    question_id=question.id,
+                    text=c_text,
+                    is_correct=is_correct
+                )
+                db.session.add(choice)
+
+        db.session.commit()
+        flash(f'{label} "{quiz.title}" created with {len(question_texts)} questions!', 'success')
+        return redirect(redirect_back)
+
+    return render_template('quiz_form.html', course=course, action='create',
+                           from_eval=from_eval, eval_type=eval_type,
+                           is_test_paper=is_test_paper, label=label)
+
+
+@course_bp.route('/courses/<int:course_id>/assignment/create', methods=['GET', 'POST'])
+@login_required
+def create_assignment(course_id):
+    course = Course.query.get_or_404(course_id)
+    if course.teacher_id != current_user.id:
+        abort(403)
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        max_marks = int(request.form.get('max_marks', 100))
+        due_date_str = request.form.get('due_date')
+
+        if not title or not description or not due_date_str:
+            flash('Title, description, and due date are required.', 'danger')
+            return redirect(url_for('course.create_assignment', course_id=course_id))
+
+        from datetime import datetime as dt
+        due_date = dt.strptime(due_date_str, '%Y-%m-%dT%H:%M')
+
+        assignment = Assignment(
+            course_id=course.id,
+            title=title,
+            description=description,
+            max_marks=max_marks,
+            due_date=due_date
+        )
+        db.session.add(assignment)
+        db.session.commit()
+
+        flash(f'Assignment "{assignment.title}" created successfully!', 'success')
+        return redirect(url_for('dashboard.teacher'))
+
+    return render_template('assignment_form.html', course=course, action='create')
+
+
+@course_bp.route('/courses/<int:course_id>/live-class/create', methods=['GET', 'POST'])
+@login_required
+def create_live_class(course_id):
+    course = Course.query.get_or_404(course_id)
+    if course.teacher_id != current_user.id:
+        abort(403)
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        meet_link = request.form.get('meet_link', '').strip()
+        date_str = request.form.get('date')
+        time_str = request.form.get('time')
+        duration = int(request.form.get('duration_minutes', 60))
+        description = request.form.get('description', '').strip()
+
+        if not title or not date_str or not time_str:
+            flash('Title, date, and time are required.', 'danger')
+            return redirect(url_for('course.create_live_class', course_id=course_id))
+
+        from datetime import datetime as dt
+        start_time = dt.strptime(f'{date_str} {time_str}', '%Y-%m-%d %H:%M')
+
+        lc = LiveClass(
+            course_id=course.id,
+            teacher_id=current_user.id,
+            title=title,
+            description=description or None,
+            meet_link=meet_link or None,
+            start_time=start_time,
+            duration_minutes=duration
+        )
+        db.session.add(lc)
+        db.session.commit()
+
+        flash(f'Live class "{lc.title}" scheduled!', 'success')
+        return redirect(url_for('dashboard.teacher'))
+
+    return render_template('live_class_form.html', course=course, action='create')
+
+
+@course_bp.route('/courses/<int:course_id>/attendance', methods=['GET', 'POST'])
+@login_required
+def attendance(course_id):
+    course = Course.query.get_or_404(course_id)
+    today = datetime.now().date()
+
+    if request.method == 'POST':
+        if course.teacher_id != current_user.id:
+            abort(403)
+        att_date_str = request.form.get('att_date', str(today))
+        try:
+            att_date = datetime.strptime(att_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            att_date = today
+
+        student_ids = request.form.getlist('student_ids')
+        for sid_str in student_ids:
+            try:
+                sid = int(sid_str)
+            except ValueError:
+                continue
+            existing = Attendance.query.filter_by(
+                course_id=course.id, student_id=sid, date=att_date
+            ).first()
+            is_present = request.form.get(f'present_{sid}') == 'on'
+            if existing:
+                existing.is_present = is_present
+            else:
+                db.session.add(Attendance(
+                    course_id=course.id, student_id=sid,
+                    date=att_date, is_present=is_present
+                ))
+        db.session.commit()
+        flash(f'Attendance saved for {att_date}.', 'success')
+        return redirect(url_for('course.attendance', course_id=course_id))
+
+    enrollments = Enrollment.query.filter_by(course_id=course.id).all()
+    enrolled_students = sorted(set(
+        (e.student_id, e.student.username) for e in enrollments
+    ), key=lambda x: x[1])
+
+    student_attendance = {}
+    for sid, sname in enrolled_students:
+        records = Attendance.query.filter_by(
+            course_id=course.id, student_id=sid
+        ).order_by(Attendance.date.desc()).all()
+        student_attendance[sid] = {
+            'username': sname,
+            'records': records,
+            'present_count': sum(1 for r in records if r.is_present),
+            'total_count': len(records)
+        }
+
+    return render_template(
+        'attendance_form.html',
+        course=course,
+        today=today,
+        enrolled=enrolled_students,
+        student_attendance=student_attendance
+    )

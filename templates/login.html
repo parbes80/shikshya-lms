@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}{% if action == 'register' %}Create Account{% else %}Welcome Back{% endif %}{% endblock %}
+
+{% block content %}
+<div style="max-width: 450px; margin: 2rem auto; padding: 1rem;">
+  <div class="card" style="padding: 2.5rem; position: relative; overflow: hidden;">
+    
+    <!-- Top graphic element -->
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, var(--primary), var(--secondary));"></div>
+    
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <i class="fas fa-graduation-cap" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+      {% if action == 'register' %}
+        <h2 style="font-size: 1.8rem; font-weight: 800;">Join Shikshya</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">Start your tech learning journey today</p>
+      {% else %}
+        <h2 style="font-size: 1.8rem; font-weight: 800;">Welcome Back</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">Log in to continue learning</p>
+      {% endif %}
+    </div>
+
+    {% if action == 'register' %}
+      <form action="{{ url_for('auth.register') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+          <label class="form-label" for="reg-username">Username</label>
+          <input type="text" name="username" id="reg-username" class="form-control" placeholder="Choose a unique username" required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-email">Email Address</label>
+          <input type="email" name="email" id="reg-email" class="form-control" placeholder="name@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-password">Password</label>
+          <input type="password" name="password" id="reg-password" class="form-control" placeholder="••••••••" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-role">I want to join as a:</label>
+          <select name="role" id="reg-role" class="form-control" required style="cursor: pointer;">
+            <option value="Student">Student (Learner)</option>
+            <option value="Teacher">Teacher (Instructor)</option>
+          </select>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;" id="register-btn">
+          <i class="fas fa-user-plus"></i> Create Free Account
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem;">
+        <span style="color: var(--text-muted);">Already have an account?</span> 
+        <a href="{{ url_for('auth.login') }}" style="color: var(--primary); font-weight: 600;">Log In</a>
+      </div>
+
+    {% else %}
+      <form action="{{ url_for('auth.login') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+          <label class="form-label" for="log-email">Email Address</label>
+          <input type="email" name="email" id="log-email" class="form-control" placeholder="name@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="log-password">Password</label>
+          <input type="password" name="password" id="log-password" class="form-control" placeholder="••••••••" required>
+        </div>
+        
+        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" name="remember" style="accent-color: var(--primary);"> Remember me
+          </label>
+          <a href="{{ url_for('auth.forgot_password') }}" style="color: var(--primary); font-weight: 550;">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;" id="login-btn">
+          <i class="fas fa-sign-in-alt"></i> Access Platform
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem;">
+        <span style="color: var(--text-muted);">New to Shikshya?</span> 
+        <a href="{{ url_for('auth.register') }}" style="color: var(--primary); font-weight: 600;">Create Account</a>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

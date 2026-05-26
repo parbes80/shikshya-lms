@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}Explore Courses{% endblock %}
+
+{% block content %}
+<div class="catalog-wrapper">
+  
+  <div style="margin-bottom: 2rem;">
+    <h1 class="section-title">All Programs & Courses</h1>
+    <p style="color: var(--text-muted); margin-top: 0.25rem;">Learn cutting edge programming languages and responsive designs.</p>
+  </div>
+
+  <div class="catalog-container">
+    
+    <!-- Left Filters Sidebar -->
+    <aside class="filters-sidebar">
+      <form action="{{ url_for('course.index') }}" method="GET" id="catalog-filters-form">
+        <!-- Maintain search query if active -->
+        <input type="hidden" name="q" value="{{ query }}">
+        
+        <div class="filter-section">
+          <h3 class="filter-title">Program Category</h3>
+          <div class="filter-options-list">
+            <label class="filter-option">
+              <input type="radio" name="category" value="" {% if not cat_slug %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
+              <span>All Categories</span>
+            </label>
+            {% for cat in categories %}
+              <label class="filter-option">
+                <input type="radio" name="category" value="{{ cat.slug }}" {% if cat_slug == cat.slug %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
+                <span>{{ cat.name }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="filter-section">
+          <h3 class="filter-title">Difficulty Level</h3>
+          <div class="filter-options-list">
+            <label class="filter-option">
+              <input type="radio" name="difficulty" value="" {% if not difficulty %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
+              <span>All Levels</span>
+            </label>
+            <label class="filter-option">
+              <input type="radio" name="difficulty" value="Beginner" {% if difficulty == 'Beginner' %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
+              <span>Beginner</span>
+            </label>
+            <label class="filter-option">
+              <input type="radio" name="difficulty" value="Intermediate" {% if difficulty == 'Intermediate' %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
+              <span>Intermediate</span>
+            </label>
+            <label class="filter-option">
+              <input type="radio" name="difficulty" value="Advanced" {% if difficulty == 'Advanced' %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
+              <span>Advanced</span>
+            </label>
+          </div>
+        </div>
+      </form>
+    </aside>
+
+    <!-- Right Course Catalog Grid -->
+    <div>
+      {% if query %}
+        <div style="background: var(--bg-card); padding: 0.75rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1.5rem; font-size: 0.9rem;">
+          Search results for: <strong>"{{ query }}"</strong> ({{ courses|length }} matches found)
+        </div>
+      {% endif %}
+
+      {% if courses %}
+        <div class="courses-grid">
+          {% for course in courses %}
+            <div class="card course-card">
+              <div class="course-thumbnail">
+                <span class="difficulty-badge {{ course.difficulty_level.lower() }}">{{ course.difficulty_level }}</span>
+                {% if course.thumbnail_url and course.thumbnail_url != 'course_default.jpg' %}
+                  <img src="{{ url_for('static', filename=course.thumbnail_url) }}" alt="{{ course.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                <div style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-size: 4rem; color: white;">
+                  <i class="fas fa-laptop-code"></i>
+                </div>
+                {% endif %}
+              </div>
+              <div class="course-content">
+                <span class="course-category">{{ course.category.name }}</span>
+                <a href="{{ url_for('course.details', slug=course.slug) }}">
+                  <h3 class="course-title">{{ course.title }}</h3>
+                </a>
+                <p class="course-desc">{{ course.description[:110] }}...</p>
+                <div class="course-footer">
+                  <div class="course-teacher">
+                    <i class="fas fa-user-circle" style="font-size: 1.2rem; color: var(--primary);"></i>
+                    <span>{{ course.teacher.username }}</span>
+                  </div>
+                  <div class="course-price {% if course.price == 0.0 %}free{% endif %}">
+                    {% if course.price == 0.0 %}Free{% else %}Rs. {{ "{:,.0f}".format(course.price) }}{% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="card" style="text-align: center; padding: 4rem 2rem;">
+          <i class="fas fa-folder-open" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+          <h3>No courses found!</h3>
+          <p style="color: var(--text-muted); margin-top: 0.5rem;">Try modifying your search query or changing active category filters.</p>
+          <a href="{{ url_for('course.index') }}" class="btn btn-primary" style="margin-top: 1.5rem;"><i class="fas fa-sync"></i> Reset Filters</a>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

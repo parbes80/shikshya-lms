@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}{{ evaluation.title }} - Teacher{% endblock %}
+{% block content %}
+{% set icon = icons.get(evaluation.eval_type, 'fa-question-circle') %}
+{% set color = colors.get(evaluation.eval_type, '#6b7280') %}
+{% set is_test = evaluation.eval_type == 'test_paper' %}
+<div class="dashboard-container">
+  <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1><i class="fas {{ icon }}" style="color: {{ color }};"></i> {{ evaluation.title }}</h1>
+      <p style="color: var(--text-muted);">
+        {{ course.title }} | {{ evaluation.eval_type|replace('_', ' ')|title }}
+        | Max: {{ evaluation.max_score }}
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      {% if not evaluation.results_published %}
+        {% if students_data|selectattr('submission')|list|length > 0 %}
+        <a href="{{ url_for('eval.publish', eval_id=evaluation.id) }}" class="btn btn-success" onclick="return confirm('Publish results?')">
+          <i class="fas fa-globe"></i> Publish Results
+        </a>
+        {% endif %}
+      {% else %}
+        <a href="{{ url_for('eval.unpublish', eval_id=evaluation.id) }}" class="btn btn-warning" onclick="return confirm('Hide results?')">
+          <i class="fas fa-eye-slash"></i> Unpublish
+        </a>
+      {% endif %}
+      <a href="{{ url_for('eval.edit', eval_id=evaluation.id) }}" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</a>
+      <form method="POST" action="{{ url_for('eval.delete', eval_id=evaluation.id) }}" style="display:inline;" onsubmit="return confirm('Delete this evaluation and all submissions?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</button>
+      </form>
+      <a href="{{ url_for('eval.index', course_id=course.id) }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+    </div>
+  </div>
+
+  {% if evaluation.description %}
+  <div class="card" style="margin-bottom: 1rem;">
+    <div class="card-body">
+      <p style="margin: 0; white-space: pre-wrap;">{{ evaluation.description }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+    {% if evaluation.scheduled_at %}
+    <div class="card" style="text-align: center; padding: 1.2rem;">
+      <i class="far fa-calendar-alt" style="font-size: 1.3rem; color: #3b82f6; margin-bottom: 0.3rem;"></i>
+      <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Scheduled</div>
+      <div style="font-weight: 700; font-size: 1rem;">{{ evaluation.scheduled_at.strftime('%b %d, %Y') }}</div>
+      <div style="font-weight: 600; color: var(--primary);">{{ evaluation.scheduled_at.strftime('%I:%M %p') }}</div>
+    </div>
+    {% endif %}
+    <div class="card" style="text-align: center; padding: 1.2rem;">
+      <i class="fas {{ icon }}" style="font-size: 1.3rem; color: {{ color }}; margin-bottom: 0.3rem;"></i>
+      <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Type</div>
+      <div style="font-weight: 700;">{{ evaluation.eval_type|replace('_', ' ')|title }}</div>
+    </div>
+    {% if evaluation.duration_minutes %}
+    <div class="card" style="text-align: center; padding: 1.2rem;">
+      <i class="far fa-clock" style="font-size: 1.3rem; color: #f59e0b; margin-bottom: 0.3rem;"></i>
+      <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Duration</div>
+      <div style="font-weight: 700;">{{ evaluation.duration_minutes }} min</div>
+    </div>
+    {% endif %}
+    <div class="card" style="text-align: center; padding: 1.2rem; {% if evaluation.scheduled_at and evaluation.scheduled_at > now %}border-color: #3b82f6{% elif evaluation.results_published %}border-color: #10b981{% else %}border-color: #f59e0b{% endif %};">
+      <i class="fas fa-hourglass-half" style="font-size: 1.3rem; margin-bottom: 0.3rem; {% if evaluation.scheduled_at and evaluation.scheduled_at > now %}color: #3b82f6{% elif evaluation.results_published %}color: #10b981{% else %}color: #f59e0b{% endif %};"></i>
+      <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Status</div>
+      <div style="font-weight: 700; font-size: 0.9rem;">
+        {% if evaluation.results_published %}
+          <span style="color: #10b981;">Results Published</span>
+        {% elif evaluation.scheduled_at and evaluation.scheduled_at > now %}
+          <span style="color: #3b82f6;">Scheduled</span>
+          <div style="font-family: monospace; font-size: 0.85rem; color: var(--text-muted); font-weight: 400;" id="teacher-countdown"></div>
+        {% else %}
+          <span style="color: #f59e0b;">Ongoing</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if is_test and evaluation.question_pdf_url %}
+  <div class="card" style="margin-bottom: 1rem; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 1rem;">
+    <div>
+      <strong><i class="fas fa-file-pdf" style="color: #ef4444;"></i> Question Paper:</strong>
+      {% if evaluation.question_pdf_url.startswith('http') %}
+        <a href="{{ evaluation.question_pdf_url }}" target="_blank">{{ evaluation.question_pdf_url.split('/')[-1] }}</a>
+      {% else %}
+        <a href="{{ url_for('static', filename=evaluation.question_pdf_url) }}" target="_blank">{{ evaluation.question_pdf_url.split('/')[-1] }}</a>
+      {% endif %}
+    </div>
+    {% if evaluation.meet_link %}
+    <a href="{{ evaluation.meet_link }}" target="_blank" class="btn btn-sm btn-danger" style="background:#ea4335;border-color:#ea4335;"><i class="fab fa-google"></i> Meet Link</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="card" style="padding: 0;">
+    <div class="card-header" style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0; font-size: 1rem;">
+        <i class="fas fa-users"></i> Student Submissions
+        <span style="background: var(--primary); color: white; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.75rem; margin-left: 0.5rem;">{{ students_data|selectattr('submission')|list|length }} / {{ students_data|length }}</span>
+      </h3>
+      {% if evaluation.results_published %}
+      <span class="badge" style="background: #10b98115; color: #10b981; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600;"><i class="fas fa-check-circle"></i> Results Published</span>
+      {% endif %}
+    </div>
+    <div style="overflow-x: auto;">
+      {% if students_data %}
+      <table class="table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: var(--bg-secondary);">
+            <th style="padding: 0.65rem 1rem; text-align: left; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Student</th>
+            <th style="padding: 0.65rem 1rem; text-align: center; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Submitted</th>
+            <th style="padding: 0.65rem 1rem; text-align: center; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Answer Sheet</th>
+            <th style="padding: 0.65rem 1rem; text-align: center; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Score</th>
+            <th style="padding: 0.65rem 1rem; text-align: left; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Feedback</th>
+            <th style="padding: 0.65rem 1rem; text-align: center; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Grade</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in students_data %}
+          {% set s = item.student %}
+          {% set sub = item.submission %}
+          <tr style="border-top: 1px solid var(--border-color);">
+            <td style="padding: 0.75rem 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-user-circle" style="font-size: 1.3rem; color: var(--primary);"></i>
+                <div>
+                  <div style="font-weight: 600;">{{ s.username }}</div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">{{ s.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td style="padding: 0.75rem 1rem; text-align: center;">
+              {% if sub %}
+              <span style="color: #10b981;"><i class="fas fa-check-circle"></i> {{ sub.submitted_at.strftime('%b %d %H:%M') }}</span>
+              {% else %}
+              <span style="color: var(--text-muted);"><i class="far fa-clock"></i> Pending</span>
+              {% endif %}
+            </td>
+            <td style="padding: 0.75rem 1rem; text-align: center;">
+              {% if sub and sub.file_url %}
+                {% if sub.file_url.startswith('http') %}
+                  <a href="{{ sub.file_url }}" target="_blank" class="btn btn-sm btn-secondary"><i class="fas fa-external-link-alt"></i> View</a>
+                {% else %}
+                  <a href="{{ url_for('static', filename=sub.file_url) }}" target="_blank" class="btn btn-sm btn-secondary"><i class="fas fa-download"></i> Download</a>
+                {% endif %}
+              {% else %}
+                <span style="color: var(--text-muted);">&mdash;</span>
+              {% endif %}
+            </td>
+            <td style="padding: 0.75rem 1rem; text-align: center; font-weight: 600;">
+              {% if sub and sub.score is not none %}
+                <span style="color: {% if sub.score >= evaluation.max_score * 0.8 %}#10b981{% elif sub.score >= evaluation.max_score * 0.5 %}#f59e0b{% else %}#ef4444{% endif %};">
+                  {{ sub.score }} / {{ evaluation.max_score }}
+                </span>
+              {% else %}
+                <span style="color: var(--text-muted);">&mdash;</span>
+              {% endif %}
+            </td>
+            <td style="padding: 0.75rem 1rem; max-width: 200px;">
+              {% if sub and sub.feedback %}
+              <span style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ sub.feedback[:60] }}</span>
+              {% else %}
+              <span style="color: var(--text-muted); font-size: 0.85rem;">&mdash;</span>
+              {% endif %}
+            </td>
+            <td style="padding: 0.75rem 1rem; text-align: center;">
+              {% if sub %}
+                <button type="button" class="btn btn-sm btn-primary" onclick="document.getElementById('grade-form-{{ sub.id }}').style.display='block'">
+                  <i class="fas fa-gavel"></i> Grade
+                </button>
+              {% else %}
+                <span style="color: var(--text-muted); font-size: 0.8rem;">No submission</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% if sub %}
+          <tr id="grade-form-{{ sub.id }}" style="display: none; background: var(--bg-secondary);">
+            <td colspan="6" style="padding: 1rem 1.5rem;">
+              <form method="POST" action="{{ url_for('eval.grade', eval_id=evaluation.id) }}" style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="submission_id" value="{{ sub.id }}">
+                <div>
+                  <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Score / {{ evaluation.max_score }}</label>
+                  <input type="number" name="score" class="form-control" value="{{ sub.score if sub.score is not none else '' }}" step="0.5" min="0" max="{{ evaluation.max_score }}" required style="width: 120px;">
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                  <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Feedback</label>
+                  <input type="text" name="feedback" class="form-control" value="{{ sub.feedback if sub.feedback else '' }}" placeholder="Optional feedback">
+                </div>
+                <button type="submit" class="btn btn-sm btn-success"><i class="fas fa-save"></i> Save</button>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('grade-form-{{ sub.id }}').style.display='none'">Cancel</button>
+              </form>
+            </td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="text-align: center; padding: 2rem;">
+        <p style="color: var(--text-muted);">No students are enrolled in this course yet.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% if evaluation.scheduled_at %}
+<script>
+(function() {
+  var scheduled = {{ evaluation.scheduled_at.timestamp() * 1000 }};
+  var el = document.getElementById('teacher-countdown');
+  if (!el) return;
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function tick() {
+    var now = new Date().getTime();
+    var diff = Math.floor((scheduled - now) / 1000);
+    if (diff <= 0) { el.textContent = 'Started'; el.style.color = '#10b981'; return; }
+    var days = Math.floor(diff / 86400);
+    var hours = Math.floor((diff % 86400) / 3600);
+    var mins = Math.floor((diff % 3600) / 60);
+    var secs = diff % 60;
+    if (days > 0) { el.textContent = days + 'd ' + pad(hours) + 'h ' + pad(mins) + 'm'; }
+    else if (hours > 0) { el.textContent = pad(hours) + ':' + pad(mins) + ':' + pad(secs); }
+    else { el.textContent = pad(mins) + ':' + pad(secs); }
+    setTimeout(tick, 1000);
+  }
+  tick();
+})();
+</script>
+{% endif %}
+{% endblock %}

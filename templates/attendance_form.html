@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Mark Attendance - {{ course.title }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; padding: 2rem 1rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <div>
+      <h1 class="section-title"><i class="fas fa-clipboard-check"></i> Attendance</h1>
+      <p style="color: var(--text-muted);">Course: <strong>{{ course.title }}</strong></p>
+    </div>
+  </div>
+
+  <div class="card" style="padding: 2rem; margin-bottom: 2rem;">
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group" style="max-width: 250px;">
+        <label class="form-label">Date</label>
+        <input type="date" name="att_date" class="form-control" value="{{ today }}">
+      </div>
+
+      {% if enrolled %}
+        <div style="overflow-x: auto; margin-top: 1.5rem;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted); font-weight: bold;">
+                <th style="padding: 0.75rem; text-align: left;">Student</th>
+                <th style="padding: 0.75rem; text-align: center;">Present</th>
+                <th style="padding: 0.75rem; text-align: center;">Attendance %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sid, sname in enrolled %}
+                {% set stats = student_attendance.get(sid) %}
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                  <td style="padding: 0.75rem;">
+                    <input type="hidden" name="student_ids" value="{{ sid }}">
+                    <strong>{{ sname }}</strong>
+                  </td>
+                  <td style="padding: 0.75rem; text-align: center;">
+                    <input type="checkbox" name="present_{{ sid }}" id="present_{{ sid }}" checked style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer;">
+                  </td>
+                  <td style="padding: 0.75rem; text-align: center;">
+                    {% if stats and stats.total_count > 0 %}
+                      <span style="font-weight: bold; color: {% if stats.present_count / stats.total_count >= 0.75 %}var(--secondary){% elif stats.present_count / stats.total_count >= 0.5 %}var(--accent){% else %}#ef4444{% endif %};">
+                        {{ (stats.present_count / stats.total_count * 100)|round }}%
+                      </span>
+                      <small style="color: var(--text-muted);"> ({{ stats.present_count }}/{{ stats.total_count }})</small>
+                    {% else %}
+                      <small style="color: var(--text-muted);">No records</small>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem; justify-content: center;">
+          <i class="fas fa-save"></i> Save Attendance
+        </button>
+      {% else %}
+        <div style="text-align: center; padding: 3rem;">
+          <i class="fas fa-user-graduate" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+          <h3>No enrolled students</h3>
+          <p style="color: var(--text-muted);">Students must enroll in this course before attendance can be marked.</p>
+        </div>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Attendance history per student -->
+  {% if enrolled %}
+    <h2 style="font-size: 1.3rem; margin-bottom: 1rem;">Attendance History</h2>
+    {% for sid, sname in enrolled %}
+      {% set stats = student_attendance.get(sid) %}
+      {% if stats and stats.records %}
+        <div class="card" style="padding: 1.25rem; margin-bottom: 1rem;">
+          <h4 style="margin-bottom: 0.5rem;">{{ sname }}</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            {% for r in stats.records[:20] %}
+              <span style="padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; {% if r.is_present %}background: rgba(16, 185, 129, 0.15); color: var(--secondary);{% else %}background: rgba(239, 68, 68, 0.15); color: #ef4444;{% endif %}">
+                {{ r.date.strftime('%b %d') }}
+                {% if r.is_present %}<i class="fas fa-check"></i>{% else %}<i class="fas fa-times"></i>{% endif %}
+              </span>
+            {% endfor %}
+            {% if stats.records|length > 20 %}
+              <small style="color: var(--text-muted);">+{{ stats.records|length - 20 }} more</small>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}{% if action == 'create' %}New Plan{% else %}Edit Plan{% endif %}{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 3rem auto; padding: 1rem;">
+  <div class="card" style="padding: 2.5rem;">
+    <h2 style="font-size: 1.4rem; margin-bottom: 2rem;">
+      <i class="fas fa-crown" style="color: var(--primary);"></i>
+      {% if action == 'create' %}Create Membership Plan{% else %}Edit Plan{% endif %}
+    </h2>
+
+    <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label">Plan Name *</label>
+        <input type="text" name="name" class="form-control" value="{{ plan.name if plan else '' }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" rows="3" class="form-control">{{ plan.description if plan else '' }}</textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label">Price (Rs.) *</label>
+          <input type="number" step="0.01" name="price" class="form-control" value="{{ plan.price if plan else '0' }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Duration (days) *</label>
+          <input type="number" name="duration_days" class="form-control" value="{{ plan.duration_days if plan else '30' }}" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Features (one per line)</label>
+        <textarea name="features" rows="5" class="form-control" placeholder="Access to all courses&#10;Certificate on completion&#10;Priority support">{{ plan.features if plan else '' }}</textarea>
+      </div>
+
+      {% if action == 'edit' %}
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" name="is_active" id="is_active" {% if plan.is_active %}checked{% endif %} style="accent-color: var(--primary);">
+          <label for="is_active"> Active</label>
+        </div>
+      {% endif %}
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+        <i class="fas fa-save"></i> {% if action == 'create' %}Create Plan{% else %}Save Changes{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}User Profile{% endblock %}
+
+{% block content %}
+<div style="max-width: 650px; margin: 2rem auto; padding: 1rem;">
+
+  <div style="margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
+    <h1 class="section-title" style="margin-bottom: 0;">My Account Profile</h1>
+  </div>
+
+  <div class="card" style="padding: 2.5rem; position: relative;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--primary);"></div>
+
+    <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem;">
+      {% if current_user.avatar_url and current_user.avatar_url.startswith('uploads/') %}
+        <img src="{{ url_for('static', filename=current_user.avatar_url) }}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); margin-bottom: 1rem;" alt="User Avatar">
+      {% else %}
+        <img src="{{ url_for('static', filename='images/' + current_user.avatar_url) if current_user.avatar_url else url_for('static', filename='images/avatar_default.jpg') }}" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); margin-bottom: 1rem;" alt="User Avatar">
+      {% endif %}
+      <h2 style="font-size: 1.5rem; font-weight: 800;">{{ current_user.username }}</h2>
+      <p style="color: var(--text-muted); font-size: 0.95rem; font-weight: 600;">System Role: <span class="difficulty-badge beginner" style="position: static; font-size: 0.7rem; padding: 0.2rem 0.4rem;">{{ current_user.role.name }}</span></p>
+      <small style="color: var(--text-muted); display: block; margin-top: 0.25rem;">Current Streak: &#x1f525; {{ current_user.streak_count }} days | Active since: {{ current_user.created_at.strftime('%Y-%m-%d') }}</small>
+    </div>
+
+    <!-- Profile Info Form -->
+    <form action="{{ url_for('auth.profile') }}" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="profile">
+
+      <div class="form-group">
+        <label class="form-label" for="prof-username">Username</label>
+        <input type="text" name="username" id="prof-username" class="form-control" value="{{ current_user.username }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="prof-email">Email Address</label>
+        <input type="email" name="email" id="prof-email" class="form-control" value="{{ current_user.email }}" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="prof-bio">Bio Description</label>
+        <textarea name="bio" id="prof-bio" rows="4" class="form-control" placeholder="A little about yourself...">{{ current_user.profile.bio if current_user.profile else '' }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="prof-qualification">Qualifications</label>
+        <input type="text" name="qualification" id="prof-qualification" class="form-control" value="{{ current_user.profile.qualification if current_user.profile else '' }}" placeholder="e.g. B.E. Computer Science student, Full Stack Developer">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="prof-skills">Skills (comma separated)</label>
+        <input type="text" name="skills" id="prof-skills" class="form-control" value="{{ current_user.profile.skills if current_user.profile else '' }}" placeholder="e.g. Python, CSS, Flask, Javascript">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="prof-website">Personal Website / Portfolio Link</label>
+        <input type="url" name="website" id="prof-website" class="form-control" value="{{ current_user.profile.website if current_user.profile else '' }}" placeholder="https://example.com">
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label" for="prof-github">GitHub Profile</label>
+          <input type="text" name="github" id="prof-github" class="form-control" value="{{ current_user.profile.github if current_user.profile else '' }}" placeholder="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="prof-linkedin">LinkedIn Username</label>
+          <input type="text" name="linkedin" id="prof-linkedin" class="form-control" value="{{ current_user.profile.linkedin if current_user.profile else '' }}" placeholder="username">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="prof-avatar-file">Upload Profile Picture</label>
+        <input type="file" name="avatar_file" id="prof-avatar-file" class="form-control" accept="image/png,image/jpeg,image/gif,image/webp" style="padding: 0.5rem;">
+        <small style="color: var(--text-muted); font-size: 0.75rem;">Supported: PNG, JPG, GIF, WebP. Max 16MB.</small>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;" id="save-profile-btn">
+        <i class="fas fa-save"></i> Save Account Updates
+      </button>
+    </form>
+  </div>
+
+  <!-- Password Change Section -->
+  <div class="card" style="padding: 2.5rem; margin-top: 2rem; position: relative;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--accent);"></div>
+
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; color: var(--accent);">
+        <i class="fas fa-lock"></i>
+      </div>
+      <div>
+        <h2 style="font-size: 1.3rem; font-weight: bold;">Change Password</h2>
+        <p style="color: var(--text-muted); font-size: 0.8rem;">Update your account password regularly to stay secure.</p>
+      </div>
+    </div>
+
+    <form action="{{ url_for('auth.profile') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="password">
+
+      <div class="form-group">
+        <label class="form-label" for="current-password">Current Password</label>
+        <input type="password" name="current_password" id="current-password" class="form-control" placeholder="Enter current password" required>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label" for="new-password">New Password</label>
+          <input type="password" name="new_password" id="new-password" class="form-control" placeholder="Min 6 characters" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="confirm-password">Confirm New Password</label>
+          <input type="password" name="confirm_password" id="confirm-password" class="form-control" placeholder="Re-enter new password" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn" style="width: 100%; justify-content: center; background: var(--accent); color: white; border: none;">
+        <i class="fas fa-key"></i> Update Password
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

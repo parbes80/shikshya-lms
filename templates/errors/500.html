@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Internal Server Error (500){% endblock %}
+
+{% set no_sidebar = true %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 5rem auto; text-align: center; padding: 2rem;">
+  <div class="card" style="padding: 3rem; position: relative;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: #ef4444;"></div>
+    <i class="fas fa-bug" style="font-size: 4rem; color: #ef4444; margin-bottom: 1.5rem;"></i>
+    <h1 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.5rem;">500 Error</h1>
+    <h3 style="font-size: 1.25rem; font-weight: bold; color: var(--text-muted); margin-bottom: 1.5rem;">Server Error</h3>
+    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">
+      Oops! Something went wrong on our end. The server encountered an error processing your request. We are tracking this bug and will fix it shortly.
+    </p>
+    <a href="{{ url_for('main.home') }}" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-home"></i> Go Back Home</a>
+  </div>
+</div>
+{% endblock %}

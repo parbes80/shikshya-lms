@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Create Assignment{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 2rem auto; padding: 1rem;">
+
+  <div style="margin-bottom: 2rem;">
+    <h1 class="section-title">Create New Assignment</h1>
+    <p style="color: var(--text-muted);">for <strong>{{ course.title }}</strong></p>
+  </div>
+
+  <div class="card" style="padding: 2.5rem; position: relative;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--secondary);"></div>
+
+    <form action="{{ url_for('course.create_assignment', course_id=course.id) }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label" for="assign-title">Assignment Title</label>
+        <input type="text" name="title" id="assign-title" class="form-control" placeholder="e.g. Build a CLI Calculator" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="assign-desc">Description / Instructions</label>
+        <textarea name="description" id="assign-desc" rows="5" class="form-control" placeholder="Describe what students need to build, include requirements and submission guidelines..." required></textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label" for="assign-marks">Maximum Marks</label>
+          <input type="number" name="max_marks" id="assign-marks" class="form-control" value="100" min="1" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="assign-due">Due Date & Time</label>
+          <input type="datetime-local" name="due_date" id="assign-due" class="form-control" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem; padding: 0.75rem;">
+        <i class="fas fa-check-circle"></i> Create Assignment
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}{% if action == 'create' %}New Lab{% else %}Edit Lab{% endif %}{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 2rem auto; padding: 1rem;">
+  <div style="margin-bottom: 2rem;">
+    <h1 class="section-title"><i class="fas fa-flask"></i> {% if action == 'create' %}Create Lab / Simulation{% else %}Edit Lab{% endif %}</h1>
+  </div>
+
+  <div class="card" style="padding: 2.5rem;">
+    <form method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input type="text" name="title" class="form-control" value="{{ lab.title if lab else '' }}" placeholder="e.g. Networking Basics: Setting up a LAN" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Short Description</label>
+        <textarea name="description" rows="3" class="form-control" placeholder="Brief overview of this lab exercise">{{ lab.description if lab else '' }}</textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div class="form-group">
+          <label class="form-label">Upload PDF / Documentation</label>
+          <input type="file" name="pdf_file" class="form-control" accept=".pdf,.doc,.docx">
+          {% if lab and lab.pdf_url %}
+            <small style="color: var(--text-muted);">Current: <a href="{{ url_for('static', filename=lab.pdf_url) if not lab.pdf_url.startswith('http') else lab.pdf_url }}" target="_blank">{{ lab.pdf_url }}</a></small>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Or PDF Link (URL)</label>
+          <input type="url" name="pdf_link" class="form-control" placeholder="https://example.com/lab.pdf" value="{{ lab.pdf_url if lab and lab.pdf_url and lab.pdf_url.startswith('http') else '' }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Video URL (YouTube, Vimeo, etc.)</label>
+        <input type="url" name="video_url" class="form-control" placeholder="https://www.youtube.com/embed/..." value="{{ lab.video_url if lab else '' }}">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Lab Content / Instructions (Rich Text)</label>
+        <div id="lab-editor" style="min-height: 300px; background: white; color: #1e293b;"></div>
+        <input type="hidden" name="content" id="content-hidden" value="{{ lab.content if lab else '' }}">
+      </div>
+
+      <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+        <input type="checkbox" name="is_published" id="is_published" {% if not lab or lab.is_published %}checked{% endif %} style="accent-color: var(--primary);">
+        <label for="is_published"> Published (visible to students)</label>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
+        <i class="fas fa-save"></i> {% if action == 'create' %}Create Lab{% else %}Save Changes{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+  var editor = new Quill('#lab-editor', {
+    theme: 'snow',
+    placeholder: 'Write step-by-step instructions, code snippets, and explanations...',
+    modules: {
+      toolbar: [
+        [{ 'header': [1,2,3,false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['blockquote', 'code-block'],
+        [{ 'align': [] }],
+        ['link', 'image'],
+        ['clean']
+      ]
+    }
+  });
+  var saved = document.getElementById('content-hidden').value;
+  if (saved) editor.root.innerHTML = saved;
+  document.querySelector('form').addEventListener('submit', function() {
+    document.getElementById('content-hidden').value = editor.root.innerHTML;
+  });
+</script>
+{% endblock %}

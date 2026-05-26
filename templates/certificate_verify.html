@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}
+  {% if valid %}
+    Verified Credential: {{ certificate.unique_code }}
+  {% else %}
+    Verification Failure: {{ unique_code }}
+  {% endif %}
+{% endblock %}
+
+{% set no_sidebar = true %}
+
+{% block content %}
+<style>
+  @keyframes floatUp {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes checkBounce {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.1); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes pulseSecondary {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  }
+  @keyframes pulseAlert {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  }
+  
+  .animate-float {
+    animation: floatUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  
+  .animate-check {
+    animation: checkBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  
+  .pulse-success {
+    animation: pulseSecondary 2s infinite;
+  }
+  
+  .pulse-danger {
+    animation: pulseAlert 2s infinite;
+  }
+
+  .verify-field {
+    background: rgba(148, 163, 184, 0.05);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    margin-bottom: 1.25rem;
+    transition: var(--transition);
+  }
+  .verify-field:hover {
+    background: rgba(148, 163, 184, 0.09);
+    border-color: var(--primary-light);
+  }
+</style>
+
+<div class="verification-wrapper" style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1rem; background: radial-gradient(circle at 10% 20%, rgba(98, 0, 234, 0.04) 0%, rgba(0, 229, 255, 0.02) 90.1%);">
+  <div class="verification-glass-card animate-float" style="width: 100%; max-width: 600px; padding: 3rem 2.5rem; border-radius: var(--radius-lg); background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); box-shadow: var(--shadow-lg); text-align: center; position: relative; overflow: hidden;">
+    
+    <!-- Decorative floating glow spheres inside card background -->
+    <div style="position: absolute; top: -50px; left: -50px; width: 150px; height: 150px; border-radius: 50%; background: var(--primary-glow); filter: blur(40px); pointer-events: none;"></div>
+    <div style="position: absolute; bottom: -50px; right: -50px; width: 150px; height: 150px; border-radius: 50%; background: var(--secondary-glow); filter: blur(40px); pointer-events: none;"></div>
+
+    {% if valid %}
+      <!-- Glowing green/emerald verification circle -->
+      <div class="animate-check pulse-success" style="width: 80px; height: 80px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); border: 2px solid var(--secondary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+        <i class="fas fa-check-circle" style="font-size: 3.5rem; color: var(--secondary);"></i>
+      </div>
+
+      <span style="display: inline-block; padding: 0.35rem 1rem; border-radius: 100px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: rgba(16, 185, 129, 0.12); color: var(--secondary); border: 1px solid rgba(16, 185, 129, 0.25); margin-bottom: 1.25rem;">
+        Credential Verified
+      </span>
+
+      <h2 style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem; font-family: 'Outfit', sans-serif;">Official Certificate Valid</h2>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem;">This digital certificate is active and authentic within Shikshya's secure registry.</p>
+
+      <div style="text-align: left; margin-bottom: 2rem;">
+        <div class="verify-field">
+          <small style="text-transform: uppercase; font-weight: bold; color: var(--primary); display: block; font-size: 0.75rem; letter-spacing: 0.5px; margin-bottom: 0.25rem;">Recipient Name</small>
+          <span style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); font-family: 'Outfit', sans-serif;">{{ certificate.student.username }}</span>
+        </div>
+        
+        <div class="verify-field">
+          <small style="text-transform: uppercase; font-weight: bold; color: var(--primary); display: block; font-size: 0.75rem; letter-spacing: 0.5px; margin-bottom: 0.25rem;">Course Title</small>
+          <span style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); font-family: 'Outfit', sans-serif;">{{ certificate.course.title }}</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="verify-field">
+            <small style="text-transform: uppercase; font-weight: bold; color: var(--primary); display: block; font-size: 0.75rem; letter-spacing: 0.5px; margin-bottom: 0.25rem;">Graduation Date</small>
+            <span style="font-size: 0.95rem; font-weight: 600; color: var(--text-main);">{{ certificate.issued_at.strftime('%B %d, %Y') }}</span>
+          </div>
+          <div class="verify-field">
+            <small style="text-transform: uppercase; font-weight: bold; color: var(--primary); display: block; font-size: 0.75rem; letter-spacing: 0.5px; margin-bottom: 0.25rem;">Credential Code</small>
+            <span style="font-size: 0.85rem; font-weight: 700; font-family: monospace; color: var(--text-main);">{{ certificate.unique_code }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="background: rgba(79, 70, 229, 0.05); border-left: 4px solid var(--primary); padding: 1rem 1.25rem; border-radius: 4px; text-align: left; margin-bottom: 2.5rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+        <strong style="color: var(--text-main); display: block; margin-bottom: 0.25rem;"><i class="fas fa-shield-alt"></i> Verified Curriculum Met:</strong>
+        All core modules reviewed. 100% dynamic video sessions completed, fully cleared simulated unit quizzes, and custom verified assignment codes successfully passed.
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ url_for('api.view_certificate', unique_code=certificate.unique_code) }}" class="btn btn-primary"><i class="fas fa-award"></i> View Official Certificate</a>
+        <a href="{{ url_for('main.home') }}" class="btn btn-outline"><i class="fas fa-home"></i> Back to Home</a>
+      </div>
+
+    {% else %}
+      <!-- Glowing red/amber failure circle -->
+      <div class="animate-check pulse-danger" style="width: 80px; height: 80px; border-radius: 50%; background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #ef4444;"></i>
+      </div>
+
+      <span style="display: inline-block; padding: 0.35rem 1rem; border-radius: 100px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); margin-bottom: 1.25rem;">
+        Verification Failure
+      </span>
+
+      <h2 style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem; font-family: 'Outfit', sans-serif;">Credential Invalid</h2>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.6;">The certificate details provided could not be matched against our database records.</p>
+
+      <div class="verify-field" style="margin-bottom: 2rem; text-align: center; border-color: rgba(239, 68, 68, 0.25);">
+        <small style="text-transform: uppercase; font-weight: bold; color: #ef4444; display: block; font-size: 0.75rem; letter-spacing: 0.5px; margin-bottom: 0.25rem;">Provided Verification Code</small>
+        <span style="font-size: 1.1rem; font-weight: 700; font-family: monospace; color: var(--text-main);">{{ unique_code }}</span>
+      </div>
+
+      <div style="background: rgba(239, 68, 68, 0.05); border-left: 4px solid #ef4444; padding: 1rem 1.25rem; border-radius: 4px; text-align: left; margin-bottom: 2.5rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+        <strong style="color: var(--text-main); display: block; margin-bottom: 0.25rem;"><i class="fas fa-question-circle"></i> Why is this record invalid?</strong>
+        This error occurs if the certificate validation code has been entered incorrectly, has expired or been revoked, or the course was not fully validated by the instructor. Please contact support if you believe this is in error.
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ url_for('main.contact') }}" class="btn btn-primary"><i class="fas fa-envelope"></i> Contact Support</a>
+        <a href="{{ url_for('main.home') }}" class="btn btn-outline"><i class="fas fa-home"></i> Back to Home</a>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

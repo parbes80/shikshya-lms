@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Calendar - {{ month_name }} {{ year }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto; padding: 2rem 1rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1 class="section-title"><i class="fas fa-calendar-alt"></i> Academic Calendar</h1>
+  </div>
+
+  <div class="card" style="padding: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <a href="{{ url_for('notice.calendar', year=prev_year, month=prev_month) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem;">
+        <i class="fas fa-chevron-left"></i> {{ prev_month }}
+      </a>
+      <h2 style="font-size: 1.5rem; font-weight: 800;">{{ month_name }} {{ year }}</h2>
+      <a href="{{ url_for('notice.calendar', year=next_year, month=next_month) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem;">
+        {{ next_month }} <i class="fas fa-chevron-right"></i>
+      </a>
+    </div>
+
+    <div id="event-legend" style="display: flex; gap: 1.5rem; margin-bottom: 1rem; font-size: 0.8rem; flex-wrap: wrap;">
+      <span><span style="display: inline-block; width: 12px; height: 12px; background: #ea4335; border-radius: 2px; margin-right: 0.3rem;"></span> Live Class</span>
+      <span><span style="display: inline-block; width: 12px; height: 12px; background: #f59e0b; border-radius: 2px; margin-right: 0.3rem;"></span> Assignment Due</span>
+      <span><span style="display: inline-block; width: 12px; height: 12px; background: #8b5cf6; border-radius: 2px; margin-right: 0.3rem;"></span> Quiz</span>
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.85rem;">
+        <thead>
+          <tr style="background: var(--bg-card-hover);">
+            <th style="padding: 0.6rem; font-weight: bold; color: var(--text-muted);">Sun</th>
+            <th style="padding: 0.6rem; font-weight: bold; color: var(--text-muted);">Mon</th>
+            <th style="padding: 0.6rem; font-weight: bold; color: var(--text-muted);">Tue</th>
+            <th style="padding: 0.6rem; font-weight: bold; color: var(--text-muted);">Wed</th>
+            <th style="padding: 0.6rem; font-weight: bold; color: var(--text-muted);">Thu</th>
+            <th style="padding: 0.6rem; font-weight: bold; color: var(--text-muted);">Fri</th>
+            <th style="padding: 0.6rem; font-weight: bold; color: var(--text-muted);">Sat</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for week in month_days %}
+            <tr>
+              {% for d in week %}
+                {% if d == 0 %}
+                  <td style="padding: 0.5rem; color: var(--text-muted); opacity: 0.4;"></td>
+                {% else %}
+                  {% set today_cls = 'today' if year == now().year and month == now().month and d == now().day else '' %}
+                  <td id="cal-day-{{ d }}" style="padding: 0.4rem; vertical-align: top; height: 80px; width: 14%; border: 1px solid var(--border-color); position: relative; {% if today_cls %}background: var(--primary-light);{% endif %}">
+                    <div style="font-weight: {% if today_cls %}800{% else %}600{% endif %}; margin-bottom: 0.25rem; font-size: 0.8rem;">{{ d }}</div>
+                    <div class="cal-events" style="display: flex; flex-direction: column; gap: 2px;"></div>
+                  </td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var year = {{ year }};
+  var month = {{ month }};
+  var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+  var startDate = year + '-' + pad(month) + '-01';
+  var endDate = year + '-' + pad(month) + '-' + pad({{ month_days|last|select("gt",0)|list|last }});
+
+  fetch('{{ url_for("notice.calendar_events_api") }}?start=' + startDate + '&end=' + endDate)
+    .then(function(r) { return r.json(); })
+    .then(function(events) {
+      events.forEach(function(ev) {
+        var dayNum = parseInt(ev.start.split('-')[2]);
+        var cell = document.getElementById('cal-day-' + dayNum);
+        if (cell) {
+          var container = cell.querySelector('.cal-events');
+          var el = document.createElement('a');
+          el.href = ev.url || '#';
+          el.target = ev.url && ev.url.startsWith('http') ? '_blank' : '_self';
+          el.style.cssText = 'display: block; padding: 1px 4px; border-radius: 3px; font-size: 0.65rem; color: white; background: ' + ev.color + '; text-decoration: none; margin-bottom: 1px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;';
+          el.textContent = ev.title;
+          el.title = ev.title + (ev.time ? ' (' + ev.time + ')' : '');
+          container.appendChild(el);
+        }
+      });
+    });
+});
+</script>
+{% endblock %}

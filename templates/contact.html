@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Contact Us{% endblock %}
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto; padding: 2rem 1rem;">
+  <h1 class="section-title">Get in Touch</h1>
+  <p style="margin-bottom: 2rem; color: var(--text-muted);">Have questions about courses, certifications, or teacher registration? Shoot us a message!</p>
+  
+  <div class="card">
+    <form action="{{ url_for('main.contact') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group">
+        <label class="form-label" for="name-input">Full Name</label>
+        <input type="text" name="name" id="name-input" class="form-control" placeholder="Enter your name" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email-input">Email Address</label>
+        <input type="email" name="email" id="email-input" class="form-control" placeholder="name@example.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="subject-input">Subject</label>
+        <input type="text" name="subject" id="subject-input" class="form-control" placeholder="How can we help?" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="message-input">Your Message</label>
+        <textarea name="message" id="message-input" rows="5" class="form-control" placeholder="Type your details here..." required style="resize: vertical; font-family: inherit;"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;" id="contact-submit-btn">
+        <i class="fas fa-paper-plane"></i> Send Message
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+# ==============================================================================
+# Shikshya LMS - Docker Ignore Config
+# ==============================================================================
+
+# Version Control
+.git
+.gitignore
+
+# Python Cache & Runtime Files
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.pytest_cache/
+.tox/
+.venv/
+venv/
+ENV/
+env/
+
+# Databases & Cache
+*.db
+*.sqlite
+shikshya.db
+
+# Sensitive Information
+.env
+.env.*
+secrets.json
+*.key
+*.pem
+
+# IDE & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temporary & Build Directories
+build/
+dist/
+*.egg-info/
+static/uploads/

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Evaluations - {{ course.title }}{% endblock %}
+{% block content %}
+<div class="dashboard-container">
+  <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1><i class="fas fa-clipboard-check"></i> Evaluations</h1>
+      <p style="color: var(--text-muted);">{{ course.title }}</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      {% if current_user.role.name == 'Teacher' %}
+      <div class="eval-dropdown" style="position: relative;">
+        <button id="eval-dropdown-btn" class="btn btn-primary">
+          <i class="fas fa-plus"></i> New Evaluation &#9660;
+        </button>
+        <div class="eval-dropdown-menu" style="display: none; position: absolute; top: 100%; right: 0; z-index: 50; min-width: 220px; margin-top: 0.25rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); overflow: hidden;">
+          <a href="{{ url_for('course.create_quiz', course_id=course.id) }}?from=eval" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; text-decoration: none; color: inherit; border-bottom: 1px solid var(--border-color); transition: background 0.1s;" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #8b5cf615; display: flex; align-items: center; justify-content: center;"><i class="fas fa-question-circle" style="color: #8b5cf6;"></i></div>
+            <div><div style="font-weight: 600; font-size: 0.9rem;">Quiz</div><div style="font-size: 0.75rem; color: var(--text-muted);">Multiple choice questions</div></div>
+          </a>
+          <a href="{{ url_for('eval.create', course_id=course.id, type='test_paper') }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; text-decoration: none; color: inherit; border-bottom: 1px solid var(--border-color); transition: background 0.1s;" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #3b82f615; display: flex; align-items: center; justify-content: center;"><i class="fas fa-file-alt" style="color: #3b82f6;"></i></div>
+            <div><div style="font-weight: 600; font-size: 0.9rem;">Test Paper</div><div style="font-size: 0.75rem; color: var(--text-muted);">PDF question + answer submission</div></div>
+          </a>
+          <a href="{{ url_for('eval.create', course_id=course.id, type='presentation') }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; text-decoration: none; color: inherit; border-bottom: 1px solid var(--border-color); transition: background 0.1s;" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #10b98115; display: flex; align-items: center; justify-content: center;"><i class="fas fa-chalkboard-teacher" style="color: #10b981;"></i></div>
+            <div><div style="font-weight: 600; font-size: 0.9rem;">Presentation</div><div style="font-size: 0.75rem; color: var(--text-muted);">Slide submission project</div></div>
+          </a>
+          <a href="{{ url_for('eval.create', course_id=course.id, type='lab') }}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; text-decoration: none; color: inherit;" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #f59e0b15; display: flex; align-items: center; justify-content: center;"><i class="fas fa-flask" style="color: #f59e0b;"></i></div>
+            <div><div style="font-weight: 600; font-size: 0.9rem;">Lab</div><div style="font-size: 0.75rem; color: var(--text-muted);">Practical lab work</div></div>
+          </a>
+        </div>
+      </div>
+      {% endif %}
+      {% if current_user.role.name == 'Teacher' %}
+        <a href="{{ url_for('dashboard.teacher') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+      {% else %}
+        <a href="{{ url_for('course.player', slug=course.slug) }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Course</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if not evaluations %}
+  <div class="card" style="text-align: center; padding: 3rem;">
+    <i class="fas fa-clipboard-list" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+    <h3>No Evaluations Yet</h3>
+    <p style="color: var(--text-muted);">
+      {% if current_user.role.name == 'Teacher' %}
+        Create your first evaluation to assess your students.
+      {% else %}
+        No evaluations have been scheduled for this course yet.
+      {% endif %}
+    </p>
+  </div>
+  {% else %}
+  <div style="display: flex; flex-direction: column; gap: 1rem;">
+    {% for eval in evaluations %}
+    {% set icon = icons.get(eval.eval_type, 'fa-question-circle') %}
+    {% set color = colors.get(eval.eval_type, '#6b7280') %}
+    <a href="{{ url_for('eval.detail', eval_id=eval.id) }}" class="card" style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.5rem; text-decoration: none; color: inherit; transition: all 0.2s; cursor: pointer;" onmouseover="this.style.borderColor='{{ color }}'" onmouseout="this.style.borderColor=''">
+      <div style="width: 48px; height: 48px; border-radius: 12px; background: {{ color }}15; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <i class="fas {{ icon }}" style="color: {{ color }}; font-size: 1.2rem;"></i>
+      </div>
+      <div style="flex: 1; min-width: 0;">
+        <h3 style="margin: 0 0 0.25rem; font-size: 1rem;">{{ eval.title }}</h3>
+        <div style="display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap;">
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
+            <i class="fas {{ icon }}"></i> {{ eval.eval_type|replace('_', ' ')|title }}
+          </span>
+          {% if eval.scheduled_at %}
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
+            <i class="far fa-calendar-alt"></i> {{ eval.scheduled_at.strftime('%b %d, %Y %I:%M %p') }}
+          </span>
+          {% endif %}
+          {% if eval.duration_minutes %}
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
+            <i class="far fa-clock"></i> {{ eval.duration_minutes }} min
+          </span>
+          {% endif %}
+          <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
+            <i class="fas fa-star"></i> Max: {{ eval.max_score }}
+          </span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+        <span class="badge" style="background: {% if eval.results_published %}#10b981{% elif eval.status == 'upcoming' %}#f59e0b{% else %}#6b7280{% endif %}15; color: {% if eval.results_published %}#10b981{% elif eval.status == 'upcoming' %}#f59e0b{% else %}#6b7280{% endif %}; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600;">
+          {% if eval.results_published %}Published{% else %}{{ eval.status|title }}{% endif %}
+        </span>
+        <i class="fas fa-chevron-right" style="color: var(--text-muted); font-size: 0.8rem;"></i>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<script>
+document.getElementById('eval-dropdown-btn').addEventListener('click', function(e) {
+  e.stopPropagation();
+  var menu = this.nextElementSibling;
+  var isOpen = menu.style.display === 'block';
+  document.querySelectorAll('.eval-dropdown-menu').forEach(function(m) { m.style.display = 'none'; });
+  menu.style.display = isOpen ? 'none' : 'block';
+});
+document.addEventListener('click', function() {
+  document.querySelectorAll('.eval-dropdown-menu').forEach(function(m) { m.style.display = 'none'; });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Membership Plans{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto; padding: 2rem 1rem;">
+  <div style="text-align: center; margin-bottom: 3rem;">
+    <h1 class="section-title"><i class="fas fa-crown"></i> Choose Your Plan</h1>
+    <p style="color: var(--text-muted);">Unlock all features with a Shikshya membership.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+    {% for plan in plans %}
+      <div class="card" style="padding: 2rem; text-align: center; position: relative; border: 2px solid {% if loop.index == 2 %}var(--primary){% else %}var(--border-color){% endif %};">
+        {% if loop.index == 2 %}
+          <span class="difficulty-badge beginner" style="position: static; display: inline-block; margin-bottom: 1rem; font-size: 0.7rem;">POPULAR</span>
+        {% endif %}
+        <i class="fas {% if plan.duration_days >= 365 %}fa-infinity{% elif plan.duration_days >= 180 %}fa-gem{% elif plan.duration_days >= 90 %}fa-rocket{% else %}fa-star{% endif %}" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 1rem;"></i>
+        <h3 style="font-size: 1.4rem; font-weight: 800;">{{ plan.name }}</h3>
+        <p style="font-size: 2rem; font-weight: 800; color: var(--primary); margin: 1rem 0;">
+          Rs. {{ "{:,.0f}".format(plan.price) }}
+          <small style="font-size: 0.8rem; color: var(--text-muted); font-weight: 400;">/{{ plan.duration_days }} days</small>
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">{{ plan.description }}</p>
+        {% if plan.features %}
+          <ul style="list-style: none; text-align: left; margin-bottom: 1.5rem;">
+            {% for f in plan.features.split('\n') %}
+              <li style="padding: 0.4rem 0; font-size: 0.85rem;"><i class="fas fa-check" style="color: var(--secondary); margin-right: 0.5rem;"></i> {{ f }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+        <a href="{{ url_for('payment.subscribe', plan_id=plan.id) }}" class="btn btn-primary" style="width: 100%; justify-content: center;">
+          <i class="fas fa-lock"></i> Subscribe Now
+        </a>
+      </div>
+    {% else %}
+      <div style="grid-column: 1/-1; text-align: center; padding: 3rem;">
+        <i class="fas fa-box-open" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+        <h3>No plans available</h3>
+        <p style="color: var(--text-muted);">Check back later for membership plans.</p>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Shikshya - Learn Anything, Anywhere{% endblock %}
+
+{% block content %}
+<div class="home-container">
+  <!-- Hero Section -->
+  <section class="course-hero" style="border-radius: var(--radius-lg); margin-bottom: 3rem;">
+    <div class="course-hero-content">
+      <div class="course-hero-details">
+        <h1 style="font-size: 3rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Learn Without Limits</h1>
+        <p style="font-size: 1.15rem; color: var(--text-muted); margin: 1.5rem 0; line-height: 1.6;">
+          Shikshya is Nepal's premium learning platform, crafted for aspiring engineers, developers, and designers. Gain access to expert-led video tutorials, dynamic examinations, assignments, and secure certificate credentials.
+        </p>
+        <div style="display: flex; gap: 1rem;">
+          <a href="{{ url_for('course.index') }}" class="btn btn-primary"><i class="fas fa-search"></i> Browse Courses</a>
+          <a href="{{ url_for('auth.register') }}" class="btn btn-outline"><i class="fas fa-user-plus"></i> Join for Free</a>
+        </div>
+      </div>
+      <div class="course-hero-preview" style="background: transparent; border: none; box-shadow: none;">
+        <div style="padding: 2rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); position: relative;">
+          <!-- Glowing mock interface card -->
+          <div style="width: 100%; aspect-ratio: 16/10; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--primary-light), var(--bg-app)); display: flex; align-items: center; justify-content: center; font-size: 3rem; color: var(--primary); margin-bottom: 1.5rem;">
+            <i class="fas fa-laptop-code"></i>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="text-align: left;">
+              <h4 style="font-weight: 800;">Python CLI Calculator</h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Assignment 1: Completed by 85%</p>
+            </div>
+            <span class="difficulty-badge intermediate" style="position: static;">🔥 Active</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories Grid -->
+  <section style="margin-bottom: 4rem;">
+    <h2 class="section-title">Explore Top Categories</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+      {% for cat in categories %}
+        <a href="{{ url_for('course.index', category=cat.slug) }}" class="card" style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem; padding: 2rem;">
+          <div class="stat-icon" style="width: 60px; height: 60px; border-radius: 50%; font-size: 1.8rem;">
+            <i class="fas {{ cat.icon_class }}"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.25rem;">{{ cat.name }}</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">{{ cat.courses|length }} courses available</p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Featured Courses -->
+  <section style="margin-bottom: 4rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h2 class="section-title">Popular Programs</h2>
+      <a href="{{ url_for('course.index') }}" style="color: var(--primary); font-weight: 600;">View All <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="courses-grid">
+      {% for course in featured_courses %}
+        <div class="card course-card">
+          <div class="course-thumbnail">
+            <span class="difficulty-badge {{ course.difficulty_level.lower() }}">{{ course.difficulty_level }}</span>
+            {% if course.thumbnail_url and course.thumbnail_url != 'course_default.jpg' %}
+              <img src="{{ url_for('static', filename=course.thumbnail_url) }}" alt="{{ course.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+            {% else %}
+            <div style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary-dark), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-size: 4rem; color: white;">
+              <i class="fas fa-book-reader"></i>
+            </div>
+            {% endif %}
+          </div>
+          <div class="course-content">
+            <span class="course-category">{{ course.category.name }}</span>
+            <a href="{{ url_for('course.details', slug=course.slug) }}">
+              <h3 class="course-title">{{ course.title }}</h3>
+            </a>
+            <p class="course-desc">{{ course.description[:110] }}...</p>
+            <div class="course-footer">
+              <div class="course-teacher">
+                <i class="fas fa-user-circle" style="font-size: 1.2rem; color: var(--primary);"></i>
+                <span>{{ course.teacher.username }}</span>
+              </div>
+              <div class="course-price {% if course.price == 0.0 %}free{% endif %}">
+                {% if course.price == 0.0 %}Free{% else %}Rs. {{ "{:,.0f}".format(course.price) }}{% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Platform Stats -->
+  <section class="stats-grid" style="margin-bottom: 4rem;">
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+      <div>
+        <div class="stat-number">{{ stats.students_count }}</div>
+        <div class="stat-label">Active Learners</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fas fa-chalkboard-teacher"></i></div>
+      <div>
+        <div class="stat-number">{{ stats.teachers_count }}</div>
+        <div class="stat-label">Expert Mentors</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"><i class="fas fa-graduation-cap"></i></div>
+      <div>
+        <div class="stat-number">{{ stats.courses_count }}</div>
+        <div class="stat-label">Verified Programs</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-certificate"></i></div>
+      <div>
+        <div class="stat-number">{{ stats.certificates_count }}</div>
+        <div class="stat-label">Certificates Issued</div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

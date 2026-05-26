@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  
+  <!-- Welcome and Gamification Block -->
+  <div class="dashboard-header">
+    <div class="welcome-box">
+      <div class="welcome-text">
+        <h1>Namaste, {{ current_user.username }}!</h1>
+        <p style="color: var(--text-muted);">Ready to conquer your coding and styling goals today?</p>
+      </div>
+    </div>
+    
+    <!-- Streak Flame Card -->
+    <div class="streak-badge-container">
+      <div class="streak-icon">🔥</div>
+      <div>
+        <h4 style="font-weight: 800; font-size: 1.25rem;">{{ current_user.streak_count }} Days Streak!</h4>
+        <p style="font-size: 0.8rem; opacity: 0.9;">Keep up the daily activity to grow your streak!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two-column dashboard split -->
+  <div class="content-grid">
+    
+    <!-- Left Column: Active Enrollments -->
+    <div>
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-graduation-cap" style="color: var(--primary);"></i> Enrolled Courses</h2>
+      <div class="list-container">
+        {% if enrollments %}
+          {% for enr in enrollments %}
+            <div class="card" style="margin-bottom: 1rem; display: grid; grid-template-columns: 80px 1fr; gap: 1.5rem; align-items: center;">
+              <div style="aspect-ratio: 1; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white;">
+                <i class="fas fa-code"></i>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                  <div>
+                    <h3 style="font-size: 1.15rem; font-weight: bold;"><a href="{{ url_for('course.player', slug=enr.course.slug) }}">{{ enr.course.title }}</a></h3>
+                    <small style="color: var(--text-muted);">Instructor: {{ enr.course.teacher.username }}</small>
+                  </div>
+                  <a href="{{ url_for('course.player', slug=enr.course.slug) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"><i class="fas fa-play"></i> Learn</a>
+                </div>
+                
+                <!-- Progress Line -->
+                <div class="progress-container">
+                  <div class="progress-header">
+                    <span>Course Progress</span>
+                    <span>{{ enr.progress_percent }}%</span>
+                  </div>
+                  <div class="progress-bar-wrapper">
+                    <div class="progress-bar-fill" style="width: {{ enr.progress_percent }}%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="card" style="text-align: center; padding: 3rem;">
+            <i class="fas fa-book-reader" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <h3>No courses enrolled yet!</h3>
+            <p style="color: var(--text-muted); margin-top: 0.5rem;">Explore our curated programs and start studying now.</p>
+            <a href="{{ url_for('course.index') }}" class="btn btn-primary" style="margin-top: 1.5rem;"><i class="fas fa-search"></i> Browse Catalog</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Pending Assignments & Submissions -->
+      <h2 style="font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem;"><i class="fas fa-tasks" style="color: var(--secondary);"></i> Assignments Submissions</h2>
+      <div class="card">
+        {% if submissions %}
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; color: var(--text-muted); font-weight: bold;">
+                  <th style="padding: 0.75rem;">Course / Assignment</th>
+                  <th style="padding: 0.75rem;">Submitted Date</th>
+                  <th style="padding: 0.75rem;">Status / Score</th>
+                  <th style="padding: 0.75rem;">Feedback</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for sub in submissions %}
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.75rem;">
+                      <strong>{{ sub.assignment.title }}</strong><br>
+                      <small style="color: var(--text-muted);">{{ sub.assignment.course.title }}</small>
+                    </td>
+                    <td style="padding: 0.75rem;">{{ sub.submitted_at.strftime('%Y-%m-%d') }}</td>
+                    <td style="padding: 0.75rem;">
+                      {% if sub.is_graded %}
+                        <span class="status-badge" style="background: rgba(16, 185, 129, 0.15); color: var(--secondary); padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-weight: bold;">{{ sub.marks_obtained }} / {{ sub.assignment.max_marks }}</span>
+                      {% else %}
+                        <span class="status-badge" style="background: rgba(245, 158, 11, 0.15); color: var(--accent); padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-weight: bold;">Pending Review</span>
+                      {% endif %}
+                    </td>
+                    <td style="padding: 0.75rem;">{{ sub.feedback or 'No feedback yet.' }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem;">No assignments submitted yet.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right Column: Gamification Badges, Certificates, & Quizzes -->
+    <div>
+      
+      <!-- Gamified badges drawer -->
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-trophy" style="color: var(--accent);"></i> Badges Earned</h2>
+      <div class="card" style="margin-bottom: 2rem;">
+        {% if badges %}
+          <div class="badges-list">
+            {% for badge in badges %}
+              <div class="badge-item" title="{{ badge.description }}">
+                <div class="badge-circle" style="background: {{ badge.color }};">
+                  <i class="fas {{ badge.icon }}"></i>
+                </div>
+                <span class="badge-name">{{ badge.name }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center;">Gain badges by watching lessons and attempting quizzes!</p>
+        {% endif %}
+      </div>
+
+      <!-- Attendance Summary -->
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-clipboard-check" style="color: #10b981;"></i> My Attendance</h2>
+      <div class="list-container" style="margin-bottom: 2rem;">
+        {% if enrollments %}
+          {% for enr in enrollments %}
+            {% set att_records = enr.course.attendance|selectattr("student_id", "equalto", current_user.id)|list %}
+            {% set present = att_records|selectattr("is_present", "equalto", true)|list %}
+            <div class="list-row">
+              <div>
+                <strong>{{ enr.course.title }}</strong><br>
+                <small style="color: var(--text-muted);">
+                  {% if att_records %}
+                    {{ present|length }} / {{ att_records|length }} sessions present
+                    ({{ (present|length / att_records|length * 100)|round }}%)
+                  {% else %}
+                    No attendance records yet
+                  {% endif %}
+                </small>
+              </div>
+              <span class="status-badge" style="background: {% if att_records and present|length / att_records|length >= 0.75 %}rgba(16, 185, 129, 0.15); color: var(--secondary){% else %}rgba(245, 158, 11, 0.15); color: var(--accent){% endif %}; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: bold;">
+                {% if att_records %}{{ (present|length / att_records|length * 100)|round }}%{% else %}--{% endif %}
+              </span>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem;">Enroll in a course to track attendance.</p>
+        {% endif %}
+      </div>
+
+      <!-- Certificates generated drawer -->
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-certificate" style="color: var(--primary);"></i> My Certificates</h2>
+      <div class="list-container" style="margin-bottom: 2rem;">
+        {% if certificates %}
+          {% for cert in certificates %}
+            <div class="list-row">
+              <div>
+                <h4 style="font-size: 0.95rem; font-weight: bold;"><a href="{{ url_for('api.view_certificate', unique_code=cert.unique_code) }}">{{ cert.course.title }}</a></h4>
+                <small style="color: var(--text-muted);">Issued Code: {{ cert.unique_code }}</small>
+              </div>
+              <a href="{{ url_for('api.view_certificate', unique_code=cert.unique_code) }}" class="btn btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-eye"></i> View</a>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="card" style="text-align: center; padding: 1.5rem;">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Complete 100% of course curriculum content to receive your official QR certified verification!</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Quiz Attempts Dashboard -->
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-edit" style="color: var(--primary);"></i> Exam Scoreboard</h2>
+      <div class="card">
+        {% if quiz_attempts %}
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+            {% for att in quiz_attempts %}
+              <li style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                <div>
+                  <strong>{{ att.quiz.title }}</strong><br>
+                  <small style="color: var(--text-muted);">{{ att.completed_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                </div>
+                <span class="status-badge" style="background: {% if att.is_passed %}rgba(16, 185, 129, 0.15); color: var(--secondary){% else %}rgba(239, 68, 68, 0.15); color: #ef4444{% endif %}; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: bold;">
+                  {{ att.score }}% ({{ 'PASSED' if att.is_passed else 'FAILED' }})
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center;">No quizzes attempted yet.</p>
+        {% endif %}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

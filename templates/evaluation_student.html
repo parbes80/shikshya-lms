@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block title %}{{ evaluation.title }} - Student{% endblock %}
+{% block content %}
+{% set icon = icons.get(evaluation.eval_type, 'fa-question-circle') %}
+{% set color = colors.get(evaluation.eval_type, '#6b7280') %}
+{% set is_test = evaluation.eval_type == 'test_paper' %}
+<div class="dashboard-container">
+  <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1><i class="fas {{ icon }}" style="color: {{ color }};"></i> {{ evaluation.title }}</h1>
+      <p style="color: var(--text-muted);">
+        {{ course.title }} | {{ evaluation.eval_type|replace('_', ' ')|title }}
+        {% if evaluation.scheduled_at %} | {{ evaluation.scheduled_at.strftime('%b %d, %Y %I:%M %p') }}{% endif %}
+        {% if evaluation.duration_minutes %} | {{ evaluation.duration_minutes }} min{% endif %}
+        | Max: {{ evaluation.max_score }} points
+      </p>
+    </div>
+    <a href="{{ url_for('eval.index', course_id=course.id) }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Evaluations</a>
+  </div>
+
+  {% if evaluation.description %}
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-body">
+      <p style="margin: 0; white-space: pre-wrap;">{{ evaluation.description }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+    <div class="card" style="text-align: center; padding: 1.5rem;">
+      <i class="fas {{ icon }}" style="font-size: 1.5rem; color: {{ color }}; margin-bottom: 0.5rem;"></i>
+      <div style="font-size: 0.8rem; color: var(--text-muted);">Type</div>
+      <div style="font-weight: 600;">{{ evaluation.eval_type|replace('_', ' ')|title }}</div>
+    </div>
+    {% if evaluation.scheduled_at %}
+    <div class="card" style="text-align: center; padding: 1.5rem;">
+      <i class="far fa-calendar-alt" style="font-size: 1.5rem; color: #3b82f6; margin-bottom: 0.5rem;"></i>
+      <div style="font-size: 0.8rem; color: var(--text-muted);">Scheduled</div>
+      <div style="font-weight: 600; font-size: 0.9rem;">{{ evaluation.scheduled_at.strftime('%b %d, %Y') }}</div>
+      <div style="font-size: 0.8rem; color: var(--text-muted);">{{ evaluation.scheduled_at.strftime('%I:%M %p') }}</div>
+    </div>
+    {% endif %}
+    {% if evaluation.duration_minutes %}
+    <div class="card" id="timer-card" style="text-align: center; padding: 1.5rem; {% if evaluation.scheduled_at and evaluation.scheduled_at > now %}border-color: #3b82f6{% else %}border-color: #f59e0b{% endif %};">
+      <i class="far fa-clock" id="timer-icon" style="font-size: 1.5rem; {% if evaluation.scheduled_at and evaluation.scheduled_at > now %}color: #3b82f6{% else %}color: #f59e0b{% endif %}; margin-bottom: 0.5rem;"></i>
+      <div style="font-size: 0.8rem; color: var(--text-muted);" id="timer-label">
+        {% if evaluation.scheduled_at and evaluation.scheduled_at > now %}
+          Starts in
+        {% else %}
+          Remaining
+        {% endif %}
+      </div>
+      <div style="font-weight: 600; font-family: monospace; font-size: 1.5rem;" id="countdown-timer">
+        {% if evaluation.scheduled_at and evaluation.scheduled_at > now %}
+          --
+        {% else %}
+          {{ evaluation.duration_minutes }}:00
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    <div class="card" style="text-align: center; padding: 1.5rem;">
+      <i class="fas fa-star" style="font-size: 1.5rem; color: #f59e0b; margin-bottom: 0.5rem;"></i>
+      <div style="font-size: 0.8rem; color: var(--text-muted);">Max Score</div>
+      <div style="font-weight: 600;">{{ evaluation.max_score }}</div>
+    </div>
+  </div>
+
+  {% if is_test and evaluation.question_pdf_url %}
+  {% set exam_started = not evaluation.scheduled_at or evaluation.scheduled_at <= now %}
+  <div class="card" style="margin-bottom: 1.5rem; border-left: 4px solid {% if exam_started %}{{ color }}{% else %}#6b7280{% endif %};">
+    <div class="card-body" style="display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <h3 style="margin: 0 0 0.25rem;">
+          {% if exam_started %}
+            <i class="fas fa-file-pdf" style="color: #ef4444;"></i> Question Paper
+          {% else %}
+            <i class="fas fa-lock" style="color: #6b7280;"></i> Question Paper (Locked)
+          {% endif %}
+        </h3>
+        <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">
+          {% if exam_started %}
+            Download and read the questions carefully.
+          {% else %}
+            The question paper will be unlocked when the exam starts at <strong>{{ evaluation.scheduled_at.strftime('%I:%M %p') }}</strong>.
+          {% endif %}
+        </p>
+      </div>
+      {% if exam_started %}
+        {% if evaluation.question_pdf_url.startswith('http') %}
+          <a href="{{ evaluation.question_pdf_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-external-link-alt"></i> Open PDF</a>
+        {% else %}
+          <a href="{{ url_for('static', filename=evaluation.question_pdf_url) }}" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> Download PDF</a>
+        {% endif %}
+      {% else %}
+        <span class="btn btn-secondary" style="opacity: 0.5; cursor: not-allowed;"><i class="fas fa-lock"></i> Locked</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if is_test and evaluation.meet_link %}
+  <div class="card" style="margin-bottom: 1.5rem; border-left: 4px solid #ea4335;">
+    <div class="card-body" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h3 style="margin: 0 0 0.25rem;"><i class="fab fa-google" style="color: #ea4335;"></i> Proctoring</h3>
+        <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Keep your <strong>video camera</strong> and <strong>microphone</strong> ON during the entire exam.</p>
+      </div>
+      <a href="{{ evaluation.meet_link }}" target="_blank" class="btn btn-danger" style="background: #ea4335; border-color: #ea4335;"><i class="fab fa-google"></i> Join Meet</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if submission %}
+  <div class="card" style="margin-bottom: 1.5rem; border-left: 4px solid #10b981;">
+    <div class="card-body">
+      <h3 style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+        <i class="fas fa-check-circle" style="color: #10b981;"></i> You Submitted
+      </h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+        Submitted on {{ submission.submitted_at.strftime('%B %d, %Y at %H:%M') }}
+      </p>
+      {% if submission.file_url %}
+        {% if submission.file_url.startswith('http') %}
+          <a href="{{ submission.file_url }}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-external-link-alt"></i> View Submission</a>
+        {% else %}
+          <a href="{{ url_for('static', filename=submission.file_url) }}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-download"></i> Download Submission</a>
+        {% endif %}
+      {% endif %}
+      {% if submission.notes %}
+      <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg-secondary); border-radius: var(--radius-sm);">
+        <strong style="font-size: 0.85rem;">Your Notes:</strong>
+        <p style="margin: 0.25rem 0 0; font-size: 0.85rem; white-space: pre-wrap;">{{ submission.notes }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if can_view_results %}
+  <div class="card" style="border-left: 4px solid var(--primary);">
+    <div class="card-body" style="text-align: center;">
+      <i class="fas fa-trophy" style="font-size: 2rem; color: #f59e0b; margin-bottom: 0.5rem;"></i>
+      <h2 style="margin: 0 0 0.25rem;">
+        {% if submission.score is not none %}
+          {{ submission.score }} / {{ evaluation.max_score }}
+        {% else %}
+          Pending Grade
+        {% endif %}
+      </h2>
+      {% if submission.score is not none %}
+      <div style="font-size: 2rem; font-weight: 800; margin: 0.5rem 0;">
+        {% set pct = (submission.score / evaluation.max_score * 100) %}
+        <span style="color: {% if pct >= 80 %}#10b981{% elif pct >= 50 %}#f59e0b{% else %}#ef4444{% endif %};">{{ '%.1f'|format(pct) }}%</span>
+      </div>
+      {% endif %}
+      {% if submission.feedback %}
+      <div style="margin-top: 1rem; padding: 0.75rem; background: var(--bg-secondary); border-radius: var(--radius-sm); text-align: left;">
+        <strong style="font-size: 0.85rem;">Teacher's Feedback:</strong>
+        <p style="margin: 0.25rem 0 0; font-size: 0.85rem; white-space: pre-wrap;">{{ submission.feedback }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% elif submission %}
+  <div class="card" style="background: #f59e0b15; border-color: #f59e0b;">
+    <div class="card-body" style="text-align: center;">
+      <i class="fas fa-hourglass-half" style="font-size: 1.5rem; color: #f59e0b; margin-bottom: 0.5rem;"></i>
+      <p style="margin: 0; color: #92400e;">Results have not been published yet. Check back later.</p>
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  {% set exam_started = not evaluation.scheduled_at or evaluation.scheduled_at <= now %}
+  {% set exam_ended = evaluation.scheduled_at and evaluation.duration_minutes and (evaluation.scheduled_at.timestamp() + evaluation.duration_minutes * 60) <= now.timestamp() %}
+  <div class="card" style="text-align: center; padding: 2rem;">
+    <i class="fas {% if not exam_started %}fa-clock{% elif exam_ended %}fa-hourglass-end{% else %}fa-upload{% endif %}" style="font-size: 2.5rem; {% if not exam_started %}color: #3b82f6{% elif exam_ended %}color: #ef4444{% else %}color: var(--text-muted){% endif %}; margin-bottom: 1rem;"></i>
+    <h3>
+      {% if not exam_started %}
+        Exam Not Yet Open
+      {% elif exam_ended %}
+        Exam Has Ended
+      {% else %}
+        Not Submitted Yet
+      {% endif %}
+    </h3>
+    <p style="color: var(--text-muted); margin-bottom: 1rem;">
+      {% if not exam_started %}
+        This exam will open at <strong>{{ evaluation.scheduled_at.strftime('%I:%M %p on %b %d, %Y') }}</strong>.
+        {% if is_test %}Download the question paper and be ready to join the Google Meet on time.{% endif %}
+      {% elif exam_ended %}
+        The scheduled time for this exam has passed.
+      {% elif is_test %}
+        Download the question paper, join the Google Meet, and submit your answer sheet below.
+      {% else %}
+        You haven't submitted this evaluation yet.
+      {% endif %}
+    </p>
+    {% if exam_started and not exam_ended %}
+    <a href="{{ url_for('eval.submit', eval_id=evaluation.id) }}" class="btn btn-primary">
+      <i class="fas fa-upload"></i> Submit Now
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+<script>
+(function() {
+  var scheduled = {{ evaluation.scheduled_at.timestamp() * 1000 if evaluation.scheduled_at else 'null' }};
+  var durationMinutes = {{ evaluation.duration_minutes if evaluation.duration_minutes else 0 }};
+  var el = document.getElementById('countdown-timer');
+  var label = document.getElementById('timer-label');
+  var icon = document.getElementById('timer-icon');
+  var card = document.getElementById('timer-card');
+  if (!el) return;
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function tick() {
+    var now = new Date().getTime();
+    if (scheduled && now < scheduled) {
+      var diff = Math.floor((scheduled - now) / 1000);
+      var days = Math.floor(diff / 86400);
+      var hours = Math.floor((diff % 86400) / 3600);
+      var mins = Math.floor((diff % 3600) / 60);
+      var secs = diff % 60;
+      if (days > 0) {
+        el.textContent = days + 'd ' + pad(hours) + ':' + pad(mins) + ':' + pad(secs);
+      } else {
+        el.textContent = pad(hours) + ':' + pad(mins) + ':' + pad(secs);
+      }
+      if (label) label.textContent = 'Starts in';
+      if (icon) { icon.style.color = '#3b82f6'; }
+      if (card) card.style.borderColor = '#3b82f6';
+      setTimeout(tick, 1000);
+    } else if (durationMinutes > 0) {
+      if (label) label.textContent = 'Remaining';
+      if (icon) { icon.style.color = '#f59e0b'; }
+      if (card) card.style.borderColor = '#f59e0b';
+      var endTime = scheduled ? scheduled + durationMinutes * 60000 : now + durationMinutes * 60000;
+      var diff = Math.floor((endTime - now) / 1000);
+      if (diff <= 0) {
+        el.textContent = '00:00';
+        el.style.color = '#ef4444';
+        if (label) label.textContent = 'Ended';
+        return;
+      }
+      var mins = Math.floor(diff / 60);
+      var secs = diff % 60;
+      el.textContent = pad(mins) + ':' + pad(secs);
+      if (mins < 5) el.style.color = '#ef4444';
+      setTimeout(tick, 1000);
+    }
+  }
+  tick();
+})();
+</script>
+{% endblock %}

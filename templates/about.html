@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}About Us{% endblock %}
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; padding: 2rem 1rem;">
+  <h1 class="section-title">About Shikshya</h1>
+  <p style="font-size: 1.1rem; line-height: 1.7; margin-bottom: 1.5rem; color: var(--text-muted);">
+    Shikshya is an advanced, role-based, end-to-end educational portal created to deliver high-quality, self-paced learning to students across Nepal. Built with a highly responsive glassmorphic aesthetic and powered by robust Python systems, our platform brings academic rigor and professional tech training directly to your screen.
+  </p>
+  
+  <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Our Mission</h3>
+  <p style="font-size: 1rem; line-height: 1.6; margin-bottom: 1.5rem; color: var(--text-muted);">
+    To democratize learning by building accessible, secure, and production-ready toolsets. We connect professional mentors with eager students, equipping them with the quizzes, resources, assignments, and verified certificates necessary to launch and excel in tech careers.
+  </p>
+
+  <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Core Features</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+    <div class="card" style="padding: 1.25rem;">
+      <h4 style="margin-bottom: 0.5rem;"><i class="fas fa-video" style="color: var(--primary);"></i> Immersive Video Learning</h4>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">Resume exactly where you left off. Watch lessons with multi-speed controls, take inline notes, and track your completions.</p>
+    </div>
+    <div class="card" style="padding: 1.25rem;">
+      <h4 style="margin-bottom: 0.5rem;"><i class="fas fa-tasks" style="color: var(--secondary);"></i> Assignments & Timed Quizzes</h4>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">Take timer-locked exams, check your answers instantly, submit files, and receive rubric-based teacher reviews.</p>
+    </div>
+    <div class="card" style="padding: 1.25rem;">
+      <h4 style="margin-bottom: 0.5rem;"><i class="fas fa-certificate" style="color: var(--accent);"></i> Secure QR Certificates</h4>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">Complete all lessons in a course, and instantly download a certificate embedded with a unique verification code and QR code.</p>
+    </div>
+    <div class="card" style="padding: 1.25rem;">
+      <h4 style="margin-bottom: 0.5rem;"><i class="fas fa-comments" style="color: var(--primary);"></i> Collaborative Q&A</h4>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">Engage in Q&A course discussion forums, interact directly with teachers, and consult our AI chat tutor 24/7.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

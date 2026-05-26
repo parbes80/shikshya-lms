@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Taking Quiz: {{ quiz.title }}{% endblock %}
+
+{% set no_sidebar = true %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 2rem auto; padding: 1rem;">
+  
+  <!-- Interactive Timed Quiz Box Panel -->
+  <div class="card" id="quiz-box" data-quiz-id="{{ quiz.id }}" data-duration="{{ quiz.time_limit_minutes }}" style="padding: 2.5rem; position: relative;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--primary);"></div>
+    
+    <!-- Timer Indicator header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+      <div>
+        <small style="color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Examination Session</small>
+        <h2 style="font-size: 1.4rem; font-weight: 800;">{{ quiz.title }}</h2>
+      </div>
+      <div id="quiz-timer-box" style="background: var(--bg-app); border: 1px solid var(--border-color); padding: 0.5rem 1rem; border-radius: var(--radius-md); font-family: monospace; font-size: 1.15rem; font-weight: bold; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
+        <i class="far fa-clock"></i>
+        <span id="quiz-timer">--:--</span>
+      </div>
+    </div>
+
+    <!-- Overall quiz slider progress bar -->
+    <div class="progress-container" style="margin-bottom: 2rem;">
+      <div class="progress-bar-wrapper">
+        <div class="progress-bar-fill" id="quiz-progress-fill" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <!-- Questions cards lists -->
+    <div id="questions-list">
+      {% for q in quiz.questions %}
+        <div class="question-card" data-question-id="{{ q.id }}" style="display: none;">
+          <small style="color: var(--text-muted); font-weight: bold;">Question {{ loop.index }} of {{ quiz.questions|length }}</small>
+          <h3 class="question-text" style="font-size: 1.25rem; font-weight: bold; margin: 0.5rem 0 1.5rem 0; line-height: 1.4;">{{ q.text }}</h3>
+          
+          <!-- Choices list radios -->
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            {% for choice in q.choices %}
+              <label style="border: 1px solid var(--border-color); padding: 1rem; border-radius: var(--radius-md); display: flex; align-items: center; gap: 0.75rem; cursor: pointer; transition: var(--transition);">
+                <input type="radio" name="question-{{ q.id }}" value="{{ choice.id }}" style="accent-color: var(--primary); width: 18px; height: 18px;">
+                <span>{{ choice.text }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Question navigations controller -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2.5rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+      <button class="btn btn-outline" id="prev-question-btn" style="visibility: hidden;"><i class="fas fa-chevron-left"></i> Previous</button>
+      <button class="btn btn-primary" id="next-question-btn">Next <i class="fas fa-chevron-right"></i></button>
+      <button class="btn btn-secondary" id="submit-quiz-btn" style="display: none;"><i class="fas fa-check-double"></i> Submit Quiz</button>
+    </div>
+
+  </div>
+
+  <!-- Scoreboards assessment results panel (hidden initially) -->
+  <div class="card" id="quiz-results-container" style="padding: 2.5rem; display: none; position: relative; text-align: center;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--secondary);"></div>
+    
+    <i class="fas fa-award" style="font-size: 4rem; color: var(--accent); margin-bottom: 1.5rem;"></i>
+    <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem;">Exam Completed!</h2>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem;">Here is your instant academic score evaluation.</p>
+    
+    <!-- Score circles -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 2rem; margin-bottom: 2.5rem;">
+      <div style="background: var(--bg-app); border: 1px solid var(--border-color); padding: 1.5rem 2rem; border-radius: var(--radius-lg);">
+        <small style="color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Final Score</small>
+        <h3 id="quiz-final-score" style="font-size: 2.5rem; font-weight: 800; color: var(--primary); font-family: 'Outfit', sans-serif;">--%</h3>
+      </div>
+      <div>
+        <small style="color: var(--text-muted); font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 0.25rem;">Passing Status</small>
+        <span id="quiz-final-status" class="status-badge" style="padding: 0.5rem 1rem; border-radius: var(--radius-sm); font-weight: bold; font-size: 1.1rem;">--</span>
+      </div>
+    </div>
+
+    <!-- Corrections Review listing -->
+    <div style="text-align: left; margin-bottom: 2.5rem;">
+      <h3 style="font-size: 1.2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Detailed Corrections Review</h3>
+      <div id="quiz-corrections-review">
+        <!-- Javascript populated -->
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+      <a href="{{ url_for('course.player', slug=quiz.course.slug) }}" class="btn btn-primary"><i class="fas fa-play"></i> Return to Lesson Player</a>
+      <a href="{{ url_for('dashboard.student') }}" class="btn btn-outline"><i class="fas fa-columns"></i> View Dashboard</a>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+{% endblock %}

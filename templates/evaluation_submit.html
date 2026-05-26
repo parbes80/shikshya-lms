@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Submit - {{ evaluation.title }}{% endblock %}
+{% block content %}
+{% set icon = icons.get(evaluation.eval_type, 'fa-question-circle') %}
+{% set color = colors.get(evaluation.eval_type, '#6b7280') %}
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1><i class="fas fa-upload"></i> Submit Evaluation</h1>
+    <p style="color: var(--text-muted);">{{ evaluation.title }} &middot; {{ course.title }}</p>
+  </div>
+
+  <div class="card" style="max-width: 640px;">
+    <div class="card-body">
+      <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-secondary); border-radius: var(--radius-sm); margin-bottom: 1.5rem;">
+        <i class="fas {{ icon }}" style="color: {{ color }}; font-size: 1.2rem;"></i>
+        <div>
+          <strong>{{ evaluation.eval_type|replace('_', ' ')|title }}</strong>
+          {% if evaluation.scheduled_at %} &middot; {{ evaluation.scheduled_at.strftime('%b %d, %Y %H:%M') }}{% endif %}
+          {% if evaluation.duration_minutes %} &middot; {{ evaluation.duration_minutes }} min{% endif %}
+          &middot; Max: {{ evaluation.max_score }} points
+        </div>
+      </div>
+
+      <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+          <label class="form-label" for="file">Upload File</label>
+          <input type="file" name="file" id="file" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.mp4,.jpg,.jpeg,.png,.py,.js,.html,.css,.txt">
+          <small style="color: var(--text-muted);">Accepted: PDF, DOC, PPT, ZIP, Images, Code files</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="link">Or submit a link (URL)</label>
+          <input type="url" name="link" id="link" class="form-control" placeholder="https://drive.google.com/...">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="notes">Notes (optional)</label>
+          <textarea name="notes" id="notes" class="form-control" rows="4" placeholder="Add any notes or comments about your submission..."></textarea>
+        </div>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-paper-plane"></i> Submit
+          </button>
+          <a href="{{ url_for('eval.detail', eval_id=evaluation.id) }}" class="btn btn-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

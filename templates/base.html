@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{% endblock %} - {{ site_name }}</title>
+  <meta name="description" content="Shikshya is a modern Learning Management System providing high-end programming and web design courses. Enroll today and level up your skills.">
+  <meta name="keywords" content="LMS, E-learning, Programming, Web Development, Shikshya, Canvas, Classroom, Moodle">
+
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/course.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            <span>{{ message }}</span>
+            <i class="fas fa-times close-alert"></i>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <header>
+    <a href="{{ url_for('main.home') }}" class="logo" id="header-logo-link">
+      <i class="fas fa-graduation-cap"></i> Shikshya
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="{{ url_for('main.home') }}">Home</a></li>
+      <li><a href="{{ url_for('course.index') }}">Courses</a></li>
+      <li><a href="{{ url_for('main.about') }}">About</a></li>
+      <li><a href="{{ url_for('main.contact') }}">Contact</a></li>
+      <li><a href="{{ url_for('notice.calendar') }}"><i class="fas fa-calendar-alt"></i> Calendar</a></li>
+      <li><a href="{{ url_for('notice.list_notices') }}"><i class="fas fa-bullhorn"></i> Notices</a></li>
+      <li><a href="{{ url_for('branch.branches_map') }}"><i class="fas fa-map-marker-alt"></i> Branches</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <form action="{{ url_for('course.index') }}" method="GET" style="display: flex; position: relative;">
+        <input type="text" name="q" class="form-control" placeholder="Search courses..." style="padding: 0.4rem 0.8rem; font-size: 0.85rem; width: 180px; border-radius: var(--radius-sm);">
+      </form>
+
+      <button class="btn-icon" id="theme-toggle" title="Toggle Light/Dark Theme">
+        <i class="fas fa-moon"></i>
+      </button>
+
+      {% if current_user.is_authenticated %}
+        <div style="position: relative;">
+          <button class="btn-icon" id="notif-dropdown-btn" title="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="badge-number" id="notif-badge" style="position: absolute; top: 0; right: 0; background: var(--secondary); color: white; width: 18px; height: 18px; border-radius: 50%; font-size: 0.7rem; display: none; align-items: center; justify-content: center; font-weight: bold;"></span>
+          </button>
+          <div class="notifications-panel" id="notif-panel">
+            <h4 style="margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Unread Notifications</h4>
+            <div id="notif-list">
+            </div>
+          </div>
+        </div>
+
+        <div class="user-profile-menu" onclick="location.href='{{ url_for('auth.profile') }}'" title="View Profile">
+          {% set avatar = current_user.avatar_url if current_user.avatar_url else 'avatar_default.jpg' %}
+          <img src="{{ url_for('static', filename='images/' + avatar) }}" class="avatar-nav" alt="User Avatar">
+        </div>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary" id="login-button"><i class="fas fa-sign-in-alt"></i> Login</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="app-container">
+
+    {% if current_user.is_authenticated and not no_sidebar %}
+      <aside class="sidebar" id="navigation-sidebar">
+        <h4 style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 1rem; padding: 0 1rem; font-weight: bold;">User Control</h4>
+        <ul class="sidebar-menu">
+          {% if current_user.role.name == 'Student' %}
+            <li class="sidebar-item"><a href="{{ url_for('dashboard.student') }}"><i class="fas fa-columns"></i> Dashboard</a></li>
+            <li class="sidebar-item"><a href="{{ url_for('course.index') }}"><i class="fas fa-book-open"></i> Browse Courses</a></li>
+            <li class="sidebar-item"><a href="{{ url_for('lab.index') }}"><i class="fas fa-flask"></i> Labs & Simulations</a></li>
+            <li class="sidebar-item"><a href="{{ url_for('auth.profile') }}"><i class="fas fa-user-circle"></i> Edit Profile</a></li>
+          {% elif current_user.role.name == 'Teacher' %}
+            <li class="sidebar-item"><a href="{{ url_for('dashboard.teacher') }}"><i class="fas fa-chalkboard-teacher"></i> Instructor Panel</a></li>
+            <li class="sidebar-item"><a href="{{ url_for('course.create') }}"><i class="fas fa-plus-circle"></i> Create Course</a></li>
+            <li class="sidebar-item"><a href="{{ url_for('lab.index') }}"><i class="fas fa-flask"></i> Labs & Simulations</a></li>
+            <li class="sidebar-item"><a href="{{ url_for('auth.profile') }}"><i class="fas fa-user-circle"></i> Personal Profile</a></li>
+          {% elif current_user.role.name == 'Admin' %}
+            <li class="sidebar-item"><a href="{{ url_for('dashboard.admin') }}"><i class="fas fa-user-shield"></i> Administration</a></li>
+            <li class="sidebar-item"><a href="{{ url_for('lab.index') }}"><i class="fas fa-flask"></i> Labs & Simulations</a></li>
+            <li class="sidebar-item"><a href="{{ url_for('payment.manage_plans') }}"><i class="fas fa-crown"></i> Membership Plans</a></li>
+            <li class="sidebar-item"><a href="{{ url_for('payment.manage_coupons') }}"><i class="fas fa-tags"></i> Coupons</a></li>
+            <li class="sidebar-item"><a href="{{ url_for('auth.admin_reset_password') }}"><i class="fas fa-key"></i> Reset Password</a></li>
+            <li class="sidebar-item"><a href="{{ url_for('auth.profile') }}"><i class="fas fa-user-circle"></i> Profile Setting</a></li>
+          {% endif %}
+          <li class="sidebar-item" style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;"><a href="{{ url_for('auth.logout') }}" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+      </aside>
+    {% endif %}
+
+    <main class="main-content {% if not current_user.is_authenticated or no_sidebar %}no-sidebar{% endif %}">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>
+
+  {% if current_user.is_authenticated %}
+    <button class="btn-chat-toggle" id="ai-chat-toggle-btn" title="Open AI Study Assistant">
+      <i class="fas fa-robot"></i>
+    </button>
+
+    <div class="ai-chat-drawer" id="ai-chat-drawer">
+      <div class="ai-chat-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fas fa-robot" style="font-size: 1.2rem;"></i>
+          <div>
+            <h4 style="font-size: 0.95rem; font-weight: bold; color: white;">Shikshya AI Tutor</h4>
+            <span style="font-size: 0.65rem; opacity: 0.9;">Ask study questions instantly</span>
+          </div>
+        </div>
+        <button id="ai-chat-close-btn" style="background: transparent; border: none; color: white; cursor: pointer; font-size: 1rem;"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="ai-chat-messages" id="ai-chat-messages">
+        <div class="chat-msg bot">
+          Hello, {{ current_user.username }}! I am your AI learning assistant. Ask me anything about programming, databases, mathematics, or how to get your certificate!
+        </div>
+      </div>
+      <form class="ai-chat-input-area" id="ai-chat-form">
+        <input type="text" class="form-control" id="ai-chat-input" placeholder="Type your query here..." required autocomplete="off">
+        <button class="btn btn-primary" style="padding: 0.5rem 1rem;"><i class="fas fa-paper-plane"></i></button>
+      </form>
+    </div>
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% if current_user.is_authenticated %}
+    <script src="{{ url_for('static', filename='js/ai_chat.js') }}"></script>
+  {% endif %}
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Verify Certificate: {{ certificate.unique_code }}{% endblock %}
+
+{% set no_sidebar = true %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 3rem auto; padding: 1rem; text-align: center;">
+  
+  <!-- Sleek premium certificate card container -->
+  <div class="card" id="certificate-print-area" style="padding: 4rem; background: #fff; border: 15px double var(--primary-light); border-radius: var(--radius-lg); color: #000; box-shadow: var(--shadow-lg); text-align: center; font-family: 'Outfit', sans-serif; position: relative;">
+    
+    <!-- Decorative background vector lines -->
+    <div style="position: absolute; top: 20px; left: 20px; right: 20px; bottom: 20px; border: 2px solid var(--primary-dark); opacity: 0.15; pointer-events: none;"></div>
+
+    <i class="fas fa-graduation-cap" style="font-size: 4.5rem; color: var(--primary); margin-bottom: 1.5rem;"></i>
+    <h1 style="font-size: 2.8rem; font-weight: 800; font-family: 'Outfit', sans-serif; color: var(--primary-dark); margin-bottom: 0.5rem; letter-spacing: 1px;">Certificate of Completion</h1>
+    <p style="font-size: 1.15rem; color: var(--text-muted); font-style: italic; margin-bottom: 2.5rem;">This official academic credential is proudly presented to</p>
+    
+    <h2 style="font-size: 2.5rem; font-weight: 800; text-decoration: underline; color: #000; margin-bottom: 1.5rem; font-family: 'Outfit', sans-serif;">{{ certificate.student.username }}</h2>
+    
+    <p style="font-size: 1.1rem; line-height: 1.6; max-width: 600px; margin: 0 auto 2.5rem auto; color: var(--text-muted);">
+      for having successfully met all the curricular requirements and completed the course
+    </p>
+    
+    <h3 style="font-size: 1.8rem; font-weight: 800; color: var(--primary); margin-bottom: 2.5rem;">"{{ certificate.course.title }}"</h3>
+    
+    <!-- Signature and QR section layout -->
+    <div style="display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 2rem; align-items: center; border-top: 1px solid var(--border-color); padding-top: 2.5rem; margin-top: 2rem;">
+      
+      <!-- Left: Signature -->
+      <div style="text-align: center;">
+        <span style="font-family: 'Dancing Script', cursive, sans-serif; font-size: 1.8rem; font-style: italic; display: block; margin-bottom: 0.25rem;">Sandesh Adhikari</span>
+        <div style="width: 150px; height: 1px; background: #000; margin: 0 auto 0.5rem auto;"></div>
+        <small style="color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Lead Educator, Shikshya</small>
+      </div>
+
+      <!-- Center: Verified QR Code -->
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+        <img src="{{ url_for('api.get_certificate_qrcode', unique_code=certificate.unique_code) }}" alt="Verification QR Code" style="width: 100px; height: 100px; border: 2px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.25rem; background: white; box-shadow: var(--shadow);">
+        <small style="font-size: 0.7rem; font-weight: bold; color: var(--text-muted);">SECURE QR VERIFICATION</small>
+      </div>
+
+      <!-- Right: Issued details -->
+      <div style="text-align: center;">
+        <span style="font-weight: 800; font-size: 1.1rem; display: block; margin-bottom: 0.25rem;">{{ certificate.issued_at.strftime('%B %d, %Y') }}</span>
+        <div style="width: 150px; height: 1px; background: #000; margin: 0 auto 0.5rem auto;"></div>
+        <small style="color: var(--text-muted); font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 0.25rem;">Date of Graduation</small>
+        <small style="color: var(--primary); font-family: monospace; font-size: 0.75rem; font-weight: bold;">CODE: {{ certificate.unique_code }}</small>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Print and return controls -->
+  <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
+    <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Print / Download PDF</button>
+    <a href="{{ url_for('dashboard.student') }}" class="btn btn-outline"><i class="fas fa-columns"></i> Return to Dashboard</a>
+  </div>
+
+</div>
+
+<!-- Styles for printing optimization -->
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #certificate-print-area, #certificate-print-area * {
+      visibility: visible;
+    }
+    #certificate-print-area {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      border: 10px double var(--primary-dark) !important;
+      box-shadow: none !important;
+      padding: 2rem !important;
+    }
+  }
+</style>
+{% endblock %}
