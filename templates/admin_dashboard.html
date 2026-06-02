@@ -39,26 +39,9 @@
       <div>
         <div class="stat-number">Rs. {{ stats.total_sales }}</div>
         <div class="stat-label">System Revenue</div>
-          </div>
-
-          {% if users_pagination.pages > 1 %}
-            <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-              {% if users_pagination.has_prev %}
-                <a href="{{ url_for('dashboard.admin', page=users_pagination.prev_num) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-chevron-left"></i></a>
-              {% endif %}
-              {% for p in range(1, users_pagination.pages + 1) %}
-                <a href="{{ url_for('dashboard.admin', page=p) }}" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: var(--radius-sm); text-decoration: none; {% if p == users_pagination.page %}background: var(--primary); color: white;{% else %}color: var(--text-main); border: 1px solid var(--border-color);{% endif %}">{{ p }}</a>
-              {% endfor %}
-              {% if users_pagination.has_next %}
-                <a href="{{ url_for('dashboard.admin', page=users_pagination.next_num) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-chevron-right"></i></a>
-              {% endif %}
-              <small style="color: var(--text-muted); margin-left: 0.5rem;">{{ users_pagination.total }} total</small>
-            </div>
-          {% endif %}
-
-        </div>
       </div>
     </div>
+  </div>
 
   <!-- Admin control split grid -->
   <div class="content-grid">
@@ -215,8 +198,12 @@
         {% endif %}
       </div>
 
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-users" style="color: var(--primary);"></i> Registered Users Listing</h2>
-      <div class="card">
+    </div>
+
+    <!-- Right column: Users, Billing, Plans, and Categories -->
+    <div>
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-users" style="color: var(--primary);"></i> Registered Users</h2>
+      <div class="card" style="margin-bottom: 2rem;">
         <div style="overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
               <thead>
@@ -261,11 +248,22 @@
             </tbody>
           </table>
         </div>
+        {% if users_pagination.pages > 1 %}
+          <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            {% if users_pagination.has_prev %}
+              <a href="{{ url_for('dashboard.admin', page=users_pagination.prev_num) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-chevron-left"></i></a>
+            {% endif %}
+            {% for p in range(1, users_pagination.pages + 1) %}
+              <a href="{{ url_for('dashboard.admin', page=p) }}" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: var(--radius-sm); text-decoration: none; {% if p == users_pagination.page %}background: var(--primary); color: white;{% else %}color: var(--text-main); border: 1px solid var(--border-color);{% endif %}">{{ p }}</a>
+            {% endfor %}
+            {% if users_pagination.has_next %}
+              <a href="{{ url_for('dashboard.admin', page=users_pagination.next_num) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-chevron-right"></i></a>
+            {% endif %}
+            <small style="color: var(--text-muted); margin-left: 0.5rem;">{{ users_pagination.total }} total</small>
+          </div>
+        {% endif %}
       </div>
-    </div>
 
-    <!-- Right column: Billing, Plans, and Categories -->
-    <div>
       <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-crown" style="color: var(--accent);"></i> Membership & Billing</h2>
       <div class="card" style="margin-bottom: 2rem;">
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
