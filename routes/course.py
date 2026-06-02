@@ -40,7 +40,7 @@ def index():
 
     courses = courses_query.all()
     categories = Category.query.all()
-    return render_template('course_form.html', categories=categories, course=None, action='create')
+    return render_template('courses.html', courses=courses, categories=categories, query=query, cat_slug=cat_slug, difficulty=difficulty)
 
 
 @course_bp.route('/courses/<int:course_id>/edit', methods=['GET', 'POST'])
