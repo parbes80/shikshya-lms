@@ -11,7 +11,7 @@
         <p style="font-size: 1.15rem; color: var(--text-muted); margin: 1.5rem 0; line-height: 1.6;">
           Shikshya is Nepal's premium learning platform, crafted for aspiring engineers, developers, and designers. Gain access to expert-led video tutorials, dynamic examinations, assignments, and secure certificate credentials.
         </p>
-        <div style="display: flex; gap: 1rem;">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
           <a href="{{ url_for('course.index') }}" class="btn btn-primary"><i class="fas fa-search"></i> Browse Courses</a>
           <a href="{{ url_for('auth.register') }}" class="btn btn-outline"><i class="fas fa-user-plus"></i> Join for Free</a>
         </div>

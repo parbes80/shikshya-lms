@@ -12,6 +12,32 @@ function csrfFetch(url, options = {}) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const hamburger = document.getElementById('hamburger-btn');
+  const navLinks = document.getElementById('nav-links');
+  const overlay = document.createElement('div');
+  overlay.className = 'nav-overlay';
+  document.body.appendChild(overlay);
+
+  function toggleNav(open) {
+    hamburger.classList.toggle('active', open);
+    navLinks.classList.toggle('active', open);
+    overlay.classList.toggle('active', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+
+  if (hamburger && navLinks) {
+    hamburger.addEventListener('click', () => toggleNav(!navLinks.classList.contains('active')));
+
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => toggleNav(false));
+    });
+
+    overlay.addEventListener('click', () => toggleNav(false));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') toggleNav(false);
+    });
+  }
   const themeToggle = document.getElementById('theme-toggle');
   const activeTheme = localStorage.getItem('theme') || 'light';
 
