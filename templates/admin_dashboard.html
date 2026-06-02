@@ -117,6 +117,7 @@
                     <td style="padding: 0.75rem; display: flex; gap: 0.25rem; flex-wrap: wrap;">
                       <a href="{{ url_for('dashboard.approve_course', course_id=c.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve</a>
                       <form action="{{ url_for('course.delete_course', course_id=c.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete course &quot;{{ c.title|escape }}&quot;?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i></button>
                       </form>
                     </td>
@@ -125,10 +126,10 @@
               </tbody>
             </table>
           </div>
-        {% else %}
-          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All courses are published and visible to students.</p>
-        {% endif %}
-      </div>
+        </div>
+      {% else %}
+        <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All courses are published and visible to students.</p>
+      {% endif %}
 
       <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-video" style="color: var(--primary);"></i> All Courses</h2>
       <div class="card" style="margin-bottom: 2rem;">
@@ -156,6 +157,7 @@
                   </td>
                   <td style="padding: 0.75rem;">
                     <form action="{{ url_for('course.delete_course', course_id=c.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete course &quot;{{ c.title|escape }}&quot;? All data will be lost.')">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                       <button type="submit" class="btn" style="padding: 0.3rem 0.5rem; font-size: 0.7rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i> Delete</button>
                     </form>
                   </td>
@@ -249,6 +251,7 @@
                     <td style="padding: 0.75rem;">
                       {% if usr.role.name != 'Admin' %}
                       <form action="{{ url_for('dashboard.delete_user', user_id=usr.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete user &quot;{{ usr.username|escape }}&quot;? This cannot be undone.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn" style="padding: 0.3rem 0.5rem; font-size: 0.7rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i> Delete</button>
                       </form>
                       {% endif %}
