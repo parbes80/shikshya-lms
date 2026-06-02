@@ -1,40 +1,42 @@
 {% extends 'base.html' %}
-{% block title %}Create Course{% endblock %}
+{% block title %}{% if action == 'edit' %}Edit{% else %}Create{% endif %} Course{% endblock %}
 
 {% block content %}
 <div style="max-width: 600px; margin: 2rem auto; padding: 1rem;">
   
   <div style="margin-bottom: 2rem;">
-    <h1 class="section-title">Design New Course</h1>
-    <p style="color: var(--text-muted); margin-top: 0.25rem;">Create a syllabus, publish course, and teach students across Nepal.</p>
+    <h1 class="section-title">{% if action == 'edit' %}Edit Course{% else %}Design New Course{% endif %}</h1>
+    <p style="color: var(--text-muted); margin-top: 0.25rem;">
+      {% if action == 'edit' %}Update your course details below.{% else %}Create a syllabus, publish course, and teach students across Nepal.{% endif %}
+    </p>
   </div>
 
   <div class="card" style="padding: 2.5rem; position: relative;">
     <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--primary);"></div>
     
-    <form action="{{ url_for('course.create') }}" method="POST" enctype="multipart/form-data">
+    <form action="{% if action == 'edit' %}{{ url_for('course.edit_course', course_id=course.id) }}{% else %}{{ url_for('course.create') }}{% endif %}" method="POST" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-group">
         <label class="form-label" for="course-title-input">Course Program Title</label>
-        <input type="text" name="title" id="course-title-input" class="form-control" placeholder="e.g. Master Python Programming from Scratch" required>
+        <input type="text" name="title" id="course-title-input" class="form-control" placeholder="e.g. Master Python Programming from Scratch" value="{{ course.title if course else '' }}" required>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="course-desc-input">Program Syllabus Description</label>
-        <textarea name="description" id="course-desc-input" rows="6" class="form-control" placeholder="Enter high level summary of what students will achieve in this course..." required></textarea>
+        <textarea name="description" id="course-desc-input" rows="6" class="form-control" placeholder="Enter high level summary of what students will achieve in this course..." required>{{ course.description if course else '' }}</textarea>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="course-price-input">Tuition Pricing (Rs.) - Set 0 for Free</label>
-        <input type="number" name="price" id="course-price-input" class="form-control" value="0.0" min="0" step="10" required>
+        <input type="number" name="price" id="course-price-input" class="form-control" value="{{ "%.0f"|format(course.price) if course else '0.0' }}" min="0" step="10" required>
       </div>
 
       <div class="form-group">
         <label class="form-label" for="course-diff-input">Difficulty Grade</label>
         <select name="difficulty_level" id="course-diff-input" class="form-control" required>
-          <option value="Beginner">Beginner (No coding experience required)</option>
-          <option value="Intermediate">Intermediate (Basic understanding needed)</option>
-          <option value="Advanced">Advanced (Heavy engineering practices)</option>
+          <option value="Beginner" {% if course and course.difficulty_level == 'Beginner' %}selected{% endif %}>Beginner (No coding experience required)</option>
+          <option value="Intermediate" {% if course and course.difficulty_level == 'Intermediate' %}selected{% endif %}>Intermediate (Basic understanding needed)</option>
+          <option value="Advanced" {% if course and course.difficulty_level == 'Advanced' %}selected{% endif %}>Advanced (Heavy engineering practices)</option>
         </select>
       </div>
 
@@ -42,7 +44,7 @@
         <label class="form-label" for="course-cat-input">Program Category</label>
         <select name="category_id" id="course-cat-input" class="form-control" required>
           {% for cat in categories %}
-            <option value="{{ cat.id }}">{{ cat.name }}</option>
+            <option value="{{ cat.id }}" {% if course and course.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
           {% endfor %}
         </select>
       </div>
@@ -50,11 +52,13 @@
       <div class="form-group">
         <label class="form-label" for="course-thumb-input">Thumbnail Image</label>
         <input type="file" name="thumbnail_file" id="course-thumb-input" class="form-control" accept="image/*">
-        <small style="color: var(--text-muted); font-size: 0.75rem;">Upload a custom image (JPEG, PNG). Leave empty to use the default gradient.</small>
+        <small style="color: var(--text-muted); font-size: 0.75rem;">
+          {% if action == 'edit' %}Leave empty to keep current thumbnail.{% else %}Upload a custom image (JPEG, PNG). Leave empty to use the default gradient.{% endif %}
+        </small>
       </div>
 
       <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;" id="create-course-submit-btn">
-        <i class="fas fa-check-circle"></i> Create & Publish Program
+        <i class="fas fa-check-circle"></i> {% if action == 'edit' %}Save Changes{% else %}Create & Submit for Approval{% endif %}
       </button>
     </form>
 

@@ -40,8 +40,43 @@ def index():
 
     courses = courses_query.all()
     categories = Category.query.all()
+    return render_template('course_form.html', categories=categories, course=None, action='create')
 
-    return render_template('courses.html', courses=courses, categories=categories, query=query, cat_slug=cat_slug, difficulty=difficulty)
+
+@course_bp.route('/courses/<int:course_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_course(course_id):
+    course = Course.query.get_or_404(course_id)
+    if current_user.role.name != 'Teacher' or course.teacher_id != current_user.id:
+        abort(403)
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        if not title:
+            flash('Course title is required.', 'danger')
+            return redirect(url_for('course.edit_course', course_id=course_id))
+
+        course.title = title
+        course.description = request.form.get('description', '').strip()
+        course.price = float(request.form.get('price', 0))
+        course.difficulty_level = request.form.get('difficulty_level', 'Beginner')
+        course.category_id = int(request.form.get('category_id'))
+
+        file = request.files.get('thumbnail_file')
+        if file and file.filename:
+            filename = secure_filename(file.filename)
+            ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'jpg'
+            unique_name = f'course_{uuid.uuid4().hex[:8]}.{ext}'
+            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'thumbnails', unique_name)
+            file.save(upload_path)
+            course.thumbnail_url = f'uploads/thumbnails/{unique_name}'
+
+        db.session.commit()
+        flash(f'Course "{course.title}" updated.', 'success')
+        return redirect(url_for('dashboard.teacher'))
+
+    categories = Category.query.all()
+    return render_template('course_form.html', categories=categories, course=course, action='edit')
 
 
 @course_bp.route('/courses/<slug>')
