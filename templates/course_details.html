@@ -26,8 +26,8 @@
       <div class="course-hero-preview">
         <!-- Thumbnail visual background -->
         <div style="width: 100%; aspect-ratio: 16/9; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 1.5rem;">
-          {% if course.thumbnail_url and course.thumbnail_url != 'course_default.jpg' %}
-            <img src="{{ url_for('static', filename=course.thumbnail_url) }}" alt="{{ course.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+            {% if course.thumbnail_url and course.thumbnail_url != 'course_default.jpg' %}
+              <img src="{{ course.thumbnail_url|asset_url }}" alt="{{ course.title }}" style="width: 100%; height: 100%; object-fit: cover;">
           {% else %}
             <div style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary-dark), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-size: 4rem; color: white;">
               <i class="fas fa-film"></i>

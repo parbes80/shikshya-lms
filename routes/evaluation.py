@@ -8,6 +8,7 @@ from database import db
 from models.course import Course
 from models.learning import Enrollment
 from models.evaluation import Evaluation, EvaluationSubmission, EVALUATION_TYPES
+from utils.cloudinary_upload import upload_file
 
 eval_bp = Blueprint('eval', __name__)
 
@@ -73,12 +74,8 @@ def create(course_id):
         if selected_type == 'test_paper':
             pdf = request.files.get('question_pdf')
             if pdf and pdf.filename:
-                filename = secure_filename(pdf.filename)
-                ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'pdf'
-                unique_name = f'qpaper_{uuid.uuid4().hex[:8]}.{ext}'
-                upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'evaluations', unique_name)
-                pdf.save(upload_path)
-                question_pdf_url = f'uploads/evaluations/{unique_name}'
+                url = upload_file(pdf, folder='shikshya/evaluations')
+                question_pdf_url = url or ''
 
         evaluation = Evaluation(
             course_id=course_id,
@@ -135,12 +132,9 @@ def edit(eval_id):
         if evaluation.eval_type == 'test_paper':
             pdf = request.files.get('question_pdf')
             if pdf and pdf.filename:
-                filename = secure_filename(pdf.filename)
-                ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'pdf'
-                unique_name = f'qpaper_{uuid.uuid4().hex[:8]}.{ext}'
-                upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'evaluations', unique_name)
-                pdf.save(upload_path)
-                evaluation.question_pdf_url = f'uploads/evaluations/{unique_name}'
+                url = upload_file(pdf, folder='shikshya/evaluations')
+                if url:
+                    evaluation.question_pdf_url = url
             else:
                 link = request.form.get('question_pdf_link', '').strip()
                 if link:
@@ -224,17 +218,13 @@ def submit(eval_id):
         flash('This exam has not started yet. It opens at ' + evaluation.scheduled_at.strftime('%I:%M %p on %b %d, %Y') + '.', 'warning')
         return redirect(url_for('eval.detail', eval_id=eval_id))
 
-    if request.method == 'POST':
-        notes = request.form.get('notes', '').strip()
-        file_url = ''
-        file = request.files.get('file')
-        if file and file.filename:
-            filename = secure_filename(file.filename)
-            ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'pdf'
-            unique_name = f'eval_{eval_id}_{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}'
-            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'evaluations', unique_name)
-            file.save(upload_path)
-            file_url = f'uploads/evaluations/{unique_name}'
+        if request.method == 'POST':
+            notes = request.form.get('notes', '').strip()
+            file_url = ''
+            file = request.files.get('file')
+            if file and file.filename:
+                url = upload_file(file, folder='shikshya/submissions')
+                file_url = url or ''
 
         submission = EvaluationSubmission(
             evaluation_id=eval_id,

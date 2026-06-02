@@ -10,6 +10,7 @@ from database import db
 from models.user import User, Role, UserProfile
 from models.interaction import PasswordResetRequest, PasswordResetToken
 from utils.mail import send_password_reset_email
+from utils.cloudinary_upload import upload_file
 
 logger = logging.getLogger(__name__)
 
@@ -196,12 +197,9 @@ def profile():
 
         avatar_file = request.files.get('avatar_file')
         if avatar_file and avatar_file.filename:
-            filename = secure_filename(avatar_file.filename)
-            ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'jpg'
-            unique_name = f'avatar_{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}'
-            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars', unique_name)
-            avatar_file.save(upload_path)
-            current_user.avatar_url = f'uploads/avatars/{unique_name}'
+            url = upload_file(avatar_file, folder='shikshya/avatars', resource_type='image')
+            if url:
+                current_user.avatar_url = url
 
         db.session.commit()
         flash('Profile updated successfully.', 'success')

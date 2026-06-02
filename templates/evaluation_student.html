@@ -87,11 +87,8 @@
         </p>
       </div>
       {% if exam_started %}
-        {% if evaluation.question_pdf_url.startswith('http') %}
-          <a href="{{ evaluation.question_pdf_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-external-link-alt"></i> Open PDF</a>
-        {% else %}
-          <a href="{{ url_for('static', filename=evaluation.question_pdf_url) }}" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> Download PDF</a>
-        {% endif %}
+        <a href="{{ evaluation.question_pdf_url|asset_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-external-link-alt"></i> Open PDF</a>
+      {% endif %}
       {% else %}
         <span class="btn btn-secondary" style="opacity: 0.5; cursor: not-allowed;"><i class="fas fa-lock"></i> Locked</span>
       {% endif %}
@@ -121,11 +118,7 @@
         Submitted on {{ submission.submitted_at.strftime('%B %d, %Y at %H:%M') }}
       </p>
       {% if submission.file_url %}
-        {% if submission.file_url.startswith('http') %}
-          <a href="{{ submission.file_url }}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-external-link-alt"></i> View Submission</a>
-        {% else %}
-          <a href="{{ url_for('static', filename=submission.file_url) }}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-download"></i> Download Submission</a>
-        {% endif %}
+        <a href="{{ submission.file_url|asset_url }}" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-external-link-alt"></i> View Submission</a>
       {% endif %}
       {% if submission.notes %}
       <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--bg-secondary); border-radius: var(--radius-sm);">

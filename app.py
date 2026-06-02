@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import markdown as md_lib
-from flask import Flask, render_template
+from flask import Flask, render_template, url_for
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
@@ -14,6 +14,7 @@ from config import Config
 from models.user import User
 from models.interaction import Notification
 import models  # ensure all models are registered with SQLAlchemy
+from utils.cloudinary_upload import init_cloudinary
 
 csrf = CSRFProtect()
 limiter = Limiter(key_func=get_remote_address)
@@ -36,6 +37,16 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
+
+    init_cloudinary(app)
+
+    @app.template_filter('asset_url')
+    def asset_url(path):
+        if not path:
+            return ''
+        if path.startswith(('http://', 'https://', '//')):
+            return path
+        return url_for('static', filename=path)
 
     @app.template_filter('markdown')
     def render_markdown(text):

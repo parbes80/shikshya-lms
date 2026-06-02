@@ -9,6 +9,7 @@ from database import db
 from models.course import Course, Category, Module, Lesson, Review
 from models.learning import Enrollment, LessonProgress, Quiz, Question, Choice, Assignment, LiveClass
 from models.interaction import Payment, DiscussionTopic, Attendance, Coupon, Notification
+from utils.cloudinary_upload import upload_file
 
 course_bp = Blueprint('course', __name__)
 
@@ -64,12 +65,9 @@ def edit_course(course_id):
 
         file = request.files.get('thumbnail_file')
         if file and file.filename:
-            filename = secure_filename(file.filename)
-            ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'jpg'
-            unique_name = f'course_{uuid.uuid4().hex[:8]}.{ext}'
-            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'thumbnails', unique_name)
-            file.save(upload_path)
-            course.thumbnail_url = f'uploads/thumbnails/{unique_name}'
+            url = upload_file(file, folder='shikshya/courses', resource_type='image')
+            if url:
+                course.thumbnail_url = url
 
         db.session.commit()
         flash(f'Course "{course.title}" updated.', 'success')
@@ -263,12 +261,8 @@ def create():
         thumbnail = 'course_default.jpg'
         file = request.files.get('thumbnail_file')
         if file and file.filename:
-            filename = secure_filename(file.filename)
-            ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'jpg'
-            unique_name = f'course_{uuid.uuid4().hex[:8]}.{ext}'
-            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'thumbnails', unique_name)
-            file.save(upload_path)
-            thumbnail = f'uploads/thumbnails/{unique_name}'
+            url = upload_file(file, folder='shikshya/courses', resource_type='image')
+            thumbnail = url if url else 'course_default.jpg'
 
         course = Course(
             title=title,

@@ -83,11 +83,7 @@
   <div class="card" style="margin-bottom: 1rem; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 1rem;">
     <div>
       <strong><i class="fas fa-file-pdf" style="color: #ef4444;"></i> Question Paper:</strong>
-      {% if evaluation.question_pdf_url.startswith('http') %}
-        <a href="{{ evaluation.question_pdf_url }}" target="_blank">{{ evaluation.question_pdf_url.split('/')[-1] }}</a>
-      {% else %}
-        <a href="{{ url_for('static', filename=evaluation.question_pdf_url) }}" target="_blank">{{ evaluation.question_pdf_url.split('/')[-1] }}</a>
-      {% endif %}
+        <a href="{{ evaluation.question_pdf_url|asset_url }}" target="_blank">{{ evaluation.question_pdf_url.split('/')[-1] }}</a>
     </div>
     {% if evaluation.meet_link %}
     <a href="{{ evaluation.meet_link }}" target="_blank" class="btn btn-sm btn-danger" style="background:#ea4335;border-color:#ea4335;"><i class="fab fa-google"></i> Meet Link</a>
@@ -141,11 +137,7 @@
             </td>
             <td style="padding: 0.75rem 1rem; text-align: center;">
               {% if sub and sub.file_url %}
-                {% if sub.file_url.startswith('http') %}
-                  <a href="{{ sub.file_url }}" target="_blank" class="btn btn-sm btn-secondary"><i class="fas fa-external-link-alt"></i> View</a>
-                {% else %}
-                  <a href="{{ url_for('static', filename=sub.file_url) }}" target="_blank" class="btn btn-sm btn-secondary"><i class="fas fa-download"></i> Download</a>
-                {% endif %}
+                <a href="{{ sub.file_url|asset_url }}" target="_blank" class="btn btn-sm btn-secondary"><i class="fas fa-external-link-alt"></i> View</a>
               {% else %}
                 <span style="color: var(--text-muted);">&mdash;</span>
               {% endif %}

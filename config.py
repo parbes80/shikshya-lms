@@ -52,6 +52,10 @@ class Config:
     SITE_NAME = 'Shikshya'
     SITE_URL = os.environ.get('SITE_URL', 'http://localhost:5000')
 
+    CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
+    CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY', '')
+    CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', '')
+
     @staticmethod
     def init_app(app):
         upload_dirs = ['videos', 'assignments', 'avatars', 'certificates', 'thumbnails', 'labs', 'evaluations']

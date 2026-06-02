@@ -72,7 +72,7 @@
               <div class="course-thumbnail">
                 <span class="difficulty-badge {{ course.difficulty_level.lower() }}">{{ course.difficulty_level }}</span>
                 {% if course.thumbnail_url and course.thumbnail_url != 'course_default.jpg' %}
-                  <img src="{{ url_for('static', filename=course.thumbnail_url) }}" alt="{{ course.title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                  <img src="{{ course.thumbnail_url|asset_url }}" alt="{{ course.title }}" style="width: 100%; height: 100%; object-fit: cover;">
                 {% else %}
                 <div style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary), var(--primary-light)); display: flex; align-items: center; justify-content: center; font-size: 4rem; color: white;">
                   <i class="fas fa-laptop-code"></i>
