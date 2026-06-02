@@ -3,8 +3,10 @@
 # ==============================================================================
 import multiprocessing
 
-# Network sockets binding
-bind = "0.0.0.0:5000"
+import os
+
+# Network sockets binding (Render sets $PORT, fallback 5000 for Docker Compose)
+bind = f"0.0.0.0:{os.environ.get('PORT', '5000')}"
 
 # Performance tuning
 # Formula: (2 x num_cores) + 1
