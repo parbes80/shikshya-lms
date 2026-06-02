@@ -202,3 +202,16 @@ def approve_payment(payment_id):
 
     flash(f'Payment verified. Access granted.', 'success')
     return redirect(url_for('dashboard.admin'))
+
+
+@dashboard_bp.route('/dashboard/admin/delete-user/<int:user_id>', methods=['POST'])
+@role_required('Admin')
+def delete_user(user_id):
+    user = User.query.get_or_404(user_id)
+    if user.role.name == 'Admin':
+        flash('Cannot delete admin accounts.', 'danger')
+        return redirect(url_for('dashboard.admin'))
+    db.session.delete(user)
+    db.session.commit()
+    flash(f'User {user.username} deleted.', 'success')
+    return redirect(url_for('dashboard.admin'))

@@ -539,3 +539,17 @@ def attendance(course_id):
         enrolled=enrolled_students,
         student_attendance=student_attendance
     )
+
+
+@course_bp.route('/courses/<int:course_id>/delete', methods=['POST'])
+@login_required
+def delete_course(course_id):
+    course = Course.query.get_or_404(course_id)
+    if current_user.role.name != 'Admin' and course.teacher_id != current_user.id:
+        abort(403)
+    db.session.delete(course)
+    db.session.commit()
+    flash(f'Course "{course.title}" deleted.', 'success')
+    if current_user.role.name == 'Admin':
+        return redirect(url_for('dashboard.admin'))
+    return redirect(url_for('dashboard.teacher'))
