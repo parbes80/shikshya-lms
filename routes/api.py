@@ -338,34 +338,31 @@ def quiz_report(quiz_id):
     if quiz.course.teacher_id != current_user.id:
         abort(403)
 
-    import csv
+    try:
+        from weasyprint import HTML
+    except OSError:
+        abort(500, 'PDF generation library not available on this platform')
+
     attempts = QuizAttempt.query.filter_by(quiz_id=quiz_id).order_by(QuizAttempt.started_at).all()
 
-    si = io.StringIO()
-    si.write('\ufeff')
-    writer = csv.writer(si)
-    writer.writerow(['Student Name', 'Username', 'Email', 'Score (%)', 'Passed', 'Started At', 'Completed At'])
+    passed_count = sum(1 for a in attempts if a.is_passed)
+    failed_count = len(attempts) - passed_count
+    avg_score = sum(a.score for a in attempts) / len(attempts) if attempts else 0
 
-    for att in attempts:
-        writer.writerow([
-            att.student.full_name or att.student.username,
-            att.student.username,
-            att.student.email,
-            att.score,
-            'Yes' if att.is_passed else 'No',
-            att.started_at.strftime('%Y-%m-%d %H:%M:%S') if att.started_at else '',
-            att.completed_at.strftime('%Y-%m-%d %H:%M:%S') if att.completed_at else ''
-        ])
-
-    output = si.getvalue()
-    si.close()
-
-    return send_file(
-        io.BytesIO(output.encode('utf-8-sig')),
-        mimetype='text/csv',
-        as_attachment=True,
-        download_name=f'quiz_report_{quiz.title.replace(" ", "_")}.csv'
+    html_str = render_template('reports/quiz_report.html',
+        quiz=quiz,
+        attempts=attempts,
+        passed_count=passed_count,
+        failed_count=failed_count,
+        avg_score=avg_score,
+        now=datetime.now()
     )
+
+    pdf = HTML(string=html_str).write_pdf()
+
+    name = f'quiz_report_{quiz.title.replace(" ", "_")}.pdf'
+    return send_file(io.BytesIO(pdf), mimetype='application/pdf',
+        as_attachment=True, download_name=name)
 
 
 @api_bp.route('/certificates/<unique_code>')

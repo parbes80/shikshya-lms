@@ -212,7 +212,7 @@
         {% set q_title = qdata.title %}
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h4 style="font-size: 1rem; margin-bottom: 0.5rem;">{{ q_title }} <small style="color: var(--text-muted);">({{ q_attempts|length }} attempts)</small></h4>
-          <a href="{{ url_for('api.quiz_report', quiz_id=qid) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-download"></i> Download Report</a>
+          <a href="{{ url_for('api.quiz_report', quiz_id=qid) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-file-pdf"></i> PDF Report</a>
         </div>
         <div class="card" style="margin-bottom: 1.5rem;">
           {% if q_attempts %}
