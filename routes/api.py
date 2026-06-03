@@ -331,6 +331,43 @@ def take_quiz_view(quiz_id):
     return render_template('quiz.html', quiz=quiz)
 
 
+@api_bp.route('/api/quizzes/<int:quiz_id>/report')
+@login_required
+def quiz_report(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    if quiz.course.teacher_id != current_user.id:
+        abort(403)
+
+    import csv
+    attempts = QuizAttempt.query.filter_by(quiz_id=quiz_id).order_by(QuizAttempt.started_at).all()
+
+    si = io.StringIO()
+    si.write('\ufeff')
+    writer = csv.writer(si)
+    writer.writerow(['Student Name', 'Username', 'Email', 'Score (%)', 'Passed', 'Started At', 'Completed At'])
+
+    for att in attempts:
+        writer.writerow([
+            att.student.full_name or att.student.username,
+            att.student.username,
+            att.student.email,
+            att.score,
+            'Yes' if att.is_passed else 'No',
+            att.started_at.strftime('%Y-%m-%d %H:%M:%S') if att.started_at else '',
+            att.completed_at.strftime('%Y-%m-%d %H:%M:%S') if att.completed_at else ''
+        ])
+
+    output = si.getvalue()
+    si.close()
+
+    return send_file(
+        io.BytesIO(output.encode('utf-8-sig')),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'quiz_report_{quiz.title.replace(" ", "_")}.csv'
+    )
+
+
 @api_bp.route('/certificates/<unique_code>')
 @login_required
 def view_certificate(unique_code):

@@ -78,6 +78,13 @@ def teacher():
         Quiz.course_id.in_(course_ids)
     ).order_by(QuizAttempt.started_at.desc()).all() if course_ids else []
 
+    quiz_attempts_by_quiz = {}
+    for att in quiz_attempts:
+        qid = att.quiz_id
+        if qid not in quiz_attempts_by_quiz:
+            quiz_attempts_by_quiz[qid] = {'title': att.quiz.title, 'attempts': []}
+        quiz_attempts_by_quiz[qid]['attempts'].append(att)
+
     categories = Category.query.all()
 
     return render_template(
@@ -88,7 +95,7 @@ def teacher():
         avg_rating=avg_rating,
         pending_submissions=pending_submissions,
         enrollments_by_course=enrollments_by_course,
-        quiz_attempts=quiz_attempts,
+        quiz_attempts_by_quiz=quiz_attempts_by_quiz,
         categories=categories
     )
 

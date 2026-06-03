@@ -176,8 +176,8 @@
             {% set course = courses|selectattr('id', 'equalto', cid)|first %}
             <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">{{ course.title if course else 'Course #' ~ cid }} <small style="color: var(--text-muted);">({{ enrols|length }} students)</small></h4>
             {% if enrols %}
-              <div style="overflow-x: auto; margin-bottom: 1.5rem;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+              <div style="overflow-x: auto; margin-bottom: 0.5rem;">
+                <table class="paginated-table" data-per-page="5" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
                   <thead>
                     <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
                       <th style="padding: 0.5rem;">Name</th>
@@ -195,6 +195,7 @@
                     {% endfor %}
                   </tbody>
                 </table>
+                <div class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; padding: 0.5rem 0; font-size: 0.8rem;"></div>
               </div>
             {% else %}
               <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">No students enrolled yet.</p>
@@ -206,42 +207,54 @@
       </div>
 
       <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-chart-bar" style="color: var(--accent);"></i> Quiz Attempts</h2>
-      <div class="card" style="margin-bottom: 2rem;">
-        {% if quiz_attempts %}
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-              <thead>
-                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
-                  <th style="padding: 0.5rem;">Student</th>
-                  <th style="padding: 0.5rem;">Quiz</th>
-                  <th style="padding: 0.5rem;">Score</th>
-                  <th style="padding: 0.5rem;">Result</th>
-                  <th style="padding: 0.5rem;">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for att in quiz_attempts %}
-                  <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 0.5rem;">{{ att.student.full_name or att.student.username }}</td>
-                    <td style="padding: 0.5rem;">{{ att.quiz.title }}</td>
-                    <td style="padding: 0.5rem;">{{ att.score }}%</td>
-                    <td style="padding: 0.5rem;">
-                      {% if att.is_passed %}
-                        <span style="color: var(--secondary); font-weight: bold;"><i class="fas fa-check-circle"></i> Passed</span>
-                      {% else %}
-                        <span style="color: #ef4444; font-weight: bold;"><i class="fas fa-times-circle"></i> Failed</span>
-                      {% endif %}
-                    </td>
-                    <td style="padding: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">{{ att.completed_at.strftime('%b %d, %Y') }}</td>
+      {% for qid, qdata in quiz_attempts_by_quiz.items() %}
+        {% set q_attempts = qdata.attempts %}
+        {% set q_title = qdata.title %}
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h4 style="font-size: 1rem; margin-bottom: 0.5rem;">{{ q_title }} <small style="color: var(--text-muted);">({{ q_attempts|length }} attempts)</small></h4>
+          <a href="{{ url_for('api.quiz_report', quiz_id=qid) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-download"></i> Download Report</a>
+        </div>
+        <div class="card" style="margin-bottom: 1.5rem;">
+          {% if q_attempts %}
+            <div style="overflow-x: auto;">
+              <table class="paginated-table" data-per-page="5" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                <thead>
+                  <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
+                    <th style="padding: 0.5rem;">Student</th>
+                    <th style="padding: 0.5rem;">Score</th>
+                    <th style="padding: 0.5rem;">Result</th>
+                    <th style="padding: 0.5rem;">Date</th>
                   </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
+                </thead>
+                <tbody>
+                  {% for att in q_attempts %}
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                      <td style="padding: 0.5rem;">{{ att.student.full_name or att.student.username }}</td>
+                      <td style="padding: 0.5rem;">{{ att.score }}%</td>
+                      <td style="padding: 0.5rem;">
+                        {% if att.is_passed %}
+                          <span style="color: var(--secondary); font-weight: bold;"><i class="fas fa-check-circle"></i> Passed</span>
+                        {% else %}
+                          <span style="color: #ef4444; font-weight: bold;"><i class="fas fa-times-circle"></i> Failed</span>
+                        {% endif %}
+                      </td>
+                      <td style="padding: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">{{ att.completed_at.strftime('%b %d, %Y') }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              <div class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; padding: 0.5rem 0; font-size: 0.8rem;"></div>
+            </div>
+          {% else %}
+            <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 1.5rem;">No attempts yet.</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+      {% if not quiz_attempts_by_quiz %}
+        <div class="card" style="margin-bottom: 2rem;">
           <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 1.5rem;">No quiz attempts yet.</p>
-        {% endif %}
-      </div>
+        </div>
+      {% endif %}
 
       <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-check-double" style="color: var(--secondary);"></i> Submissions to Grade</h2>
       <div class="card">
@@ -295,4 +308,53 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.paginated-table').forEach(function(table) {
+    var perPage = parseInt(table.getAttribute('data-per-page')) || 5;
+    var tbody = table.querySelector('tbody');
+    var rows = Array.from(tbody.querySelectorAll('tr'));
+    var controls = table.parentNode.querySelector('.pagination-controls');
+    if (!controls) return;
+    var totalPages = Math.ceil(rows.length / perPage) || 1;
+    var currentPage = 1;
+
+    function showPage(page) {
+      currentPage = page;
+      rows.forEach(function(row, i) {
+        row.style.display = (i >= (page - 1) * perPage && i < page * perPage) ? '' : 'none';
+      });
+      controls.innerHTML = '';
+      if (totalPages <= 1) return;
+      var prev = document.createElement('a');
+      prev.href = '#';
+      prev.innerHTML = '&laquo;';
+      prev.style.cssText = 'padding: 0.25rem 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); text-decoration: none; color: var(--text-main);';
+      if (page <= 1) { prev.style.opacity = '0.4'; prev.style.pointerEvents = 'none'; }
+      prev.addEventListener('click', function(e) { e.preventDefault(); showPage(Math.max(1, page - 1)); });
+      controls.appendChild(prev);
+
+      for (var p = 1; p <= totalPages; p++) {
+        var btn = document.createElement('a');
+        btn.href = '#';
+        btn.textContent = p;
+        btn.style.cssText = 'padding: 0.25rem 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); text-decoration: none; color: var(--text-main);';
+        if (p === page) { btn.style.background = 'var(--primary)'; btn.style.color = 'white'; btn.style.borderColor = 'var(--primary)'; }
+        btn.addEventListener('click', (function(pg) { return function(e) { e.preventDefault(); showPage(pg); }; })(p));
+        controls.appendChild(btn);
+      }
+
+      var next = document.createElement('a');
+      next.href = '#';
+      next.innerHTML = '&raquo;';
+      next.style.cssText = 'padding: 0.25rem 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); text-decoration: none; color: var(--text-main);';
+      if (page >= totalPages) { next.style.opacity = '0.4'; next.style.pointerEvents = 'none'; }
+      next.addEventListener('click', function(e) { e.preventDefault(); showPage(Math.min(totalPages, page + 1)); });
+      controls.appendChild(next);
+    }
+
+    showPage(1);
+  });
+});
+</script>
 {% endblock %}
