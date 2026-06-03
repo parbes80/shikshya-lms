@@ -13,6 +13,33 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       const pane = document.getElementById(targetPane);
       if (pane) pane.classList.add('active');
+
+      // sync bottom nav
+      document.querySelectorAll('.player-bottom-nav a').forEach(n => n.classList.remove('active'));
+      const navLink = document.querySelector(`.player-bottom-nav a[data-tab="${targetPane}"]`);
+      if (navLink) navLink.classList.add('active');
+    });
+  });
+
+  // bottom nav click — activate tab + scroll to tabs area
+  document.querySelectorAll('.player-bottom-nav a').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetPane = link.getAttribute('data-tab');
+
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.player-bottom-nav a').forEach(n => n.classList.remove('active'));
+
+      const tabBtn = document.querySelector(`.tab-btn[data-tab="${targetPane}"]`);
+      if (tabBtn) tabBtn.classList.add('active');
+      link.classList.add('active');
+      const pane = document.getElementById(targetPane);
+      if (pane) pane.classList.add('active');
+
+      // scroll to tab area
+      const tabsEl = document.querySelector('.lesson-details-section');
+      if (tabsEl) tabsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
 

@@ -460,6 +460,17 @@
   </main>
 
 </div>
+
+<nav class="player-bottom-nav">
+  <a href="#" data-tab="lesson-content" class="active"><i class="fas fa-book-open"></i> Notes</a>
+  <a href="#" data-tab="lesson-quizzes"><i class="fas fa-pencil-alt"></i> Quizzes</a>
+  <a href="#" data-tab="lesson-evaluations"><i class="fas fa-tasks"></i> Eval</a>
+  {% if active_lesson and (active_lesson.document_url|asset_url) %}
+  <a href="#" data-tab="lesson-doc"><i class="fas fa-download"></i> Doc</a>
+  {% endif %}
+  <a href="#" data-tab="lesson-discussions"><i class="fas fa-comments"></i> QA</a>
+  <a href="#" data-tab="lesson-downloads"><i class="fas fa-certificate"></i> Cert</a>
+</nav>
 {% endblock %}
 
 {% block extra_js %}

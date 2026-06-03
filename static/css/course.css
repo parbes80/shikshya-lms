@@ -333,7 +333,7 @@
 
 .notes-section {
   width: 100%;
-  padding: 2rem;
+  padding: 2.5rem;
   background: var(--bg-card);
   overflow-y: auto;
 }
@@ -353,7 +353,7 @@
 
 .lesson-details-section {
   padding: 2rem;
-  max-width: 900px;
+  max-width: 1100px;
   width: 100%;
   margin: 0 auto;
 }
@@ -447,6 +447,44 @@
   font-size: 0.85rem;
 }
 
+/* Mobile Bottom Navigation Bar */
+.player-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border-color);
+  padding: 0.35rem 0;
+  justify-content: space-around;
+  align-items: center;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+}
+
+.player-bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: var(--transition);
+  border-radius: var(--radius-sm);
+}
+
+.player-bottom-nav a i {
+  font-size: 1.1rem;
+}
+
+.player-bottom-nav a:hover,
+.player-bottom-nav a.active {
+  color: var(--primary);
+}
+
 /* Mobile Responsive — MUST come after desktop styles to avoid override */
 @media (max-width: 992px) {
   .catalog-container {
@@ -518,7 +556,11 @@
   }
   .player-main {
     padding: 0;
+    padding-bottom: 3.5rem;
     overflow-y: visible;
+  }
+  .player-bottom-nav {
+    display: flex;
   }
 .lesson-details-section {
     padding: 1rem;
@@ -529,7 +571,7 @@
     padding: 1rem !important;
   }
   .notes-section {
-    padding: 1rem;
+    padding: 1.25rem;
     overflow-y: visible;
   }
   .lesson-notes-content {
