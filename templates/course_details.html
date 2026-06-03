@@ -44,13 +44,22 @@
 
         {% if is_enrolled %}
           <div style="background: rgba(16, 185, 129, 0.15); color: var(--secondary); padding: 0.75rem 1rem; border-radius: var(--radius-md); font-weight: bold; margin-bottom: 1rem;">
-            <i class="fas fa-check-circle"></i> Enrolled successfully! ({{ enrollment.progress_percent }}% complete)
+            <i class="fas fa-check-circle"></i> Enrolled ({{ enrollment.progress_percent }}% complete)
           </div>
           <a href="{{ url_for('course.player', slug=course.slug) }}" class="btn btn-primary" style="width: 100%; justify-content: center;"><i class="fas fa-play"></i> Go to Course Player</a>
         {% else %}
-          <a href="{{ url_for('course.enroll', slug=course.slug) }}" class="btn btn-primary" style="width: 100%; justify-content: center; font-size: 1.1rem; padding: 1rem;">
-            <i class="fas fa-user-plus"></i> {% if course.price == 0.0 %}Enroll Instantly{% else %}Buy & Enroll Now{% endif %}
-          </a>
+          {% if course.price == 0.0 %}
+            <form action="{{ url_for('course.enroll', slug=course.slug) }}" method="POST" style="width: 100%;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; font-size: 1.1rem; padding: 1rem;">
+                <i class="fas fa-user-plus"></i> Enroll & Start Now
+              </button>
+            </form>
+          {% else %}
+            <a href="{{ url_for('course.enroll', slug=course.slug) }}" class="btn btn-primary" style="width: 100%; justify-content: center; font-size: 1.1rem; padding: 1rem;">
+              <i class="fas fa-user-plus"></i> Buy & Enroll Now
+            </a>
+          {% endif %}
         {% endif %}
       </div>
     </div>

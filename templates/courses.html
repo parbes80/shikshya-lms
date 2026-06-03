@@ -10,55 +10,14 @@
   </div>
 
   <div class="catalog-container">
-    
-    <!-- Left Filters Sidebar -->
-    <aside class="filters-sidebar">
-      <form action="{{ url_for('course.index') }}" method="GET" id="catalog-filters-form">
-        <!-- Maintain search query if active -->
-        <input type="hidden" name="q" value="{{ query }}">
-        
-        <div class="filter-section">
-          <h3 class="filter-title">Program Category</h3>
-          <div class="filter-options-list">
-            <label class="filter-option">
-              <input type="radio" name="category" value="" {% if not cat_slug %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
-              <span>All Categories</span>
-            </label>
-            {% for cat in categories %}
-              <label class="filter-option">
-                <input type="radio" name="category" value="{{ cat.slug }}" {% if cat_slug == cat.slug %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
-                <span>{{ cat.name }}</span>
-              </label>
-            {% endfor %}
-          </div>
-        </div>
 
-        <div class="filter-section">
-          <h3 class="filter-title">Difficulty Level</h3>
-          <div class="filter-options-list">
-            <label class="filter-option">
-              <input type="radio" name="difficulty" value="" {% if not difficulty %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
-              <span>All Levels</span>
-            </label>
-            <label class="filter-option">
-              <input type="radio" name="difficulty" value="Beginner" {% if difficulty == 'Beginner' %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
-              <span>Beginner</span>
-            </label>
-            <label class="filter-option">
-              <input type="radio" name="difficulty" value="Intermediate" {% if difficulty == 'Intermediate' %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
-              <span>Intermediate</span>
-            </label>
-            <label class="filter-option">
-              <input type="radio" name="difficulty" value="Advanced" {% if difficulty == 'Advanced' %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
-              <span>Advanced</span>
-            </label>
-          </div>
-        </div>
-      </form>
-    </aside>
+    <!-- Mobile Filter Toggle -->
+    <button class="mobile-filter-toggle" onclick="document.querySelector('.filters-sidebar').classList.toggle('open')">
+      <i class="fas fa-sliders-h"></i> Filters
+    </button>
 
-    <!-- Right Course Catalog Grid -->
-    <div>
+    <!-- Right Course Catalog Grid (placed first in DOM so it appears first on mobile) -->
+    <div class="catalog-courses">
       {% if query %}
         <div style="background: var(--bg-card); padding: 0.75rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 1.5rem; font-size: 0.9rem;">
           Search results for: <strong>"{{ query }}"</strong> ({{ courses|length }} matches found)
@@ -107,6 +66,49 @@
         </div>
       {% endif %}
     </div>
+
+    <!-- Left Filters Sidebar (placed after courses so it appears below on mobile) -->
+    <aside class="filters-sidebar">
+      <form action="{{ url_for('course.index') }}" method="GET" id="catalog-filters-form">
+        <input type="hidden" name="q" value="{{ query }}">
+        <div class="filter-section">
+          <h3 class="filter-title">Program Category</h3>
+          <div class="filter-options-list">
+            <label class="filter-option">
+              <input type="radio" name="category" value="" {% if not cat_slug %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
+              <span>All Categories</span>
+            </label>
+            {% for cat in categories %}
+              <label class="filter-option">
+                <input type="radio" name="category" value="{{ cat.slug }}" {% if cat_slug == cat.slug %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
+                <span>{{ cat.name }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="filter-section">
+          <h3 class="filter-title">Difficulty Level</h3>
+          <div class="filter-options-list">
+            <label class="filter-option">
+              <input type="radio" name="difficulty" value="" {% if not difficulty %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
+              <span>All Levels</span>
+            </label>
+            <label class="filter-option">
+              <input type="radio" name="difficulty" value="Beginner" {% if difficulty == 'Beginner' %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
+              <span>Beginner</span>
+            </label>
+            <label class="filter-option">
+              <input type="radio" name="difficulty" value="Intermediate" {% if difficulty == 'Intermediate' %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
+              <span>Intermediate</span>
+            </label>
+            <label class="filter-option">
+              <input type="radio" name="difficulty" value="Advanced" {% if difficulty == 'Advanced' %}checked{% endif %} onchange="document.getElementById('catalog-filters-form').submit()">
+              <span>Advanced</span>
+            </label>
+          </div>
+        </div>
+      </form>
+    </aside>
 
   </div>
 
