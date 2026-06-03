@@ -83,6 +83,7 @@ def details(slug):
 
     is_enrolled = False
     enrollment = None
+    pending_payment = None
     if current_user.is_authenticated:
         if current_user.role.name == 'Admin':
             is_enrolled = True
@@ -92,6 +93,10 @@ def details(slug):
         else:
             enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=course.id).first()
             is_enrolled = enrollment is not None
+            if not is_enrolled:
+                pending_payment = Payment.query.filter_by(
+                    student_id=current_user.id, course_id=course.id, status='pending'
+                ).first()
 
     reviews = Review.query.filter_by(course_id=course.id).all()
     avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 0.0
@@ -101,6 +106,7 @@ def details(slug):
         course=course,
         is_enrolled=is_enrolled,
         enrollment=enrollment,
+        pending_payment=pending_payment,
         reviews=reviews,
         avg_rating=avg_rating
     )

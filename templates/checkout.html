@@ -1,56 +1,72 @@
 {% extends 'base.html' %}
-{% block title %}Checkout & Payment{% endblock %}
+{% block title %}Payment Authorization{% endblock %}
 
 {% block content %}
-<div style="max-width: 520px; margin: 3rem auto; padding: 1rem;">
-  <div class="card" style="padding: 2.5rem; position: relative;">
-    <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #10b981, #3b82f6);"></div>
+<div style="max-width: 560px; margin: 2rem auto; padding: 1rem;">
+  <div class="card" style="padding: 2.5rem; position: relative; overflow: hidden;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #4f46e5, #10b981);"></div>
 
     <div style="text-align: center; margin-bottom: 1.5rem;">
-      <h2 style="font-size: 1.8rem; font-weight: 800;">Payment Checkout</h2>
-      <p style="color: var(--text-muted); font-size: 0.9rem;">Complete your transaction to unlock course access</p>
+      <div style="width: 56px; height: 56px; background: #eef2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+        <i class="fas fa-shield-alt" style="font-size: 1.5rem; color: #4f46e5;"></i>
+      </div>
+      <h2 style="font-size: 1.5rem; font-weight: 800;">Payment Authorization</h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">Complete payment to unlock course access. Admin will verify after submission.</p>
     </div>
 
     <div style="background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
-      <small style="color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Unlocking Program</small>
-      <h3 style="font-size: 1.15rem; font-weight: bold; margin: 0.25rem 0 0.5rem 0;">{{ course.title }}</h3>
+      <small style="color: var(--text-muted); font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Course</small>
+      <h3 style="font-size: 1.15rem; margin: 0.25rem 0 0.75rem;">{{ course.title }}</h3>
       <div id="price-summary">
-        <div style="display: flex; justify-content: space-between;">
-          <span>Course Price</span>
+        <div style="display: flex; justify-content: space-between; padding: 0.25rem 0;">
+          <span>Price</span>
           <strong>Rs. {{ "{:,.0f}".format(course.price) }}</strong>
         </div>
-        <div id="coupon-row" style="display: none; justify-content: space-between; color: var(--secondary); font-weight: bold; margin-top: 0.25rem;">
+        <div id="coupon-row" style="display: none; justify-content: space-between; color: var(--secondary); padding: 0.25rem 0;">
           <span>Discount</span>
           <span id="coupon-discount-amount">-Rs. 0</span>
         </div>
         <hr style="border-color: var(--border-color); margin: 0.5rem 0;">
         <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.1rem;">
-          <span>Total</span>
+          <span>Total Due</span>
           <span id="final-price">Rs. {{ "{:,.0f}".format(course.price) }}</span>
         </div>
       </div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Coupon Code (optional)</label>
+    <!-- Coupon Section -->
+    <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-card); border: 1px dashed var(--border-color); border-radius: var(--radius-md);">
+      <label style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.5rem;">Have a coupon?</label>
       <div style="display: flex; gap: 0.5rem;">
-        <input type="text" id="coupon-input" class="form-control" placeholder="Enter code" style="text-transform: uppercase;">
-        <button id="apply-coupon-btn" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Apply</button>
+        <input type="text" id="coupon-input" class="form-control" placeholder="Enter code" style="text-transform: uppercase; font-size: 0.85rem;">
+        <button id="apply-coupon-btn" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex-shrink: 0;">Apply</button>
       </div>
       <small id="coupon-msg" style="font-size: 0.75rem;"></small>
     </div>
 
-    <div style="text-align: center; margin: 1.5rem 0; padding: 1.5rem; background: var(--bg-app); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-      <p style="font-weight: bold; margin-bottom: 0.75rem;">Scan to Pay with any App</p>
+    <!-- QR Code Section -->
+    <div style="text-align: center; margin-bottom: 1.5rem; padding: 1.5rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+      <p style="font-weight: 600; margin-bottom: 1rem; font-size: 0.9rem;"><i class="fas fa-qrcode" style="color: var(--primary);"></i> Scan & Pay</p>
       <div id="qr-container">
-        <div style="width: 180px; height: 180px; margin: 0 auto; background: white; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color);">
+        <div style="width: 200px; height: 200px; margin: 0 auto; background: #fff; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color); padding: 10px;">
           <div id="qr-placeholder" style="text-align: center; color: var(--text-muted);">
-            <i class="fas fa-qrcode" style="font-size: 4rem; display: block; margin-bottom: 0.5rem;"></i>
-            <small>Select provider below</small>
+            <i class="fas fa-hand-pointer" style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;"></i>
+            <small style="font-size: 0.75rem;">Select provider below</small>
           </div>
           <canvas id="qr-canvas" style="display: none; width: 180px; height: 180px;"></canvas>
         </div>
       </div>
+    </div>
+
+    <!-- Payment Steps -->
+    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #fefce8; border: 1px solid #fde68a; border-radius: var(--radius-md); font-size: 0.8rem;">
+      <p style="font-weight: 600; margin-bottom: 0.5rem; color: #92400e;"><i class="fas fa-info-circle"></i> Authorization Steps</p>
+      <ol style="padding-left: 1.25rem; color: #78350f; line-height: 1.8;">
+        <li>Select your payment provider below</li>
+        <li>Scan the QR code with your payment app</li>
+        <li>Enter the transaction/reference ID from your app</li>
+        <li>Submit for admin verification</li>
+      </ol>
     </div>
 
     <form method="POST">
@@ -58,26 +74,28 @@
       <input type="hidden" name="coupon_code" id="hidden-coupon" value="">
 
       <div class="form-group">
-        <label class="form-label" style="font-weight: bold;">Select Payment Provider:</label>
+        <label class="form-label" style="font-weight: 600;">Payment Provider</label>
         <select name="payment_method" id="payment-method" class="form-control" required>
-          <option value="">-- Select --</option>
+          <option value="">-- Select Provider --</option>
           <option value="eSewa QR">eSewa (QR)</option>
           <option value="Khalti QR">Khalti (QR)</option>
-          <option value="Stripe">Stripe (Card)</option>
-          <option value="PayPal">PayPal</option>
         </select>
       </div>
 
       <div class="form-group">
-        <label class="form-label">Transaction ID *</label>
-        <input type="text" name="transaction_id" class="form-control" placeholder="Enter reference/transaction ID from your payment app" required>
-        <small style="color: var(--text-muted); font-size: 0.75rem;">After paying via QR scan, enter the transaction ID here to confirm.</small>
+        <label class="form-label" style="font-weight: 600;">Transaction / Reference ID *</label>
+        <input type="text" name="transaction_id" class="form-control" placeholder="e.g. QR-20260603-ABCDEF" required>
+        <small style="color: var(--text-muted); font-size: 0.75rem;">Enter the transaction ID from your payment app after scanning the QR code.</small>
       </div>
 
-      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem; font-size: 1.05rem; margin-top: 1rem;">
-        <i class="fas fa-check-circle"></i> Verify & Complete Payment
+      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem; font-size: 1rem; margin-top: 0.5rem;">
+        <i class="fas fa-lock"></i> Submit for Authorization
       </button>
     </form>
+
+    <p style="text-align: center; color: var(--text-muted); font-size: 0.75rem; margin-top: 1rem;">
+      <i class="fas fa-clock"></i> Admin will verify your payment within 24 hours. You will be notified once approved.
+    </p>
   </div>
 </div>
 
@@ -96,11 +114,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!val) {
       qp.style.display = 'block';
-      qp.querySelector('small').textContent = 'Select provider to see QR';
+      qp.querySelector('small').textContent = 'Select provider above';
       return;
     }
 
-    const upi = { 'eSewa QR': 'esewa@shikshya.edu.np', 'Khalti QR': 'khalti@shikshya.edu.np', 'Stripe': 'stripe@shikshya.edu.np', 'PayPal': 'paypal@shikshya.edu.np' };
+    const upi = { 'eSewa QR': 'esewa@shikshya.edu.np', 'Khalti QR': 'khalti@shikshya.edu.np' };
     if (upi[val]) {
       qc.style.display = 'block';
       new QRCode(qc, {

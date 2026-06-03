@@ -34,6 +34,7 @@ def student():
     certificates = Certificate.query.filter_by(student_id=current_user.id).all()
     quiz_attempts = QuizAttempt.query.filter_by(student_id=current_user.id).all()
     submissions = Submission.query.filter_by(student_id=current_user.id).all()
+    pending_payments = Payment.query.filter_by(student_id=current_user.id, status='pending').all()
 
     badges = []
     if len(enrollments) > 0:
@@ -51,6 +52,7 @@ def student():
         certificates=certificates,
         quiz_attempts=quiz_attempts,
         submissions=submissions,
+        pending_payments=pending_payments,
         badges=badges
     )
 
