@@ -245,7 +245,7 @@ def delete_user(user_id):
         Certificate.query.filter_by(student_id=uid).delete(synchronize_session=False)
         Attendance.query.filter_by(student_id=uid).delete(synchronize_session=False)
         Payment.query.filter_by(student_id=uid).delete(synchronize_session=False)
-        DiscussionTopic.query.filter_by(author_id=uid).delete(synchronize_session=False)
+        DiscussionTopic.query.filter_by(user_id=uid).delete(synchronize_session=False)
         DiscussionReply.query.filter_by(user_id=uid).delete(synchronize_session=False)
         LiveClass.query.filter_by(teacher_id=uid).delete(synchronize_session=False)
         Submission.query.filter_by(student_id=uid).delete(synchronize_session=False)
@@ -268,6 +268,6 @@ def delete_user(user_id):
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f'Failed to delete user {user_id}: {e}')
-        flash('Failed to delete user. Check server logs.', 'danger')
+        flash(f'Failed to delete user: {e}', 'danger')
 
     return redirect(url_for('dashboard.admin'))
