@@ -352,6 +352,7 @@ def add_lesson(module_id):
 
     content_type = request.form.get('content_type')
     video_url = request.form.get('video_url', '')
+    document_url = request.form.get('document_url', '')
     duration = int(request.form.get('duration', 10))
     text_content = request.form.get('text_content', '')
 
@@ -362,6 +363,7 @@ def add_lesson(module_id):
         title=title,
         content_type=content_type,
         video_url=video_url,
+        document_url=document_url,
         text_content=text_content,
         sort_order=order,
         duration_minutes=duration
