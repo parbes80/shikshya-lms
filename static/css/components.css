@@ -395,3 +395,26 @@
   transform: rotate(15deg) scale(1.05);
   background: var(--primary-dark);
 }
+
+@media (max-width: 768px) {
+  .ai-chat-drawer {
+    width: calc(100vw - 32px);
+    right: 16px;
+    bottom: 76px;
+    height: 60vh;
+    max-height: 450px;
+  }
+  .notifications-panel {
+    width: calc(100vw - 32px);
+    right: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ai-chat-drawer {
+    width: calc(100vw - 16px);
+    right: 8px;
+    bottom: 72px;
+    height: 55vh;
+  }
+}

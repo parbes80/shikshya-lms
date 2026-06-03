@@ -3,11 +3,24 @@
 
 {% set no_sidebar = true %}
 
+{% block extra_css %}
+<style>
+@media (max-width: 768px) {
+  .cert-grid { grid-template-columns: 1fr !important; gap: 1.5rem !important; }
+  .cert-inner { padding: 2rem 1rem !important; }
+  .cert-hero-icon { font-size: 3rem !important; }
+  .cert-title { font-size: 1.8rem !important; }
+  .cert-student-name { font-size: 1.6rem !important; }
+  .cert-course-name { font-size: 1.3rem !important; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div style="max-width: 900px; margin: 3rem auto; padding: 1rem; text-align: center;">
   
   <!-- Sleek premium certificate card container -->
-  <div class="card" id="certificate-print-area" style="padding: 4rem; background: #fff; border: 15px double var(--primary-light); border-radius: var(--radius-lg); color: #000; box-shadow: var(--shadow-lg); text-align: center; font-family: 'Outfit', sans-serif; position: relative;">
+  <div class="card cert-inner" id="certificate-print-area" style="padding: 4rem; background: #fff; border: 15px double var(--primary-light); border-radius: var(--radius-lg); color: #000; box-shadow: var(--shadow-lg); text-align: center; font-family: 'Outfit', sans-serif; position: relative;">
     
     <!-- Decorative background vector lines -->
     <div style="position: absolute; top: 20px; left: 20px; right: 20px; bottom: 20px; border: 2px solid var(--primary-dark); opacity: 0.15; pointer-events: none;"></div>
@@ -25,7 +38,7 @@
     <h3 style="font-size: 1.8rem; font-weight: 800; color: var(--primary); margin-bottom: 2.5rem;">"{{ certificate.course.title }}"</h3>
     
     <!-- Signature and QR section layout -->
-    <div style="display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 2rem; align-items: center; border-top: 1px solid var(--border-color); padding-top: 2.5rem; margin-top: 2rem;">
+    <div class="cert-grid" style="display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 2rem; align-items: center; border-top: 1px solid var(--border-color); padding-top: 2.5rem; margin-top: 2rem;">
       
       <!-- Left: Signature -->
       <div style="text-align: center;">

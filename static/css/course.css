@@ -371,11 +371,49 @@
   .courses-grid {
     grid-template-columns: 1fr;
   }
+  .tabs-header {
+    overflow-x: auto;
+    gap: 0.75rem;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
+  }
+  .tab-btn {
+    font-size: 0.78rem;
+    white-space: nowrap;
+    padding: 0.5rem 0.4rem;
+  }
   .player-container {
     grid-template-columns: 1fr;
     height: auto;
   }
   .player-sidebar {
     height: 300px;
+  }
+  .player-main {
+    padding: 0;
+  }
+  .lesson-details-section {
+    padding: 1rem;
+  }
+  .video-section {
+    aspect-ratio: 16/9;
+    max-height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .course-hero-details h1 {
+    font-size: 1.3rem;
+  }
+  .course-hero-preview {
+    padding: 0.75rem;
+  }
+  .tabs-header {
+    gap: 0.3rem;
+  }
+  .tab-btn {
+    font-size: 0.65rem;
+    padding: 0.35rem 0.25rem;
   }
 }
