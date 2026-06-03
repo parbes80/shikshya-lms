@@ -50,8 +50,8 @@
 
       <div class="form-group">
         <label class="form-label">Lecture Notes (Rich Text Editor)</label>
-        <div id="lesson-editor" style="min-height: 300px; background: white; color: #1e293b; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">{% if lesson and lesson.text_content %}{{ lesson.text_content|safe }}{% endif %}</div>
-        <input type="hidden" name="text_content" id="text-content-hidden" value="{{ lesson.text_content if lesson else '' }}">
+        <div id="lesson-editor" style="min-height: 300px; background: white; color: #1e293b; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></div>
+        <input type="hidden" name="text_content" id="text-content-hidden">
       </div>
 
       <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
@@ -84,8 +84,13 @@
     }
   });
 
+  {% if lesson and lesson.text_content %}
+  editor.root.innerHTML = {{ lesson.text_content|tojson|safe }};
+  {% endif %}
+
   document.querySelector('form').addEventListener('submit', function() {
-    document.getElementById('text-content-hidden').value = editor.root.innerHTML;
+    var html = editor.root.innerHTML;
+    document.getElementById('text-content-hidden').value = html === '<p><br></p>' || html === '<p></p>' || html.trim() === '' ? '' : html;
   });
 </script>
 {% endblock %}
