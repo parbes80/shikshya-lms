@@ -42,39 +42,39 @@
   <main class="player-main">
 
     {% if active_lesson %}
+      {% if active_lesson.content_type == 'video' and active_lesson.video_url %}
       <section class="video-section">
-        {% if active_lesson.content_type == 'video' and active_lesson.video_url %}
           <video id="lesson-video" controls data-lesson-id="{{ active_lesson.id }}" data-start-seconds="{{ active_progress.video_progress_seconds if active_progress else 0 }}">
             <source src="{{ active_lesson.video_url }}" type="video/mp4">
             Your browser does not support HTML5 video streaming.
           </video>
-        {% else %}
-          {% set stripped = active_lesson.text_content|striptags|trim if active_lesson.text_content else '' %}
-          {% if stripped %}
-          <div style="width: 100%; padding: 2rem; background: var(--bg-card); border-radius: 0; overflow-y: auto;">
-            <div class="lesson-notes-content" style="color: var(--text-main); font-size: 0.95rem; line-height: 1.7; max-width: 100%;">
-              {% if active_lesson.text_content|trim|list|first == '<' %}
-                {{ active_lesson.text_content|safe }}
-              {% else %}
-                {{ active_lesson.text_content|markdown|safe }}
-              {% endif %}
-            </div>
-          </div>
-          {% elif active_lesson.document_url %}
-          <div style="width: 100%; min-height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; gap: 1rem; background: linear-gradient(135deg, #1e293b, #0f172a); padding: 2rem;">
-            <i class="fas fa-file-pdf" style="font-size: 4rem; color: #ef4444;"></i>
-            <h3>Document / Notes Lecture</h3>
-            <a href="{{ active_lesson.document_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> Download Lecture Slides / PDF</a>
-          </div>
-          {% else %}
-          <div style="width: 100%; min-height: 250px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; gap: 1rem; background: linear-gradient(135deg, #1e293b, #0f172a); padding: 2rem;">
-            <i class="fas fa-file-pdf" style="font-size: 4rem; color: #ef4444;"></i>
-            <h3>Document / Notes Lecture</h3>
-            <p style="color: var(--text-muted);">No content added for this lecture yet.</p>
-          </div>
-          {% endif %}
-        {% endif %}
       </section>
+      {% else %}
+        {% set stripped = active_lesson.text_content|striptags|trim if active_lesson.text_content else '' %}
+        {% if stripped %}
+        <div class="notes-section">
+          <div class="lesson-notes-content" style="color: var(--text-main); font-size: 0.95rem; line-height: 1.7; max-width: 100%;">
+            {% if active_lesson.text_content|trim|list|first == '<' %}
+              {{ active_lesson.text_content|safe }}
+            {% else %}
+              {{ active_lesson.text_content|markdown|safe }}
+            {% endif %}
+          </div>
+        </div>
+        {% elif active_lesson.document_url %}
+        <div class="document-section">
+          <i class="fas fa-file-pdf" style="font-size: 4rem; color: #ef4444;"></i>
+          <h3>Document / Notes Lecture</h3>
+          <a href="{{ active_lesson.document_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> Download Lecture Slides / PDF</a>
+        </div>
+        {% else %}
+        <div class="document-section">
+          <i class="fas fa-file-pdf" style="font-size: 4rem; color: #ef4444;"></i>
+          <h3>Document / Notes Lecture</h3>
+          <p style="color: var(--text-muted);">No content added for this lecture yet.</p>
+        </div>
+        {% endif %}
+      {% endif %}
 
       <div style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
         <div style="display: flex; align-items: center; gap: 1rem; min-width: 0; flex: 1;">
