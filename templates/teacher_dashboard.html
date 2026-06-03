@@ -325,7 +325,6 @@ document.addEventListener('DOMContentLoaded', function() {
         row.style.display = (i >= (page - 1) * perPage && i < page * perPage) ? '' : 'none';
       });
       controls.innerHTML = '';
-      if (totalPages <= 1) return;
       var prev = document.createElement('a');
       prev.href = '#';
       prev.innerHTML = '&laquo;';
