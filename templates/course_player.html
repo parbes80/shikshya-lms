@@ -135,10 +135,14 @@
     <div class="lesson-details-section">
 
       <div class="tabs-header">
-        {% if active_lesson %}
+        {% if active_lesson and is_vid %}
           <button class="tab-btn active" data-tab="lesson-content">Overview</button>
         {% endif %}
-        <button class="tab-btn {% if not active_lesson %}active{% endif %}" data-tab="lesson-quizzes">Quizzes & Exams</button>
+        {% if not active_lesson or not is_vid %}
+        <button class="tab-btn active" data-tab="lesson-quizzes">Quizzes & Exams</button>
+        {% else %}
+        <button class="tab-btn" data-tab="lesson-quizzes">Quizzes & Exams</button>
+        {% endif %}
         <button class="tab-btn" data-tab="lesson-assignments">Assignments</button>
         <button class="tab-btn" data-tab="lesson-evaluations">Evaluations</button>
         <button class="tab-btn" data-tab="lesson-discussions">Q&A Forums</button>
@@ -150,67 +154,46 @@
         <button class="tab-btn" data-tab="lesson-downloads">Certificates</button>
       </div>
 
-      {% if active_lesson %}
+      {% if active_lesson and is_vid %}
       <div class="tab-pane active" id="lesson-content">
-        <div class="card" style="padding: 2rem; font-size: 0.95rem; line-height: 1.6;">
-          {% if is_vid %}
-            <h3>Lecture Notes</h3>
-            <div style="margin-top: 1rem;">
-              {% set stripped = active_lesson.text_content|striptags|trim if active_lesson.text_content else '' %}
-              {% if stripped %}
-                {% if lesson_headings %}
-                <div class="subtopic-card">
-                  <strong style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">In this section</strong>
-                  <ul class="subtopic-inline-list">
-                    {% for hid, htext, htag in lesson_headings %}
-                    <li><a href="#{{ hid }}" style="font-size: 0.85rem;">{{ htext }}</a></li>
-                    {% endfor %}
-                  </ul>
-                </div>
-                {% endif %}
-                <div class="lesson-notes-content">
-                  {% if lesson_content_html %}
-                    {{ lesson_content_html|safe }}
-                  {% elif active_lesson.text_content|trim|list|first == '<' %}
-                    {{ active_lesson.text_content|safe }}
-                  {% else %}
-                    {{ active_lesson.text_content|markdown|safe }}
-                  {% endif %}
-                </div>
-              {% else %}
-                <p style="color: var(--text-muted);">No additional text notes for this lecture.</p>
+        <div class="card" style="padding: 1.5rem; font-size: 0.95rem; line-height: 1.6;">
+          <h3>Lecture Notes</h3>
+          <div style="margin-top: 0.75rem;">
+            {% set stripped = active_lesson.text_content|striptags|trim if active_lesson.text_content else '' %}
+            {% if stripped %}
+              {% if lesson_headings %}
+              <div class="subtopic-card">
+                <strong style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">In this section</strong>
+                <ul class="subtopic-inline-list">
+                  {% for hid, htext, htag in lesson_headings %}
+                  <li><a href="#{{ hid }}" style="font-size: 0.85rem;">{{ htext }}</a></li>
+                  {% endfor %}
+                </ul>
+              </div>
               {% endif %}
-            </div>
-            {% if doc_url %}
-            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-              <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</a>
-            </div>
-            {% endif %}
-          {% else %}
-            {% if doc_url %}
-            <p style="color: var(--text-muted); margin-bottom: 0.75rem;">Lecture notes are displayed above in the main content area.</p>
-            <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</a>
+              <div class="lesson-notes-content">
+                {% if lesson_content_html %}
+                  {{ lesson_content_html|safe }}
+                {% elif active_lesson.text_content|trim|list|first == '<' %}
+                  {{ active_lesson.text_content|safe }}
+                {% else %}
+                  {{ active_lesson.text_content|markdown|safe }}
+                {% endif %}
+              </div>
             {% else %}
-            <p style="color: var(--text-muted);">Lecture notes are displayed above in the main content area.</p>
+              <p style="color: var(--text-muted);">No additional text notes for this lecture.</p>
             {% endif %}
+          </div>
+          {% if doc_url %}
+          <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+            <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</a>
+          </div>
           {% endif %}
         </div>
       </div>
       {% endif %}
 
-      {% set tab_doc_url = active_lesson.document_url|asset_url if active_lesson else '' %}
-      {% if tab_doc_url %}
-      <div class="tab-pane" id="lesson-doc">
-        <div class="document-section" style="min-height: auto;">
-          <i class="fas fa-file-pdf" style="font-size: 4rem; color: #ef4444;"></i>
-          <h3>Downloadable Materials</h3>
-          <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Lecture notes, slides, and reference documents</p>
-          <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> Download PDF / Document</a>
-        </div>
-      </div>
-      {% endif %}
-
-      <div class="tab-pane {% if not active_lesson %}active{% endif %}" id="lesson-quizzes">
+      <div class="tab-pane {% if not active_lesson or not is_vid %}active{% endif %}" id="lesson-quizzes">
         <h3>Syllabus Examinations</h3>
         <div class="list-container" style="margin-top: 1rem;">
           {% if quizzes %}
