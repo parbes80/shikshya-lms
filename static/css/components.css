@@ -299,7 +299,7 @@
 /* AI Chat Assistant Widget Drawer */
 .ai-chat-drawer {
   position: fixed;
-  bottom: 80px;
+  bottom: 110px;
   right: 20px;
   width: 350px;
   height: 500px;
@@ -373,7 +373,7 @@
 /* Floating chat button */
 .btn-chat-toggle {
   position: fixed;
-  bottom: 20px;
+  bottom: 70px;
   right: 20px;
   width: 50px;
   height: 50px;
@@ -400,7 +400,7 @@
   .ai-chat-drawer {
     width: calc(100vw - 32px);
     right: 16px;
-    bottom: 76px;
+    bottom: 130px;
     height: 60vh;
     max-height: 450px;
   }
@@ -414,7 +414,7 @@
   .ai-chat-drawer {
     width: calc(100vw - 16px);
     right: 8px;
-    bottom: 72px;
+    bottom: 130px;
     height: 55vh;
   }
   .modal-content {
