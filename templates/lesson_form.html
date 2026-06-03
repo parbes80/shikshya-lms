@@ -51,7 +51,7 @@
       <div class="form-group">
         <label class="form-label">Lecture Notes (Rich Text Editor)</label>
         <div id="lesson-editor" style="min-height: 300px; background: white; color: #1e293b; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></div>
-        <input type="hidden" name="text_content" id="text-content-hidden">
+        <input type="hidden" name="text_content" id="text-content-hidden" value="{{ lesson.text_content if lesson else '' }}">
       </div>
 
       <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
