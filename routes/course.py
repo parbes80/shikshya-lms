@@ -84,8 +84,14 @@ def details(slug):
     is_enrolled = False
     enrollment = None
     if current_user.is_authenticated:
-        enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=course.id).first()
-        is_enrolled = enrollment is not None
+        if current_user.role.name == 'Admin':
+            is_enrolled = True
+        elif current_user.role.name == 'Teacher':
+            enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=course.id).first()
+            is_enrolled = enrollment is not None or course.teacher_id == current_user.id
+        else:
+            enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=course.id).first()
+            is_enrolled = enrollment is not None
 
     reviews = Review.query.filter_by(course_id=course.id).all()
     avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 0.0
@@ -104,6 +110,9 @@ def details(slug):
 @login_required
 def enroll(slug):
     course = Course.query.filter_by(slug=slug).first_or_404()
+
+    if current_user.role.name == 'Admin':
+        return redirect(url_for('course.player', slug=slug))
 
     if current_user.role.name == 'Teacher' and course.teacher_id == current_user.id:
         return redirect(url_for('course.player', slug=slug))
@@ -191,16 +200,20 @@ def player(slug):
     course = Course.query.filter_by(slug=slug).first_or_404()
 
     is_teacher = current_user.role.name == 'Teacher' and course.teacher_id == current_user.id
+    is_admin = current_user.role.name == 'Admin'
 
-    enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=course.id).first()
-    if not enrollment and not is_teacher:
-        flash('Please enroll in the course to access lessons.', 'warning')
-        return redirect(url_for('course.details', slug=slug))
+    if not is_admin and not is_teacher:
+        enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=course.id).first()
+        if not enrollment:
+            flash('Please enroll in the course to access lessons.', 'warning')
+            return redirect(url_for('course.details', slug=slug))
+    else:
+        enrollment = None
 
     lesson_id = request.args.get('lesson_id', type=int)
     active_lesson = None
 
-    progress_map = {p.lesson_id: p for p in enrollment.lesson_progresses}
+    progress_map = {p.lesson_id: p for p in enrollment.lesson_progresses} if enrollment else {}
 
     if lesson_id:
         active_lesson = Lesson.query.get_or_404(lesson_id)
