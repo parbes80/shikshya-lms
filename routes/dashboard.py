@@ -9,7 +9,7 @@ from models.learning import Enrollment, Quiz, QuizAttempt, Submission, Assignmen
 from models.evaluation import Evaluation, EvaluationSubmission
 from models.interaction import (Certificate, Payment, Notification, MembershipPlan, UserSubscription,
                                 DiscussionTopic, DiscussionReply, Attendance, Notice, Lab,
-                                PasswordResetRequest)
+                                PasswordResetRequest, PasswordResetToken)
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -256,6 +256,8 @@ def delete_user(user_id):
         Notice.query.filter_by(author_id=uid).delete(synchronize_session=False)
         Lab.query.filter_by(created_by=uid).delete(synchronize_session=False)
         UserSubscription.query.filter_by(user_id=uid).delete(synchronize_session=False)
+        PasswordResetRequest.query.filter_by(user_id=uid).delete(synchronize_session=False)
+        PasswordResetToken.query.filter_by(user_id=uid).delete(synchronize_session=False)
 
         PasswordResetRequest.query.filter_by(resolved_by=uid).update(
             {'resolved_by': None}, synchronize_session=False
