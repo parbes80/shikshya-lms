@@ -47,6 +47,9 @@
       <li><a href="{{ url_for('notice.calendar') }}"><i class="fas fa-calendar-alt"></i> Calendar</a></li>
       <li><a href="{{ url_for('notice.list_notices') }}"><i class="fas fa-bullhorn"></i> Notices</a></li>
       <li><a href="{{ url_for('branch.branches_map') }}"><i class="fas fa-map-marker-alt"></i> Branches</a></li>
+      {% if current_user.is_authenticated %}
+        <li class="mobile-logout"><a href="{{ url_for('auth.logout') }}" style="color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+      {% endif %}
     </ul>
 
     <div class="nav-actions">

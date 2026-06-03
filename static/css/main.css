@@ -86,6 +86,10 @@ a {
 }
 
 /* Hamburger Button */
+.mobile-logout {
+  display: none;
+}
+
 .hamburger {
   display: none;
   flex-direction: column;
@@ -377,6 +381,12 @@ header {
     padding: 0.75rem 1rem;
     border-radius: var(--radius-sm);
     font-size: 1rem;
+  }
+
+  .mobile-logout {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
   }
 
   .nav-links a:hover {
