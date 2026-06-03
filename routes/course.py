@@ -375,6 +375,46 @@ def add_lesson(module_id):
     return redirect(url_for('dashboard.teacher'))
 
 
+@course_bp.route('/lessons/<int:lesson_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_lesson(lesson_id):
+    lesson = Lesson.query.get_or_404(lesson_id)
+    if lesson.module.course.teacher_id != current_user.id:
+        abort(403)
+
+    if request.method == 'GET':
+        return render_template('lesson_form.html', module=lesson.module, lesson=lesson, action='edit')
+
+    title = request.form.get('lesson_title', '').strip()
+    if not title:
+        flash('Lesson title is required.', 'danger')
+        return redirect(url_for('dashboard.teacher'))
+
+    lesson.title = title
+    lesson.content_type = request.form.get('content_type')
+    lesson.video_url = request.form.get('video_url', '')
+    lesson.document_url = request.form.get('document_url', '')
+    lesson.duration_minutes = int(request.form.get('duration', 10))
+    lesson.text_content = request.form.get('text_content', '')
+    db.session.commit()
+
+    flash('Lesson updated successfully!', 'success')
+    return redirect(url_for('dashboard.teacher'))
+
+
+@course_bp.route('/lessons/<int:lesson_id>/delete', methods=['POST'])
+@login_required
+def delete_lesson(lesson_id):
+    lesson = Lesson.query.get_or_404(lesson_id)
+    if lesson.module.course.teacher_id != current_user.id:
+        abort(403)
+
+    db.session.delete(lesson)
+    db.session.commit()
+    flash('Lesson deleted.', 'success')
+    return redirect(url_for('dashboard.teacher'))
+
+
 @course_bp.route('/courses/<int:course_id>/quiz/create', methods=['GET', 'POST'])
 @login_required
 def create_quiz(course_id):

@@ -1,32 +1,32 @@
 {% extends 'base.html' %}
-{% block title %}Add Lesson{% endblock %}
+{% block title %}{% if action == 'edit' %}Edit Lesson{% else %}Add Lesson{% endif %}{% endblock %}
 
 {% block content %}
 <div style="max-width: 800px; margin: 2rem auto; padding: 1rem;">
   <div style="margin-bottom: 2rem;">
-    <h1 class="section-title">Add Lesson</h1>
+    <h1 class="section-title">{% if action == 'edit' %}Edit Lesson{% else %}Add Lesson{% endif %}</h1>
     <p style="color: var(--text-muted); margin-top: 0.25rem;">
       Course: <strong>{{ module.course.title }}</strong> &middot; Chapter: <strong>{{ module.title }}</strong>
     </p>
   </div>
 
   <div class="card" style="padding: 2.5rem;">
-    <form method="POST">
+    <form method="POST" action="{% if action == 'edit' %}{{ url_for('course.edit_lesson', lesson_id=lesson.id) }}{% else %}{{ url_for('course.add_lesson', module_id=module.id) }}{% endif %}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
         <div>
           <div class="form-group">
             <label class="form-label">Lesson Title *</label>
-            <input type="text" name="lesson_title" class="form-control" placeholder="e.g. Variables and Data Types" required>
+            <input type="text" name="lesson_title" class="form-control" placeholder="e.g. Variables and Data Types" value="{{ lesson.title if lesson else '' }}" required>
           </div>
         </div>
         <div>
           <div class="form-group">
             <label class="form-label">Content Type</label>
             <select name="content_type" class="form-control" required>
-              <option value="video">Video Lecture</option>
-              <option value="pdf">Document / PDF Notes</option>
+              <option value="video" {% if lesson and lesson.content_type == 'video' %}selected{% endif %}>Video Lecture</option>
+              <option value="pdf" {% if lesson and lesson.content_type == 'pdf' %}selected{% endif %}>Document / PDF Notes</option>
             </select>
           </div>
         </div>
@@ -35,27 +35,27 @@
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
         <div class="form-group">
           <label class="form-label">Video Source Link (if Video)</label>
-          <input type="text" name="video_url" class="form-control" placeholder="https://www.w3schools.com/html/mov_bbb.mp4" value="https://www.w3schools.com/html/mov_bbb.mp4">
+          <input type="text" name="video_url" class="form-control" placeholder="https://www.w3schools.com/html/mov_bbb.mp4" value="{{ lesson.video_url if lesson else 'https://www.w3schools.com/html/mov_bbb.mp4' }}">
         </div>
         <div class="form-group">
           <label class="form-label">Duration (minutes)</label>
-          <input type="number" name="duration" class="form-control" value="10" min="1" required>
+          <input type="number" name="duration" class="form-control" value="{{ lesson.duration_minutes if lesson else 10 }}" min="1" required>
         </div>
       </div>
 
       <div class="form-group">
         <label class="form-label">Document / PDF URL (optional)</label>
-        <input type="text" name="document_url" class="form-control" placeholder="https://example.com/lecture-notes.pdf">
+        <input type="text" name="document_url" class="form-control" placeholder="https://example.com/lecture-notes.pdf" value="{{ lesson.document_url if lesson else '' }}">
       </div>
 
       <div class="form-group">
         <label class="form-label">Lecture Notes (Rich Text Editor)</label>
-        <div id="lesson-editor" style="min-height: 300px; background: white; color: #1e293b; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></div>
-        <input type="hidden" name="text_content" id="text-content-hidden">
+        <div id="lesson-editor" style="min-height: 300px; background: white; color: #1e293b; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">{% if lesson and lesson.text_content %}{{ lesson.text_content|safe }}{% endif %}</div>
+        <input type="hidden" name="text_content" id="text-content-hidden" value="{{ lesson.text_content if lesson else '' }}">
       </div>
 
       <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
-        <i class="fas fa-plus"></i> Add Lesson
+        <i class="fas fa-{% if action == 'edit' %}save{% else %}plus{% endif %}"></i> {% if action == 'edit' %}Save Changes{% else %}Add Lesson{% endif %}
       </button>
     </form>
   </div>
