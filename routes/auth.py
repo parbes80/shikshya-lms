@@ -61,7 +61,7 @@ def register():
             email=email,
             role_id=role.id,
             is_approved=is_approved,
-            avatar_url='avatar_default.jpg'
+            avatar_url='images/avatar_default.jpg'
         )
         new_user.set_password(password)
 

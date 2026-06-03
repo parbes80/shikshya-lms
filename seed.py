@@ -49,13 +49,13 @@ def seed_database():
         db.session.commit()
         print("Branches seeded.")
 
-    admin = User(username='admin', email='admin@shikshya.edu', role_id=admin_role.id, is_approved=True, avatar_url='avatar_default.jpg')
+    admin = User(username='admin', email='admin@shikshya.edu', role_id=admin_role.id, is_approved=True, avatar_url='images/avatar_default.jpg')
     admin.set_password('admin123')
 
-    teacher = User(username='teacher_sandesh', email='teacher@shikshya.edu', role_id=teacher_role.id, is_approved=True, avatar_url='avatar_default.jpg')
+    teacher = User(username='teacher_sandesh', email='teacher@shikshya.edu', role_id=teacher_role.id, is_approved=True, avatar_url='images/avatar_default.jpg')
     teacher.set_password('teacher123')
 
-    student = User(username='student_pradeep', email='student@shikshya.edu', role_id=student_role.id, is_approved=True, avatar_url='avatar_default.jpg')
+    student = User(username='student_pradeep', email='student@shikshya.edu', role_id=student_role.id, is_approved=True, avatar_url='images/avatar_default.jpg')
     student.set_password('student123')
 
     db.session.add_all([admin, teacher, student])
