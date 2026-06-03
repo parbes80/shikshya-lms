@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
-{% block title %}Create {{ label }}{% endblock %}
+{% block title %}{% if action == 'edit' %}Edit {{ label }}{% else %}Create {{ label }}{% endif %}{% endblock %}
 
 {% block content %}
 <div style="max-width: 700px; margin: 2rem auto; padding: 1rem;">
 
   <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-start;">
     <div>
-      <h1 class="section-title">Create New {{ label }}</h1>
+      <h1 class="section-title">{% if action == 'edit' %}Edit {{ label }}{% else %}Create New {{ label }}{% endif %}</h1>
       <p style="color: var(--text-muted);">for <strong>{{ course.title }}</strong></p>
     </div>
     {% if from_eval %}
@@ -17,7 +17,7 @@
   <div class="card" style="padding: 2.5rem; position: relative;">
     <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--primary);"></div>
 
-    <form id="quiz-form" action="{{ url_for('course.create_quiz', course_id=course.id) }}" method="POST">
+    <form id="quiz-form" action="{% if action == 'edit' %}{{ url_for('course.edit_quiz', course_id=course.id, quiz_id=quiz.id) }}{% else %}{{ url_for('course.create_quiz', course_id=course.id) }}{% endif %}" method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       {% if from_eval %}
       <input type="hidden" name="from_eval" value="1">
@@ -25,17 +25,17 @@
 
       <div class="form-group">
         <label class="form-label" for="quiz-title">{{ label }} Title</label>
-        <input type="text" name="title" id="quiz-title" class="form-control" placeholder="e.g. Python Basics Assessment" required>
+        <input type="text" name="title" id="quiz-title" class="form-control" placeholder="e.g. Python Basics Assessment" value="{{ quiz.title if quiz else '' }}" required>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
         <div class="form-group">
           <label class="form-label" for="quiz-time">Time Limit (minutes)</label>
-          <input type="number" name="time_limit_minutes" id="quiz-time" class="form-control" value="10" min="1" required>
+          <input type="number" name="time_limit_minutes" id="quiz-time" class="form-control" value="{{ quiz.time_limit_minutes if quiz else 10 }}" min="1" required>
         </div>
         <div class="form-group">
           <label class="form-label" for="quiz-passing">Passing Score (%)</label>
-          <input type="number" name="passing_score" id="quiz-passing" class="form-control" value="60" min="1" max="100" required>
+          <input type="number" name="passing_score" id="quiz-passing" class="form-control" value="{{ quiz.passing_score if quiz else 60 }}" min="1" max="100" required>
         </div>
       </div>
 
@@ -43,6 +43,44 @@
 
       <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Questions</h3>
       <div id="questions-container">
+        {% if quiz %}
+          {% for q in quiz.questions %}
+          <div class="question-block" style="background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <strong>Question {{ loop.index }}</strong>
+              <button type="button" class="btn btn-outline" onclick="removeQuestion(this)" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; color: #ef4444; border-color: #ef4444;"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="form-group">
+              <textarea name="question_text[]" class="form-control" rows="2" placeholder="Enter question text..." required>{{ q.text }}</textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.8rem;">Type</label>
+                <select name="question_type[]" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                  <option value="MCQ" {% if q.question_type == 'MCQ' %}selected{% endif %}>Multiple Choice</option>
+                  <option value="TF" {% if q.question_type == 'TF' %}selected{% endif %}>True/False</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size: 0.8rem;">Points</label>
+                <input type="number" name="points[]" class="form-control" value="{{ q.points }}" min="1" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size: 0.8rem;">Choices</label>
+              <div class="choices-list">
+                {% for c in q.choices %}
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                  <input type="radio" name="correct_choice_{{ loop.parent.loop.index0 }}" value="{{ loop.index0 }}" {% if c.is_correct %}checked{% endif %} style="accent-color: var(--secondary);">
+                  <input type="text" name="choice_text_{{ loop.parent.loop.index0 }}[]" class="form-control" placeholder="Choice {{ loop.index + 1 }}" value="{{ c.text }}" {% if loop.index0 < 2 %}required{% endif %} style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                </div>
+                {% endfor %}
+              </div>
+              <small style="color: var(--text-muted); font-size: 0.75rem;">Select the radio button next to the <strong>correct</strong> answer.</small>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
         <div class="question-block" style="background: var(--bg-app); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <strong>Question 1</strong>
@@ -77,6 +115,7 @@
             </div>
           </div>
         </div>
+        {% endif %}
       </div>
 
       <button type="button" class="btn btn-outline" onclick="addQuestion()" style="width: 100%; justify-content: center; margin-bottom: 1.5rem;">
@@ -84,7 +123,7 @@
       </button>
 
       <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.75rem;">
-        <i class="fas fa-check-circle"></i> Create {{ label }}
+        <i class="fas fa-check-circle"></i> {% if action == 'edit' %}Update {{ label }}{% else %}Create {{ label }}{% endif %}
       </button>
     </form>
   </div>
@@ -94,7 +133,7 @@
 
 {% block extra_js %}
 <script>
-  let questionCount = 1;
+  let questionCount = {{ quiz.questions|length if quiz else 1 }};
 
   function addQuestion() {
     const container = document.getElementById('questions-container');

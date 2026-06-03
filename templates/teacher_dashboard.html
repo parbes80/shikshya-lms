@@ -48,7 +48,7 @@
       {% if courses %}
         {% for course in courses %}
           <div class="card" style="margin-bottom: 1.5rem; padding: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
               <div>
                 <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                   <h3 style="font-size: 1.3rem; font-weight: bold;">{{ course.title }}</h3>
@@ -109,20 +109,20 @@
             </form>
 
             <!-- Quiz & Assignment management -->
-            <div style="display: flex; gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-              <a href="{{ url_for('course.create_quiz', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; justify-content: center;">
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+              <a href="{{ url_for('course.create_quiz', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; min-width: 120px; justify-content: center;">
                 <i class="fas fa-question-circle"></i> Add Quiz
               </a>
-              <a href="{{ url_for('course.create_assignment', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; justify-content: center;">
+              <a href="{{ url_for('course.create_assignment', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; min-width: 120px; justify-content: center;">
                 <i class="fas fa-tasks"></i> Add Assignment
               </a>
-              <a href="{{ url_for('course.create_live_class', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; justify-content: center; color: #ea4335; border-color: #ea4335;">
+              <a href="{{ url_for('course.create_live_class', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; min-width: 120px; justify-content: center; color: #ea4335; border-color: #ea4335;">
                 <i class="fab fa-google"></i> Live Class
               </a>
-              <a href="{{ url_for('course.attendance', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; justify-content: center; color: #10b981; border-color: #10b981;">
+              <a href="{{ url_for('course.attendance', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; min-width: 120px; justify-content: center; color: #10b981; border-color: #10b981;">
                 <i class="fas fa-clipboard-check"></i> Attendance
               </a>
-              <a href="{{ url_for('eval.index', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; justify-content: center; color: #8b5cf6; border-color: #8b5cf6;">
+              <a href="{{ url_for('eval.index', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; min-width: 120px; justify-content: center; color: #8b5cf6; border-color: #8b5cf6;">
                 <i class="fas fa-clipboard-check"></i> Evaluations
               </a>
             </div>
@@ -133,8 +133,15 @@
               <small style="color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Quizzes</small>
               <ul style="list-style: none; margin-top: 0.25rem;">
                 {% for q in course.quizzes %}
-                <li style="font-size: 0.85rem; color: var(--text-muted); padding: 0.25rem 0;">
-                  <i class="fas fa-pencil-alt" style="color: var(--accent);"></i> {{ q.title }} ({{ q.questions|length }} questions, {{ q.time_limit_minutes }}min)
+                <li style="font-size: 0.85rem; color: var(--text-muted); padding: 0.25rem 0; display: flex; justify-content: space-between; align-items: center;">
+                  <span><i class="fas fa-pencil-alt" style="color: var(--accent);"></i> {{ q.title }} ({{ q.questions|length }} questions, {{ q.time_limit_minutes }}min)</span>
+                  <span style="display: flex; gap: 0.5rem;">
+                    <a href="{{ url_for('course.edit_quiz', course_id=course.id, quiz_id=q.id) }}" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;"><i class="fas fa-edit"></i> Edit</a>
+                    <form action="{{ url_for('course.delete_quiz', course_id=course.id, quiz_id=q.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this quiz?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem; color: #ef4444; border-color: #ef4444;"><i class="fas fa-trash"></i></button>
+                    </form>
+                  </span>
                 </li>
                 {% endfor %}
               </ul>

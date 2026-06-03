@@ -80,7 +80,7 @@
       <div style="display: flex; flex-direction: column; gap: 1rem;">
         {% for mod in course.modules %}
           <div class="card" style="padding: 1.5rem;">
-            <h3 style="font-size: 1.25rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <h3 style="font-size: 1.25rem; font-weight: bold; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
               <span>Module {{ loop.index }}: {{ mod.title }}</span>
               <small style="font-size: 0.8rem; color: var(--text-muted);">{{ mod.lessons|length }} lessons</small>
             </h3>
@@ -88,7 +88,7 @@
             {% if mod.lessons %}
               <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; padding-left: 1rem;">
                 {% for les in mod.lessons %}
-                  <li style="display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; color: var(--text-muted);">
+                  <li style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.25rem; font-size: 0.95rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; color: var(--text-muted);">
                     <span><i class="fas fa-video" style="color: var(--primary); margin-right: 0.5rem;"></i> {{ les.title }}</span>
                     <span>{{ les.duration_minutes }} mins</span>
                   </li>

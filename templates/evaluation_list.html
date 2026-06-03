@@ -7,7 +7,7 @@
       <h1><i class="fas fa-clipboard-check"></i> Evaluations</h1>
       <p style="color: var(--text-muted);">{{ course.title }}</p>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
       {% if current_user.role.name == 'Teacher' %}
       <div class="eval-dropdown" style="position: relative;">
         <button id="eval-dropdown-btn" class="btn btn-primary">

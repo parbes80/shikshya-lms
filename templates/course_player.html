@@ -61,12 +61,12 @@
         {% endif %}
       </section>
 
-      <div style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0.75rem 2rem; display: flex; justify-content: space-between; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-          <h4 style="font-size: 1.15rem; font-weight: bold;">{{ active_lesson.title }}</h4>
-          <span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem;">Lecture</span>
+      <div style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; min-width: 0; flex: 1;">
+          <h4 style="font-size: 1.15rem; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ active_lesson.title }}</h4>
+          <span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem; flex-shrink: 0;">Lecture</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); flex-shrink: 0;">
           <label for="speed-btn"><i class="fas fa-cog"></i> Playback Speed:</label>
           <select id="speed-btn" class="form-control" style="width: 80px; padding: 0.25rem; font-size: 0.8rem; border-radius: var(--radius-sm);">
             <option value="1.0">1.0x</option>

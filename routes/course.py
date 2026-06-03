@@ -448,7 +448,99 @@ def create_quiz(course_id):
 
     return render_template('quiz_form.html', course=course, action='create',
                            from_eval=from_eval, eval_type=eval_type,
+                           is_test_paper=is_test_paper, label=label, quiz=None)
+
+
+@course_bp.route('/courses/<int:course_id>/quiz/<int:quiz_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_quiz(course_id, quiz_id):
+    course = Course.query.get_or_404(course_id)
+    quiz = Quiz.query.get_or_404(quiz_id)
+    if course.teacher_id != current_user.id or quiz.course_id != course.id:
+        abort(403)
+
+    from_eval = request.args.get('from_eval')
+    eval_type = request.args.get('type', 'quiz')
+    is_test_paper = eval_type == 'test_paper'
+    redirect_back = url_for('eval.index', course_id=course_id) if from_eval else url_for('dashboard.teacher')
+    label = 'Test Paper' if is_test_paper else 'Quiz'
+
+    if request.method == 'POST':
+        from_eval = request.form.get('from_eval')
+        redirect_back = url_for('eval.index', course_id=course_id) if from_eval else url_for('dashboard.teacher')
+
+        title = request.form.get('title', '').strip()
+        time_limit = int(request.form.get('time_limit_minutes', 10))
+        passing_score = int(request.form.get('passing_score', 60))
+
+        if not title:
+            flash(f'{label} title is required.', 'danger')
+            return redirect(url_for('course.edit_quiz', course_id=course_id, quiz_id=quiz_id, from_eval=from_eval, type=eval_type))
+
+        quiz.title = title
+        quiz.time_limit_minutes = time_limit
+        quiz.passing_score = passing_score
+
+        for q in quiz.questions[:]:
+            db.session.delete(q)
+        db.session.flush()
+
+        question_texts = request.form.getlist('question_text[]')
+        question_types = request.form.getlist('question_type[]')
+        question_points = request.form.getlist('points[]')
+
+        for i in range(len(question_texts)):
+            q_text = question_texts[i].strip()
+            if not q_text:
+                continue
+
+            q_type = question_types[i] if i < len(question_types) else 'MCQ'
+            points = int(question_points[i]) if i < len(question_points) else 10
+
+            question = Question(
+                quiz_id=quiz.id,
+                text=q_text,
+                question_type=q_type,
+                points=points
+            )
+            db.session.add(question)
+            db.session.flush()
+
+            choice_texts = request.form.getlist(f'choice_text_{i}[]')
+            correct_idx = request.form.get(f'correct_choice_{i}')
+            for j in range(len(choice_texts)):
+                c_text = choice_texts[j].strip()
+                if not c_text:
+                    continue
+                is_correct = (str(j) == correct_idx)
+                choice = Choice(
+                    question_id=question.id,
+                    text=c_text,
+                    is_correct=is_correct
+                )
+                db.session.add(choice)
+
+        db.session.commit()
+        flash(f'{label} "{quiz.title}" updated!', 'success')
+        return redirect(redirect_back)
+
+    return render_template('quiz_form.html', course=course, quiz=quiz, action='edit',
+                           from_eval=from_eval, eval_type=eval_type,
                            is_test_paper=is_test_paper, label=label)
+
+
+@course_bp.route('/courses/<int:course_id>/quiz/<int:quiz_id>/delete', methods=['POST'])
+@login_required
+def delete_quiz(course_id, quiz_id):
+    course = Course.query.get_or_404(course_id)
+    quiz = Quiz.query.get_or_404(quiz_id)
+    if course.teacher_id != current_user.id or quiz.course_id != course.id:
+        abort(403)
+
+    db.session.delete(quiz)
+    db.session.commit()
+    flash(f'Quiz "{quiz.title}" deleted.', 'success')
+    return redirect(url_for('dashboard.teacher'))
 
 
 @course_bp.route('/courses/<int:course_id>/assignment/create', methods=['GET', 'POST'])
