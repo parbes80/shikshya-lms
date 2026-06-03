@@ -181,7 +181,7 @@
                   {% for enr in enrols %}
                     <li style="padding: 0.25rem 0; display: flex; align-items: center; gap: 0.5rem;">
                       <i class="fas fa-user-circle" style="color: var(--primary);"></i>
-                      {{ enr.student.username }} <small style="color: var(--text-muted);">{{ enr.student.email }}</small>
+                      <strong>{{ enr.student.full_name or enr.student.username }}</strong> <small style="color: var(--text-muted);">@{{ enr.student.username }} &middot; {{ enr.student.email }}</small>
                     </li>
                   {% endfor %}
                 </ul>
@@ -212,7 +212,7 @@
               <tbody>
                 {% for att in quiz_attempts %}
                   <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 0.5rem;">{{ att.student.username }}</td>
+                    <td style="padding: 0.5rem;">{{ att.student.full_name or att.student.username }}</td>
                     <td style="padding: 0.5rem;">{{ att.quiz.title }}</td>
                     <td style="padding: 0.5rem;">{{ att.score }}%</td>
                     <td style="padding: 0.5rem;">

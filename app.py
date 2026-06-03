@@ -144,6 +144,10 @@ def create_app():
                     db.session.execute(sa.text('ALTER TABLE evaluations ADD COLUMN meet_link VARCHAR(255)'))
                     db.session.commit()
                     app.logger.info('Added meet_link column to evaluations')
+            if 'full_name' not in [c['name'] for c in insp.get_columns('users')]:
+                db.session.execute(sa.text('ALTER TABLE users ADD COLUMN full_name VARCHAR(120)'))
+                db.session.commit()
+                app.logger.info('Added full_name column to users')
         if not Role.query.first():
             from seed import seed_database
             seed_database()
