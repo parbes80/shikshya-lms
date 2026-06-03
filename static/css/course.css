@@ -392,6 +392,7 @@
   .player-container {
     grid-template-columns: 1fr;
     height: auto;
+    margin: 0 !important;
   }
   .player-sidebar {
     height: 300px;
