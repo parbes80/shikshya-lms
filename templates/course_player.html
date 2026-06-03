@@ -62,16 +62,16 @@
           </div>
         </div>
         {% endif %}
-        {% if active_lesson.document_url %}
-        <div class="{% if stripped %}doc-section-inline{% else %}document-section{% endif %}">
-          <i class="fas fa-file-pdf" style="font-size: {% if stripped %}2rem{% else %}4rem{% endif %}; color: #ef4444;"></i>
-          {% if stripped %}<span>Lecture notes available. <a href="{{ active_lesson.document_url }}" target="_blank" style="color: var(--primary); font-weight: 600; text-decoration: underline;">Download PDF</a></span>
-          {% else %}
-          <h3>Document / Notes Lecture</h3>
-          <a href="{{ active_lesson.document_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> Download Lecture Slides / PDF</a>
-          {% endif %}
+        {% set doc_url = active_lesson.document_url|asset_url %}
+        {% if doc_url %}
+        <div class="document-section" style="{% if stripped %}min-height: auto; margin-top: 1rem;{% endif %}">
+          <i class="fas fa-file-pdf" style="font-size: 3rem; color: #ef4444;"></i>
+          <h3>Downloadable Materials</h3>
+          <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Lecture notes, slides, and reference documents</p>
+          <a href="{{ doc_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> Download PDF / Document</a>
         </div>
-        {% elif not stripped %}
+        {% endif %}
+        {% if not stripped and not doc_url %}
         <div class="document-section">
           <i class="fas fa-file-pdf" style="font-size: 4rem; color: #ef4444;"></i>
           <h3>Document / Notes Lecture</h3>
@@ -138,9 +138,10 @@
               <p style="color: var(--text-muted);">No additional text notes for this lecture.</p>
             {% endif %}
           </div>
-          {% if active_lesson.document_url %}
+          {% set video_doc_url = active_lesson.document_url|asset_url %}
+          {% if video_doc_url %}
           <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-            <a href="{{ active_lesson.document_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</a>
+            <a href="{{ video_doc_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</a>
           </div>
           {% endif %}
         </div>
@@ -148,9 +149,10 @@
       {% elif active_lesson %}
       <div class="tab-pane active" id="lesson-content">
         <div class="card" style="padding: 2rem; font-size: 0.95rem; line-height: 1.6;">
-          {% if active_lesson.document_url %}
+          {% set nonvid_doc_url = active_lesson.document_url|asset_url %}
+          {% if nonvid_doc_url %}
           <p style="color: var(--text-muted); margin-bottom: 1rem;">Lecture notes are displayed above in the main content area.</p>
-          <a href="{{ active_lesson.document_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</a>
+          <a href="{{ nonvid_doc_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</a>
           {% else %}
           <p style="color: var(--text-muted);">Lecture notes are displayed above in the main content area.</p>
           {% endif %}

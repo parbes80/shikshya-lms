@@ -35,7 +35,7 @@
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
         <div class="form-group">
           <label class="form-label">Video Source Link (if Video)</label>
-          <input type="text" name="video_url" class="form-control" placeholder="https://www.w3schools.com/html/mov_bbb.mp4" value="{{ lesson.video_url if lesson else 'https://www.w3schools.com/html/mov_bbb.mp4' }}">
+          <input type="text" name="video_url" class="form-control" placeholder="https://www.w3schools.com/html/mov_bbb.mp4" value="{{ lesson.video_url if lesson and lesson.video_url and lesson.video_url not in ('None', 'null', '') else 'https://www.w3schools.com/html/mov_bbb.mp4' }}">
         </div>
         <div class="form-group">
           <label class="form-label">Duration (minutes)</label>
@@ -53,7 +53,7 @@
 
       <div class="form-group">
         <label class="form-label">Or paste Document URL (optional)</label>
-        <input type="text" name="document_url" class="form-control" placeholder="https://example.com/lecture-notes.pdf" value="{{ lesson.document_url if lesson else '' }}">
+        <input type="text" name="document_url" class="form-control" placeholder="https://example.com/lecture-notes.pdf" value="{{ lesson.document_url if lesson and lesson.document_url and lesson.document_url not in ('None', 'null', '') else '' }}">
         <small style="color: var(--text-muted);">Only used if no file uploaded above.</small>
       </div>
 
@@ -61,7 +61,7 @@
 
       <div class="form-group">
         <label class="form-label">Lecture Notes</label>
-        <textarea name="text_content" id="text-content-area" rows="12" style="width: 100%; font-family: monospace; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">{{ lesson.text_content if lesson else '' }}</textarea>
+        <textarea name="text_content" id="text-content-area" rows="12" style="width: 100%; font-family: monospace; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">{{ lesson.text_content if lesson and lesson.text_content and lesson.text_content not in ('None', 'null') else '' }}</textarea>
         <small style="color: var(--text-muted);">You can type HTML directly above, or use the rich editor below.</small>
       </div>
 

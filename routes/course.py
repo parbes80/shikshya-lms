@@ -353,6 +353,11 @@ def add_lesson(module_id):
     content_type = request.form.get('content_type')
     video_url = request.form.get('video_url', '')
     document_url = request.form.get('document_url', '')
+    # sanitize — Jinja can render None as "None" string
+    if document_url and document_url.strip().lower() in ('none', 'null', ''):
+        document_url = ''
+    if video_url and video_url.strip().lower() in ('none', 'null', ''):
+        video_url = ''
     duration = int(request.form.get('duration', 10))
     text_content = request.form.get('text_content', '')
 
@@ -401,6 +406,11 @@ def edit_lesson(lesson_id):
     lesson.content_type = request.form.get('content_type')
     lesson.video_url = request.form.get('video_url', '')
     lesson.document_url = request.form.get('document_url', '')
+    # sanitize — Jinja can render None as "None" string
+    if lesson.document_url and lesson.document_url.strip().lower() in ('none', 'null', ''):
+        lesson.document_url = ''
+    if lesson.video_url and lesson.video_url.strip().lower() in ('none', 'null', ''):
+        lesson.video_url = ''
     lesson.duration_minutes = int(request.form.get('duration', 10))
     lesson.text_content = request.form.get('text_content', '')
 
