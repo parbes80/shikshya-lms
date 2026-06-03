@@ -71,8 +71,8 @@
               <div class="choices-list">
                 {% for c in q.choices %}
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                  <input type="radio" name="correct_choice_{{ loop.parent.loop.index0 }}" value="{{ loop.index0 }}" {% if c.is_correct %}checked{% endif %} style="accent-color: var(--secondary);">
-                  <input type="text" name="choice_text_{{ loop.parent.loop.index0 }}[]" class="form-control" placeholder="Choice {{ loop.index + 1 }}" value="{{ c.text }}" {% if loop.index0 < 2 %}required{% endif %} style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                  <input type="radio" name="correct_choice_{{ loop.parent.index0 }}" value="{{ loop.index0 }}" {% if c.is_correct %}checked{% endif %} style="accent-color: var(--secondary);">
+                  <input type="text" name="choice_text_{{ loop.parent.index0 }}[]" class="form-control" placeholder="Choice {{ loop.index + 1 }}" value="{{ c.text }}" {% if loop.index0 < 2 %}required{% endif %} style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
                 </div>
                 {% endfor %}
               </div>
