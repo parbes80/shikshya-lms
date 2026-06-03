@@ -46,7 +46,138 @@
   <!-- Admin control split grid -->
   <div class="content-grid">
     
-    <!-- Left column: Course management and payments -->
+    <!-- Left column: Users, teachers, and course approvals -->
+    <div>
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-users" style="color: var(--primary);"></i> Registered Users</h2>
+      <div class="card" style="margin-bottom: 2rem;">
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
+                  <th style="padding: 0.75rem;">User</th>
+                  <th style="padding: 0.75rem;">Role</th>
+                  <th style="padding: 0.75rem;">Streak</th>
+                  <th style="padding: 0.75rem;">Approved?</th>
+                  <th style="padding: 0.75rem;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for usr in users %}
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.75rem;">
+                      <strong>{{ usr.username }}</strong><br>
+                      <small style="color: var(--text-muted);">{{ usr.email }}</small>
+                    </td>
+                    <td style="padding: 0.75rem;"><span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem;">{{ usr.role.name }}</span></td>
+                    <td style="padding: 0.75rem;">🔥 {{ usr.streak_count }} days</td>
+                    <td style="padding: 0.75rem;">
+                      {% if usr.role.name == 'Teacher' %}
+                        {% if usr.is_approved %}
+                          <span style="color: var(--secondary); font-weight: bold;"><i class="fas fa-check-circle"></i> Yes</span>
+                        {% else %}
+                          <span style="color: var(--accent); font-weight: bold;"><i class="fas fa-exclamation-circle"></i> Waiting</span>
+                        {% endif %}
+                      {% else %}
+                        <span style="color: var(--text-muted); font-size: 0.8rem;">Auto-Active</span>
+                      {% endif %}
+                    </td>
+                    <td style="padding: 0.75rem;">
+                      {% if usr.role.name != 'Admin' %}
+                      <form action="{{ url_for('dashboard.delete_user', user_id=usr.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete user &quot;{{ usr.username|escape }}&quot;? This cannot be undone.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn" style="padding: 0.3rem 0.5rem; font-size: 0.7rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i> Delete</button>
+                      </form>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if users_pagination.pages > 1 %}
+          <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            {% if users_pagination.has_prev %}
+              <a href="{{ url_for('dashboard.admin', page=users_pagination.prev_num) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-chevron-left"></i></a>
+            {% endif %}
+            {% for p in range(1, users_pagination.pages + 1) %}
+              <a href="{{ url_for('dashboard.admin', page=p) }}" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: var(--radius-sm); text-decoration: none; {% if p == users_pagination.page %}background: var(--primary); color: white;{% else %}color: var(--text-main); border: 1px solid var(--border-color);{% endif %}">{{ p }}</a>
+            {% endfor %}
+            {% if users_pagination.has_next %}
+              <a href="{{ url_for('dashboard.admin', page=users_pagination.next_num) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-chevron-right"></i></a>
+            {% endif %}
+            <small style="color: var(--text-muted); margin-left: 0.5rem;">{{ users_pagination.total }} total</small>
+          </div>
+        {% endif %}
+      </div>
+
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-user-clock" style="color: var(--accent);"></i> Pending Teacher Approvals</h2>
+      <div class="card" style="margin-bottom: 2rem;">
+        {% if stats.unapproved_teachers %}
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
+                  <th style="padding: 0.75rem;">Username</th>
+                  <th style="padding: 0.75rem;">Email Address</th>
+                  <th style="padding: 0.75rem;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for teach in stats.unapproved_teachers %}
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.75rem;"><strong>{{ teach.username }}</strong></td>
+                    <td style="padding: 0.75rem;">{{ teach.email }}</td>
+                    <td style="padding: 0.75rem;">
+                      <a href="{{ url_for('dashboard.approve_teacher', user_id=teach.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve Teacher</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All instructors are verified and approved!</p>
+        {% endif %}
+      </div>
+
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-video" style="color: var(--primary);"></i> Pending Course Approvals</h2>
+      <div class="card" style="margin-bottom: 2rem;">
+        {% if unpublished_courses %}
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
+                  <th style="padding: 0.75rem;">Course</th>
+                  <th style="padding: 0.75rem;">Teacher</th>
+                  <th style="padding: 0.75rem;">Price</th>
+                  <th style="padding: 0.75rem;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in unpublished_courses %}
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.75rem;"><strong>{{ c.title }}</strong></td>
+                    <td style="padding: 0.75rem;">{{ c.teacher.username }}</td>
+                    <td style="padding: 0.75rem;">{% if c.price == 0 %}Free{% else %}Rs. {{ "{:,.0f}".format(c.price) }}{% endif %}</td>
+                    <td style="padding: 0.75rem; display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                      <a href="{{ url_for('dashboard.approve_course', course_id=c.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve</a>
+                      <form action="{{ url_for('course.delete_course', course_id=c.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete course &quot;{{ c.title|escape }}&quot;?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i></button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All courses are published and visible to students.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right column: Courses, Payments, Membership, Labs, Categories -->
     <div>
 
       <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-video" style="color: var(--primary);"></i> All Courses</h2>
@@ -133,138 +264,6 @@
         {% endif %}
       </div>
 
-    </div>
-
-    <!-- Right column: Users, approvals, Billing, Plans, and Categories -->
-    <div>
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-user-clock" style="color: var(--accent);"></i> Pending Teacher Approvals</h2>
-      <div class="card" style="margin-bottom: 2rem;">
-        {% if stats.unapproved_teachers %}
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
-              <thead>
-                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
-                  <th style="padding: 0.75rem;">Username</th>
-                  <th style="padding: 0.75rem;">Email Address</th>
-                  <th style="padding: 0.75rem;">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for teach in stats.unapproved_teachers %}
-                  <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 0.75rem;"><strong>{{ teach.username }}</strong></td>
-                    <td style="padding: 0.75rem;">{{ teach.email }}</td>
-                    <td style="padding: 0.75rem;">
-                      <a href="{{ url_for('dashboard.approve_teacher', user_id=teach.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve Teacher</a>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
-          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All instructors are verified and approved!</p>
-        {% endif %}
-      </div>
-
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-video" style="color: var(--primary);"></i> Pending Course Approvals</h2>
-      <div class="card" style="margin-bottom: 2rem;">
-        {% if unpublished_courses %}
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
-              <thead>
-                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
-                  <th style="padding: 0.75rem;">Course</th>
-                  <th style="padding: 0.75rem;">Teacher</th>
-                  <th style="padding: 0.75rem;">Price</th>
-                  <th style="padding: 0.75rem;">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for c in unpublished_courses %}
-                  <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 0.75rem;"><strong>{{ c.title }}</strong></td>
-                    <td style="padding: 0.75rem;">{{ c.teacher.username }}</td>
-                    <td style="padding: 0.75rem;">{% if c.price == 0 %}Free{% else %}Rs. {{ "{:,.0f}".format(c.price) }}{% endif %}</td>
-                    <td style="padding: 0.75rem; display: flex; gap: 0.25rem; flex-wrap: wrap;">
-                      <a href="{{ url_for('dashboard.approve_course', course_id=c.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve</a>
-                      <form action="{{ url_for('course.delete_course', course_id=c.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete course &quot;{{ c.title|escape }}&quot;?')">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i></button>
-                      </form>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
-          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All courses are published and visible to students.</p>
-        {% endif %}
-      </div>
-
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-users" style="color: var(--primary);"></i> Registered Users</h2>
-      <div class="card" style="margin-bottom: 2rem;">
-        <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-              <thead>
-                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
-                  <th style="padding: 0.75rem;">User</th>
-                  <th style="padding: 0.75rem;">Role</th>
-                  <th style="padding: 0.75rem;">Streak</th>
-                  <th style="padding: 0.75rem;">Approved?</th>
-                  <th style="padding: 0.75rem;">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for usr in users %}
-                  <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 0.75rem;">
-                      <strong>{{ usr.username }}</strong><br>
-                      <small style="color: var(--text-muted);">{{ usr.email }}</small>
-                    </td>
-                    <td style="padding: 0.75rem;"><span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem;">{{ usr.role.name }}</span></td>
-                    <td style="padding: 0.75rem;">🔥 {{ usr.streak_count }} days</td>
-                    <td style="padding: 0.75rem;">
-                      {% if usr.role.name == 'Teacher' %}
-                        {% if usr.is_approved %}
-                          <span style="color: var(--secondary); font-weight: bold;"><i class="fas fa-check-circle"></i> Yes</span>
-                        {% else %}
-                          <span style="color: var(--accent); font-weight: bold;"><i class="fas fa-exclamation-circle"></i> Waiting</span>
-                        {% endif %}
-                      {% else %}
-                        <span style="color: var(--text-muted); font-size: 0.8rem;">Auto-Active</span>
-                      {% endif %}
-                    </td>
-                    <td style="padding: 0.75rem;">
-                      {% if usr.role.name != 'Admin' %}
-                      <form action="{{ url_for('dashboard.delete_user', user_id=usr.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete user &quot;{{ usr.username|escape }}&quot;? This cannot be undone.')">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn" style="padding: 0.3rem 0.5rem; font-size: 0.7rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i> Delete</button>
-                      </form>
-                      {% endif %}
-                    </td>
-                  </tr>
-                {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% if users_pagination.pages > 1 %}
-          <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-            {% if users_pagination.has_prev %}
-              <a href="{{ url_for('dashboard.admin', page=users_pagination.prev_num) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-chevron-left"></i></a>
-            {% endif %}
-            {% for p in range(1, users_pagination.pages + 1) %}
-              <a href="{{ url_for('dashboard.admin', page=p) }}" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: var(--radius-sm); text-decoration: none; {% if p == users_pagination.page %}background: var(--primary); color: white;{% else %}color: var(--text-main); border: 1px solid var(--border-color);{% endif %}">{{ p }}</a>
-            {% endfor %}
-            {% if users_pagination.has_next %}
-              <a href="{{ url_for('dashboard.admin', page=users_pagination.next_num) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-chevron-right"></i></a>
-            {% endif %}
-            <small style="color: var(--text-muted); margin-left: 0.5rem;">{{ users_pagination.total }} total</small>
-          </div>
-        {% endif %}
-      </div>
-
       <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-crown" style="color: var(--accent);"></i> Membership & Billing</h2>
       <div class="card" style="margin-bottom: 2rem;">
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
@@ -293,7 +292,6 @@
           {% endfor %}
         </ul>
 
-        <!-- Setup Category Mock Form -->
         <form style="background: var(--bg-app); padding: 1rem; border-radius: var(--radius-md);" onsubmit="event.preventDefault(); alert('Category configuration saved! (Seed or dynamic db implementation completed.)')">
           <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem;">Add New Category</h4>
           <div class="form-group" style="margin-bottom: 0.75rem;">
