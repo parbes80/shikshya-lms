@@ -3,39 +3,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const lessonId = video ? video.getAttribute('data-lesson-id') : null;
   const initialProgress = video ? parseFloat(video.getAttribute('data-start-seconds') || 0) : 0;
 
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetPane = btn.getAttribute('data-tab');
-
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-
-      btn.classList.add('active');
-      const pane = document.getElementById(targetPane);
-      if (pane) pane.classList.add('active');
-
-      // sync bottom nav
-      document.querySelectorAll('.player-bottom-nav a').forEach(n => n.classList.remove('active'));
-      const navLink = document.querySelector(`.player-bottom-nav a[data-tab="${targetPane}"]`);
-      if (navLink) navLink.classList.add('active');
-    });
-  });
-
-  // bottom nav click — activate tab + scroll to tabs area
+  // bottom nav click — show/hide tab pane
   document.querySelectorAll('.player-bottom-nav a').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const targetPane = link.getAttribute('data-tab');
 
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.player-bottom-nav a').forEach(n => n.classList.remove('active'));
+      // handle doc download specially
+      if (targetPane === 'lesson-doc') {
+        const docUrl = link.getAttribute('href');
+        if (docUrl && docUrl !== '#') {
+          window.open(docUrl, '_blank');
+        }
+        return;
+      }
 
-      const tabBtn = document.querySelector(`.tab-btn[data-tab="${targetPane}"]`);
-      if (tabBtn) tabBtn.classList.add('active');
-      link.classList.add('active');
       const pane = document.getElementById(targetPane);
-      if (pane) pane.classList.add('active');
+      if (!pane) return;
+
+      // toggle: if already active, hide it
+      if (link.classList.contains('active')) {
+        link.classList.remove('active');
+        pane.classList.remove('active');
+        return;
+      }
+
+      document.querySelectorAll('.player-bottom-nav a').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+      link.classList.add('active');
+      pane.classList.add('active');
 
       // scroll to tab area
       const tabsEl = document.querySelector('.lesson-details-section');

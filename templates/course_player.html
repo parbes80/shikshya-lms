@@ -134,28 +134,8 @@
 
     <div class="lesson-details-section">
 
-      <div class="tabs-header">
-        {% if active_lesson and is_vid %}
-          <button class="tab-btn active" data-tab="lesson-content">Overview</button>
-        {% endif %}
-        {% if not active_lesson or not is_vid %}
-        <button class="tab-btn active" data-tab="lesson-quizzes">Quizzes & Exams</button>
-        {% else %}
-        <button class="tab-btn" data-tab="lesson-quizzes">Quizzes & Exams</button>
-        {% endif %}
-        <button class="tab-btn" data-tab="lesson-assignments">Assignments</button>
-        <button class="tab-btn" data-tab="lesson-evaluations">Evaluations</button>
-        <button class="tab-btn" data-tab="lesson-discussions">Q&A Forums</button>
-        <button class="tab-btn" data-tab="lesson-notes">My Notes</button>
-        <button class="tab-btn" data-tab="lesson-live">Live Classes</button>
-        {% if active_lesson and (active_lesson.document_url|asset_url) %}
-        <button class="tab-btn" data-tab="lesson-doc"><i class="fas fa-download"></i> Download Notes</button>
-        {% endif %}
-        <button class="tab-btn" data-tab="lesson-downloads">Certificates</button>
-      </div>
-
       {% if active_lesson and is_vid %}
-      <div class="tab-pane active" id="lesson-content">
+      <div class="tab-pane" id="lesson-content">
         <div class="card" style="padding: 1.5rem; font-size: 0.95rem; line-height: 1.6;">
           <h3>Lecture Notes</h3>
           <div style="margin-top: 0.75rem;">
@@ -193,7 +173,7 @@
       </div>
       {% endif %}
 
-      <div class="tab-pane {% if not active_lesson or not is_vid %}active{% endif %}" id="lesson-quizzes">
+      <div class="tab-pane" id="lesson-quizzes">
         <h3>Syllabus Examinations</h3>
         <div class="list-container" style="margin-top: 1rem;">
           {% if quizzes %}
@@ -445,13 +425,15 @@
 </div>
 
 <nav class="player-bottom-nav">
-  <a href="#" data-tab="lesson-content" class="active"><i class="fas fa-book-open"></i> Notes</a>
   <a href="#" data-tab="lesson-quizzes"><i class="fas fa-pencil-alt"></i> Quizzes</a>
+  <a href="#" data-tab="lesson-assignments"><i class="fas fa-file-alt"></i> Assign</a>
   <a href="#" data-tab="lesson-evaluations"><i class="fas fa-tasks"></i> Eval</a>
-  {% if active_lesson and (active_lesson.document_url|asset_url) %}
-  <a href="#" data-tab="lesson-doc"><i class="fas fa-download"></i> Doc</a>
-  {% endif %}
   <a href="#" data-tab="lesson-discussions"><i class="fas fa-comments"></i> QA</a>
+  <a href="#" data-tab="lesson-notes"><i class="fas fa-sticky-note"></i> Notes</a>
+  <a href="#" data-tab="lesson-live"><i class="fas fa-video"></i> Live</a>
+  {% if active_lesson and (active_lesson.document_url|asset_url) %}
+  <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" data-tab="lesson-doc"><i class="fas fa-download"></i> Doc</a>
+  {% endif %}
   <a href="#" data-tab="lesson-downloads"><i class="fas fa-certificate"></i> Cert</a>
 </nav>
 {% endblock %}
