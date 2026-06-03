@@ -72,22 +72,24 @@
             <div style="margin-bottom: 1.5rem;">
               <h4 style="font-size: 1rem; margin-bottom: 0.75rem;">Syllabus Chapters</h4>
               {% if course.modules %}
-                <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div class="module-list">
                   {% for mod in course.modules %}
-                    <li style="background: var(--bg-app); border: 1px solid var(--border-color); padding: 0.75rem 1rem; border-radius: var(--radius-md);">
-                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <strong>{{ mod.title }}</strong>
+                    <div class="module-item">
+                      <div class="module-header">
+                        <span class="module-title">{{ mod.title }}</span>
                         <a href="{{ url_for('course.add_lesson', module_id=mod.id) }}" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none;"><i class="fas fa-plus"></i> Add Lesson</a>
                       </div>
                       
-                      <!-- Lessons list inside module -->
                       {% if mod.lessons %}
-                        <ul style="list-style: none; padding-left: 1.5rem; display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.5rem; border-left: 2px solid var(--border-color);">
+                        <ul class="lesson-list">
                           {% for les in mod.lessons %}
-                             <li style="font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.25rem;">
-                               <span><i class="fas fa-video"></i> {{ les.title }} ({{ les.duration_minutes }} mins)</span>
-                               <span style="display: flex; align-items: center; gap: 0.5rem;">
+                             <li class="lesson-item">
+                               <span class="lesson-meta">
+                                 <i class="fas fa-video" style="width: 1rem; text-align: center;"></i>
+                                 {{ les.title }} ({{ les.duration_minutes }} mins)
                                  <span style="color: var(--text-muted); font-size: 0.75rem;">Order: {{ les.sort_order }}</span>
+                               </span>
+                               <span class="lesson-actions">
                                  <a href="{{ url_for('course.edit_lesson', lesson_id=les.id) }}" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;"><i class="fas fa-edit"></i></a>
                                  <form action="{{ url_for('course.delete_lesson', lesson_id=les.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this lesson?');">
                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -100,9 +102,9 @@
                       {% else %}
                         <small style="color: var(--text-muted); padding-left: 1.5rem; display: block;">No lessons in this module yet.</small>
                       {% endif %}
-                    </li>
+                    </div>
                   {% endfor %}
-                </ul>
+                </div>
               {% else %}
                 <p style="color: var(--text-muted); font-size: 0.9rem;">No modules added yet.</p>
               {% endif %}
@@ -116,34 +118,24 @@
             </form>
 
             <!-- Quiz & Assignment management -->
-            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-              <a href="{{ url_for('course.create_quiz', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; min-width: 120px; justify-content: center;">
-                <i class="fas fa-question-circle"></i> Add Quiz
-              </a>
-              <a href="{{ url_for('course.create_assignment', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; min-width: 120px; justify-content: center;">
-                <i class="fas fa-tasks"></i> Add Assignment
-              </a>
-              <a href="{{ url_for('course.create_live_class', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; min-width: 120px; justify-content: center; color: #ea4335; border-color: #ea4335;">
-                <i class="fab fa-google"></i> Live Class
-              </a>
-              <a href="{{ url_for('course.attendance', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; min-width: 120px; justify-content: center; color: #10b981; border-color: #10b981;">
-                <i class="fas fa-clipboard-check"></i> Attendance
-              </a>
-              <a href="{{ url_for('eval.index', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; flex: 1; min-width: 120px; justify-content: center; color: #8b5cf6; border-color: #8b5cf6;">
-                <i class="fas fa-clipboard-check"></i> Evaluations
-              </a>
+            <div class="course-action-bar">
+              <a href="{{ url_for('course.create_quiz', course_id=course.id) }}" class="btn btn-outline"><i class="fas fa-question-circle"></i> Add Quiz</a>
+              <a href="{{ url_for('course.create_assignment', course_id=course.id) }}" class="btn btn-outline"><i class="fas fa-tasks"></i> Add Assignment</a>
+              <a href="{{ url_for('course.create_live_class', course_id=course.id) }}" class="btn btn-outline" style="color: #ea4335; border-color: #ea4335;"><i class="fab fa-google"></i> Live Class</a>
+              <a href="{{ url_for('course.attendance', course_id=course.id) }}" class="btn btn-outline" style="color: #10b981; border-color: #10b981;"><i class="fas fa-clipboard-check"></i> Attendance</a>
+              <a href="{{ url_for('eval.index', course_id=course.id) }}" class="btn btn-outline" style="color: #8b5cf6; border-color: #8b5cf6;"><i class="fas fa-clipboard-check"></i> Evaluations</a>
             </div>
 
             <!-- Existing quizzes -->
             {% if course.quizzes %}
-            <div style="margin-top: 0.75rem;">
-              <small style="color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Quizzes</small>
-              <ul style="list-style: none; margin-top: 0.25rem;">
+            <div style="margin-top: 1rem;">
+              <div class="teacher-section-header">Quizzes</div>
+              <ul class="content-list">
                 {% for q in course.quizzes %}
-                <li style="font-size: 0.85rem; color: var(--text-muted); padding: 0.25rem 0; display: flex; justify-content: space-between; align-items: center;">
+                <li class="content-item">
                   <span><i class="fas fa-pencil-alt" style="color: var(--accent);"></i> {{ q.title }} ({{ q.questions|length }} questions, {{ q.time_limit_minutes }}min)</span>
-                  <span style="display: flex; gap: 0.5rem;">
-                    <a href="{{ url_for('course.edit_quiz', course_id=course.id, quiz_id=q.id) }}" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;"><i class="fas fa-edit"></i> Edit</a>
+                  <span class="lesson-actions">
+                    <a href="{{ url_for('course.edit_quiz', course_id=course.id, quiz_id=q.id) }}" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;"><i class="fas fa-edit"></i></a>
                     <form action="{{ url_for('course.delete_quiz', course_id=course.id, quiz_id=q.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this quiz?');">
                       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                       <button type="submit" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem; color: #ef4444; border-color: #ef4444;"><i class="fas fa-trash"></i></button>
@@ -157,12 +149,12 @@
 
             <!-- Existing assignments -->
             {% if course.assignments %}
-            <div style="margin-top: 0.5rem;">
-              <small style="color: var(--text-muted); font-weight: bold; text-transform: uppercase;">Assignments</small>
-              <ul style="list-style: none; margin-top: 0.25rem;">
+            <div style="margin-top: 0.75rem;">
+              <div class="teacher-section-header">Assignments</div>
+              <ul class="content-list">
                 {% for a in course.assignments %}
-                <li style="font-size: 0.85rem; color: var(--text-muted); padding: 0.25rem 0;">
-                  <i class="fas fa-file-alt" style="color: var(--secondary);"></i> {{ a.title }} (Max {{ a.max_marks }} pts)
+                <li class="content-item">
+                  <span><i class="fas fa-file-alt" style="color: var(--secondary);"></i> {{ a.title }} (Max {{ a.max_marks }} pts)</span>
                 </li>
                 {% endfor %}
               </ul>
