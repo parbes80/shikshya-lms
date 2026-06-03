@@ -70,6 +70,14 @@ def teacher():
         Submission.is_graded == False
     ).all() if course_ids else []
 
+    enrollments_by_course = {}
+    for cid in course_ids:
+        enrollments_by_course[cid] = Enrollment.query.filter_by(course_id=cid).all()
+
+    quiz_attempts = QuizAttempt.query.join(Quiz).filter(
+        Quiz.course_id.in_(course_ids)
+    ).order_by(QuizAttempt.started_at.desc()).all() if course_ids else []
+
     categories = Category.query.all()
 
     return render_template(
@@ -79,6 +87,8 @@ def teacher():
         total_reviews=total_reviews,
         avg_rating=avg_rating,
         pending_submissions=pending_submissions,
+        enrollments_by_course=enrollments_by_course,
+        quiz_attempts=quiz_attempts,
         categories=categories
     )
 
