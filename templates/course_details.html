@@ -20,6 +20,36 @@
           </div>
           <div><i class="fas fa-user-tie"></i> Teacher: <strong>{{ course.teacher.username }}</strong></div>
         </div>
+
+        <!-- Mobile: enroll button shown inline, hidden on desktop -->
+        <div class="mobile-enroll-inline">
+          <div style="margin-bottom: 0.5rem;">
+            <strong style="font-size: 1.5rem;">{% if course.price == 0.0 %}Free{% else %}Rs. {{ "{:,.0f}".format(course.price) }}{% endif %}</strong>
+          </div>
+          {% if is_enrolled %}
+            <div style="background: rgba(16, 185, 129, 0.15); color: var(--secondary); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-weight: bold; margin-bottom: 0.5rem; font-size: 0.85rem;">
+              <i class="fas fa-check-circle"></i> Enrolled ({{ enrollment.progress_percent }}% complete)
+            </div>
+            <a href="{{ url_for('course.player', slug=course.slug) }}" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.6rem;"><i class="fas fa-play"></i> Go to Course Player</a>
+          {% elif pending_payment %}
+            <div style="background: #fefce8; border: 1px solid #fde68a; padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); text-align: center; font-size: 0.8rem; margin-bottom: 0.5rem;">
+              <i class="fas fa-clock" style="color: #d97706;"></i> Payment Pending Authorization
+            </div>
+          {% else %}
+            {% if course.price == 0.0 %}
+              <form action="{{ url_for('course.enroll', slug=course.slug) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.6rem;">
+                  <i class="fas fa-user-plus"></i> Enroll & Start Now
+                </button>
+              </form>
+            {% else %}
+              <a href="{{ url_for('course.enroll', slug=course.slug) }}" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.6rem;">
+                <i class="fas fa-user-plus"></i> Buy & Enroll Now
+              </a>
+            {% endif %}
+          {% endif %}
+        </div>
       </div>
       
       <!-- Checkout purchase preview box -->
