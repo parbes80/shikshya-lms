@@ -52,7 +52,7 @@ def create_app():
     def render_markdown(text):
         if not text:
             return ''
-        return md_lib.markdown(text, extensions=['fenced_code', 'tables'])
+        return md_lib.markdown(text, extensions=['fenced_code', 'tables', 'nl2br'])
 
     from routes.auth import auth_bp
     from routes.main import main_bp
