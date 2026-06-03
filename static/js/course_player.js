@@ -72,13 +72,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const markBtn = document.getElementById('mark-complete-btn');
   if (markBtn) {
-    const lessonId = markBtn.getAttribute('data-lesson-id');
+    const btnLessonId = markBtn.getAttribute('data-lesson-id');
     markBtn.addEventListener('click', () => {
       csrfFetch('/api/progress/video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          lesson_id: parseInt(lessonId),
+          lesson_id: parseInt(btnLessonId),
           seconds: 0,
           is_completed: true
         })
@@ -93,6 +93,11 @@ document.addEventListener('DOMContentLoaded', () => {
           markBtn.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
           markBtn.className = 'btn btn-sm btn-secondary';
           showToast('Lesson marked as completed!');
+          if (data.progress_percent >= 100.0) {
+            showToast('Congratulations! Course completed! \U0001f393');
+          }
+        } else {
+          showToast(data.error || 'Failed to mark as complete.');
         }
       })
       .catch(err => console.error('Error marking lesson complete:', err));
