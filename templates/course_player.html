@@ -42,7 +42,9 @@
   <main class="player-main">
 
     {% if active_lesson %}
-      {% if active_lesson.content_type == 'video' and active_lesson.video_url %}
+    {% set is_vid = active_lesson.content_type == 'video' and active_lesson.video_url %}
+    {% set doc_url = active_lesson.document_url|asset_url %}
+      {% if is_vid %}
       <section class="video-section">
           <video id="lesson-video" controls data-lesson-id="{{ active_lesson.id }}" data-start-seconds="{{ active_progress.video_progress_seconds if active_progress else 0 }}">
             <source src="{{ active_lesson.video_url }}" type="video/mp4">
@@ -51,7 +53,6 @@
       </section>
       {% else %}
         {% set stripped = active_lesson.text_content|striptags|trim if active_lesson.text_content else '' %}
-        {% set doc_url = active_lesson.document_url|asset_url %}
         {% if stripped %}
         <div class="notes-section">
           <div class="lesson-notes-content" style="color: var(--text-main); font-size: 0.95rem; line-height: 1.7; max-width: 100%;">
@@ -82,7 +83,6 @@
           <h4 style="font-size: 1.15rem; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ active_lesson.title }}</h4>
           <span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem; flex-shrink: 0;">{{ active_lesson.content_type|capitalize }}</span>
         </div>
-        {% set is_vid = active_lesson.content_type == 'video' and active_lesson.video_url %}
         {% if is_vid %}
         <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); flex-shrink: 0;">
           <label for="speed-btn"><i class="fas fa-cog"></i> Playback Speed:</label>

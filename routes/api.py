@@ -7,8 +7,8 @@ from werkzeug.utils import secure_filename
 from flask import Blueprint, jsonify, request, abort, render_template, redirect, url_for, flash, send_file, current_app
 from flask_login import login_required, current_user
 from database import db
-from models.learning import Enrollment, LessonProgress, Quiz, QuizAttempt, Assignment, Submission, Question, Choice, Lesson
-from models.course import Course, Review
+from models.learning import Enrollment, LessonProgress, Quiz, QuizAttempt, Assignment, Submission, Question, Choice
+from models.course import Course, Review, Lesson
 from models.interaction import Notification, DiscussionTopic, DiscussionReply, Certificate
 
 api_bp = Blueprint('api', __name__)
@@ -442,7 +442,6 @@ def download_lesson_doc(lesson_id):
     if not doc_url or doc_url.strip().lower() in ('none', 'null', ''):
         abort(404)
     if not doc_url.startswith(('http://', 'https://', '//')):
-        from flask import url_for
         doc_url = url_for('static', filename=doc_url)
     return redirect(doc_url)
 
