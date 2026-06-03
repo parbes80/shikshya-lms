@@ -1,5 +1,9 @@
 /* Shikshya LMS - Dashboard Grid Layouts & Visual Polish */
 
+.teacher-dashboard {
+  max-width: 100%;
+}
+
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -26,7 +30,7 @@
 /* Stats Overview Cards */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
@@ -35,7 +39,7 @@
   display: flex;
   align-items: center;
   gap: 1.25rem;
-  padding: 1.5rem;
+  padding: 1.5rem 2rem;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -83,18 +87,9 @@
   font-weight: 550;
 }
 
-/* Two-column Content Grids */
+/* Content Grid — full-width single column */
 .content-grid {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
-@media (max-width: 992px) {
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
+  display: block;
 }
 
 /* Dashboard List Rows */
@@ -220,6 +215,58 @@
 }
 
 /* Teacher Dashboard - Course Management Cards */
+.course-card {
+  margin-bottom: 2rem;
+  padding: 2rem 2.5rem !important;
+  border-radius: var(--radius-lg);
+}
+
+.course-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1.25rem;
+}
+
+.course-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.course-title-group h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.course-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.course-badge {
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.course-badge.published {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--secondary);
+}
+
+.course-badge.pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent);
+}
+
 .teacher-section-header {
   font-size: 0.8rem;
   font-weight: 700;
@@ -247,6 +294,7 @@
 
 .module-item:hover {
   border-color: var(--primary-light);
+  box-shadow: var(--shadow);
 }
 
 .module-header {
@@ -258,7 +306,7 @@
 
 .module-title {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--text-main);
 }
 
@@ -280,7 +328,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 0.25rem;
-  padding: 0.4rem 0.5rem;
+  padding: 0.45rem 0.6rem;
   border-radius: var(--radius-sm);
   transition: var(--transition);
 }
@@ -305,17 +353,18 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
   border-top: 1px solid var(--border-color);
 }
 
 .course-action-bar .btn {
   flex: 1;
-  min-width: 120px;
+  min-width: 130px;
   justify-content: center;
-  padding: 0.5rem 0.8rem;
-  font-size: 0.8rem;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .content-list {
@@ -329,7 +378,7 @@
 .content-item {
   font-size: 0.85rem;
   color: var(--text-muted);
-  padding: 0.5rem 0.6rem;
+  padding: 0.55rem 0.75rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -346,7 +395,7 @@
   text-align: center;
 }
 
-/* Collapsible Dashboard Panels (replaces right column) */
+/* Collapsible Dashboard Panels */
 .dashboard-panels {
   display: flex;
   flex-direction: column;
@@ -366,11 +415,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 1.1rem 1.5rem;
   cursor: pointer;
   user-select: none;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.05rem;
   color: var(--text-main);
   background: var(--bg-app);
   transition: var(--transition);

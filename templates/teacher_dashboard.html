@@ -47,24 +47,24 @@
       
       {% if courses %}
         {% for course in courses %}
-          <div class="card" style="margin-bottom: 1.5rem; padding: 2rem 2.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+          <div class="card course-card">
+            <div class="course-card-header">
               <div>
-                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                  <h3 style="font-size: 1.3rem; font-weight: bold;">{{ course.title }}</h3>
+                <div class="course-title-group">
+                  <h3>{{ course.title }}</h3>
                   {% if course.is_published %}
-                    <span class="status-badge" style="background: rgba(16, 185, 129, 0.15); color: var(--secondary); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: bold;"><i class="fas fa-check-circle"></i> Published</span>
+                    <span class="course-badge published"><i class="fas fa-check-circle"></i> Published</span>
                   {% else %}
-                    <span class="status-badge" style="background: rgba(245, 158, 11, 0.15); color: var(--accent); padding: 0.2rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.7rem; font-weight: bold;"><i class="fas fa-clock"></i> Pending Approval</span>
+                    <span class="course-badge pending"><i class="fas fa-clock"></i> Pending Approval</span>
                   {% endif %}
-                  <a href="{{ url_for('course.edit_course', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-edit"></i> Edit</a>
+                  <a href="{{ url_for('course.edit_course', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;"><i class="fas fa-edit"></i> Edit</a>
                 </div>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">Category: {{ course.category.name }} | Level: {{ course.difficulty_level }} | Price: {% if course.price == 0.0 %}Free{% else %}Rs. {{ "{:,.0f}".format(course.price) }}{% endif %}</p>
+                <p class="course-meta">Category: {{ course.category.name }} | Level: {{ course.difficulty_level }} | Price: {% if course.price == 0.0 %}Free{% else %}Rs. {{ "{:,.0f}".format(course.price) }}{% endif %}</p>
               </div>
               {% if course.is_published %}
-                <span class="status-badge" style="background: rgba(16, 185, 129, 0.15); color: var(--secondary); padding: 0.3rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: bold;">Published</span>
+                <span class="course-badge published" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">Published</span>
               {% else %}
-                <span class="status-badge" style="background: rgba(245, 158, 11, 0.15); color: var(--accent); padding: 0.3rem 0.6rem; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: bold;">Pending</span>
+                <span class="course-badge pending" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">Pending</span>
               {% endif %}
             </div>
 
