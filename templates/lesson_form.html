@@ -60,9 +60,14 @@
       <hr style="border-color: var(--border-color); margin: 1.5rem 0;">
 
       <div class="form-group">
-        <label class="form-label">Lecture Notes (Rich Text Editor)</label>
+        <label class="form-label">Lecture Notes</label>
+        <textarea name="text_content" id="text-content-area" rows="12" style="width: 100%; font-family: monospace; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">{{ lesson.text_content if lesson else '' }}</textarea>
+        <small style="color: var(--text-muted);">You can type HTML directly above, or use the rich editor below.</small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Rich Text Editor (optional)</label>
         <div id="lesson-editor" style="min-height: 300px; background: white; color: #1e293b; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></div>
-        <input type="hidden" name="text_content" id="text-content-hidden" value="{{ lesson.text_content if lesson else '' }}">
       </div>
 
       <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
@@ -78,12 +83,11 @@
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
   (function() {
-    var editor = null;
+    var textarea = document.getElementById('text-content-area');
     var editorEl = document.getElementById('lesson-editor');
-    var hiddenInput = document.getElementById('text-content-hidden');
 
     if (typeof Quill !== 'undefined') {
-      editor = new Quill(editorEl, {
+      var editor = new Quill(editorEl, {
         theme: 'snow',
         placeholder: 'Write your lecture notes here... Include real-world examples, code demos, and use cases.',
         modules: {
@@ -101,21 +105,21 @@
         }
       });
 
-      {% if lesson and lesson.text_content %}
-      editor.root.innerHTML = {{ lesson.text_content|tojson|safe }};
-      {% endif %}
-    }
-
-    document.querySelector('form').addEventListener('submit', function() {
-      if (editor) {
-        var html = editor.root.innerHTML;
-        if (html !== '<p><br></p>' && html !== '<p></p>' && html.trim() !== '') {
-          hiddenInput.value = html;
-        } else {
-          hiddenInput.value = '';
-        }
+      var initial = textarea.value.trim();
+      if (initial) {
+        editor.root.innerHTML = initial;
       }
-    });
+
+      editor.on('text-change', function() {
+        var html = editor.root.innerHTML;
+        textarea.value = (html === '<p><br></p>' || html === '<p></p>' || html.trim() === '') ? '' : html;
+      });
+
+      document.querySelector('form').addEventListener('submit', function() {
+        var html = editor.root.innerHTML;
+        textarea.value = (html === '<p><br></p>' || html === '<p></p>' || html.trim() === '') ? '' : html;
+      });
+    }
   })();
 </script>
 {% endblock %}
