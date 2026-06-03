@@ -242,16 +242,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 4000);
   }
 
-  // sub-topic smooth scroll — scroll player-main instead of body
+  // sub-topic smooth scroll
   document.querySelectorAll('.subtopic-list a').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const targetId = link.getAttribute('href').substring(1);
       const target = document.getElementById(targetId);
       if (target) {
-        const scrollContainer = document.querySelector('.player-main') || window;
-        const top = target.getBoundingClientRect().top + (scrollContainer.scrollTop || window.scrollY) - 80;
-        scrollContainer.scrollTo({ top, behavior: 'smooth' });
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // offset for fixed header
+        window.scrollBy(0, -80);
       }
     });
   });
