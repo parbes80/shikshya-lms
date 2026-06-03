@@ -346,6 +346,64 @@
   text-align: center;
 }
 
+/* Collapsible Dashboard Panels (replaces right column) */
+.dashboard-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.dpanel {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+}
+
+.dpanel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-main);
+  background: var(--bg-app);
+  transition: var(--transition);
+}
+
+.dpanel-header:hover {
+  background: var(--primary-light);
+}
+
+.dpanel-header .dpanel-chevron {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+
+.dpanel-open .dpanel-header .dpanel-chevron {
+  transform: rotate(180deg);
+}
+
+.dpanel-body {
+  padding: 0 1.5rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+  display: none;
+}
+
+.dpanel-open .dpanel-body {
+  display: block;
+}
+
+.dpanel-body .card {
+  margin-bottom: 0;
+}
+
 /* Sidebar Menu List Styling */
 .sidebar-menu {
   list-style: none;
