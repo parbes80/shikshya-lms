@@ -70,6 +70,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const markBtn = document.getElementById('mark-complete-btn');
+  if (markBtn) {
+    const lessonId = markBtn.getAttribute('data-lesson-id');
+    markBtn.addEventListener('click', () => {
+      csrfFetch('/api/progress/video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lesson_id: parseInt(lessonId),
+          seconds: 0,
+          is_completed: true
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const currentCheck = document.getElementById(`check-${lessonId}`);
+          if (currentCheck) {
+            currentCheck.className = 'fas fa-check-circle lesson-check-icon completed';
+          }
+          markBtn.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+          markBtn.className = 'btn btn-sm btn-secondary';
+          showToast('Lesson marked as completed!');
+        }
+      })
+      .catch(err => console.error('Error marking lesson complete:', err));
+    });
+  }
+
   const notesText = document.getElementById('lesson-notes-area');
   if (notesText && lessonId) {
     notesText.value = localStorage.getItem(`notes_${lessonId}`) || '';

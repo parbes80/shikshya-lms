@@ -312,6 +312,9 @@
   color: var(--text-muted);
   border-bottom: 3px solid transparent;
   transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .tab-btn:hover, .tab-btn.active {

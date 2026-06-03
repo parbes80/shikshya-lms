@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from flask import Blueprint, jsonify, request, abort, render_template, redirect, url_for, flash, send_file, current_app
 from flask_login import login_required, current_user
 from database import db
-from models.learning import Enrollment, LessonProgress, Quiz, QuizAttempt, Assignment, Submission, Question, Choice
+from models.learning import Enrollment, LessonProgress, Quiz, QuizAttempt, Assignment, Submission, Question, Choice, Lesson
 from models.course import Course, Review
 from models.interaction import Notification, DiscussionTopic, DiscussionReply, Certificate
 
@@ -432,6 +432,19 @@ def submit_assignment(assignment_id):
         'success': True,
         'message': 'Assignment submitted successfully!'
     })
+
+
+@api_bp.route('/api/lessons/<int:lesson_id>/download')
+@login_required
+def download_lesson_doc(lesson_id):
+    lesson = Lesson.query.get_or_404(lesson_id)
+    doc_url = lesson.document_url
+    if not doc_url or doc_url.strip().lower() in ('none', 'null', ''):
+        abort(404)
+    if not doc_url.startswith(('http://', 'https://', '//')):
+        from flask import url_for
+        doc_url = url_for('static', filename=doc_url)
+    return redirect(doc_url)
 
 
 @api_bp.route('/api/certificates/<unique_code>/qrcode')

@@ -51,6 +51,7 @@
       </section>
       {% else %}
         {% set stripped = active_lesson.text_content|striptags|trim if active_lesson.text_content else '' %}
+        {% set doc_url = active_lesson.document_url|asset_url %}
         {% if stripped %}
         <div class="notes-section">
           <div class="lesson-notes-content" style="color: var(--text-main); font-size: 0.95rem; line-height: 1.7; max-width: 100%;">
@@ -61,17 +62,13 @@
             {% endif %}
           </div>
         </div>
-        {% endif %}
-        {% set doc_url = active_lesson.document_url|asset_url %}
-        {% if doc_url %}
-        <div class="document-section" style="{% if stripped %}min-height: auto; margin-top: 1rem;{% endif %}">
-          <i class="fas fa-file-pdf" style="font-size: 3rem; color: #ef4444;"></i>
-          <h3>Downloadable Materials</h3>
-          <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Lecture notes, slides, and reference documents</p>
-          <a href="{{ doc_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> Download PDF / Document</a>
+        {% elif doc_url %}
+        <div class="document-section">
+          <i class="fas fa-file-pdf" style="font-size: 4rem; color: #ef4444;"></i>
+          <h3>Document / Notes Lecture</h3>
+          <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> Download Lecture Notes</a>
         </div>
-        {% endif %}
-        {% if not stripped and not doc_url %}
+        {% else %}
         <div class="document-section">
           <i class="fas fa-file-pdf" style="font-size: 4rem; color: #ef4444;"></i>
           <h3>Document / Notes Lecture</h3>
@@ -83,9 +80,10 @@
       <div style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
         <div style="display: flex; align-items: center; gap: 1rem; min-width: 0; flex: 1;">
           <h4 style="font-size: 1.15rem; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ active_lesson.title }}</h4>
-          <span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem; flex-shrink: 0;">Lecture</span>
+          <span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem; flex-shrink: 0;">{{ active_lesson.content_type|capitalize }}</span>
         </div>
-        {% if active_lesson.content_type == 'video' and active_lesson.video_url %}
+        {% set is_vid = active_lesson.content_type == 'video' and active_lesson.video_url %}
+        {% if is_vid %}
         <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); flex-shrink: 0;">
           <label for="speed-btn"><i class="fas fa-cog"></i> Playback Speed:</label>
           <select id="speed-btn" class="form-control" style="width: 80px; padding: 0.25rem; font-size: 0.8rem; border-radius: var(--radius-sm);">
@@ -95,6 +93,12 @@
             <option value="2.0">2.0x</option>
           </select>
         </div>
+        {% else %}
+        {% set prog = active_progress %}
+        <button id="mark-complete-btn" class="btn btn-sm {% if prog and prog.is_completed %}btn-secondary{% else %}btn-primary{% endif %}" data-lesson-id="{{ active_lesson.id }}" style="flex-shrink: 0;">
+          <i class="fas {% if prog and prog.is_completed %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
+          {% if prog and prog.is_completed %}Completed{% else %}Mark Complete{% endif %}
+        </button>
         {% endif %}
       </div>
     {% else %}
@@ -117,45 +121,56 @@
         <button class="tab-btn" data-tab="lesson-discussions">Q&A Forums</button>
         <button class="tab-btn" data-tab="lesson-notes">My Notes</button>
         <button class="tab-btn" data-tab="lesson-live">Live Classes</button>
+        {% if active_lesson and (active_lesson.document_url|asset_url) %}
+        <button class="tab-btn" data-tab="lesson-doc"><i class="fas fa-download"></i> Download Notes</button>
+        {% endif %}
         <button class="tab-btn" data-tab="lesson-downloads">Certificates</button>
       </div>
 
-      {% if active_lesson and active_lesson.content_type == 'video' and active_lesson.video_url %}
+      {% if active_lesson %}
       <div class="tab-pane active" id="lesson-content">
         <div class="card" style="padding: 2rem; font-size: 0.95rem; line-height: 1.6;">
-          <h3>Lecture Notes</h3>
-          <div style="margin-top: 1rem;">
-            {% set stripped = active_lesson.text_content|striptags|trim if active_lesson.text_content else '' %}
-            {% if stripped %}
-              <div class="lesson-notes-content">
-                {% if active_lesson.text_content|trim|list|first == '<' %}
-                  {{ active_lesson.text_content|safe }}
-                {% else %}
-                  {{ active_lesson.text_content|markdown|safe }}
-                {% endif %}
-              </div>
-            {% else %}
-              <p style="color: var(--text-muted);">No additional text notes for this lecture.</p>
+          {% if is_vid %}
+            <h3>Lecture Notes</h3>
+            <div style="margin-top: 1rem;">
+              {% set stripped = active_lesson.text_content|striptags|trim if active_lesson.text_content else '' %}
+              {% if stripped %}
+                <div class="lesson-notes-content">
+                  {% if active_lesson.text_content|trim|list|first == '<' %}
+                    {{ active_lesson.text_content|safe }}
+                  {% else %}
+                    {{ active_lesson.text_content|markdown|safe }}
+                  {% endif %}
+                </div>
+              {% else %}
+                <p style="color: var(--text-muted);">No additional text notes for this lecture.</p>
+              {% endif %}
+            </div>
+            {% if doc_url %}
+            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+              <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</a>
+            </div>
             {% endif %}
-          </div>
-          {% set video_doc_url = active_lesson.document_url|asset_url %}
-          {% if video_doc_url %}
-          <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-            <a href="{{ video_doc_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</a>
-          </div>
+          {% else %}
+            {% if doc_url %}
+            <p style="color: var(--text-muted); margin-bottom: 0.75rem;">Lecture notes are displayed above in the main content area.</p>
+            <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</a>
+            {% else %}
+            <p style="color: var(--text-muted);">Lecture notes are displayed above in the main content area.</p>
+            {% endif %}
           {% endif %}
         </div>
       </div>
-      {% elif active_lesson %}
-      <div class="tab-pane active" id="lesson-content">
-        <div class="card" style="padding: 2rem; font-size: 0.95rem; line-height: 1.6;">
-          {% set nonvid_doc_url = active_lesson.document_url|asset_url %}
-          {% if nonvid_doc_url %}
-          <p style="color: var(--text-muted); margin-bottom: 1rem;">Lecture notes are displayed above in the main content area.</p>
-          <a href="{{ nonvid_doc_url }}" target="_blank" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</a>
-          {% else %}
-          <p style="color: var(--text-muted);">Lecture notes are displayed above in the main content area.</p>
-          {% endif %}
+      {% endif %}
+
+      {% set tab_doc_url = active_lesson.document_url|asset_url if active_lesson else '' %}
+      {% if tab_doc_url %}
+      <div class="tab-pane" id="lesson-doc">
+        <div class="document-section" style="min-height: auto;">
+          <i class="fas fa-file-pdf" style="font-size: 4rem; color: #ef4444;"></i>
+          <h3>Downloadable Materials</h3>
+          <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Lecture notes, slides, and reference documents</p>
+          <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> Download PDF / Document</a>
         </div>
       </div>
       {% endif %}
