@@ -279,9 +279,56 @@ document.addEventListener('DOMContentLoaded', () => {
       const target = document.getElementById(targetId);
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // offset for fixed header
         window.scrollBy(0, -80);
       }
     });
+  });
+
+  // collapsible sections by heading
+  document.querySelectorAll('.lesson-notes-content').forEach(container => {
+    const headings = container.querySelectorAll('h1, h2, h3');
+    if (headings.length === 0) return;
+
+    const children = Array.from(container.childNodes);
+    container.innerHTML = '';
+
+    let currentBody = null;
+    let currentHeader = null;
+
+    function flushSection() {
+      if (currentHeader) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'csection';
+        wrapper.appendChild(currentHeader);
+        if (currentBody) wrapper.appendChild(currentBody);
+        container.appendChild(wrapper);
+      }
+    }
+
+    children.forEach(node => {
+      if (node.nodeType === 1 && /^H[123]$/.test(node.tagName)) {
+        flushSection();
+        const id = node.getAttribute('id');
+        currentHeader = document.createElement('div');
+        currentHeader.className = 'csection-header';
+        currentHeader.innerHTML = `<span>${node.innerHTML}</span><i class="fas fa-chevron-down"></i>`;
+        if (id) currentHeader.querySelector('span').id = id;
+        currentHeader.addEventListener('click', () => {
+          const body = currentHeader.nextElementSibling;
+          if (body && body.classList.contains('csection-body')) {
+            body.classList.toggle('csection-collapsed');
+            currentHeader.querySelector('i').classList.toggle('fa-chevron-down');
+            currentHeader.querySelector('i').classList.toggle('fa-chevron-right');
+          }
+        });
+        currentBody = document.createElement('div');
+        currentBody.className = 'csection-body';
+      } else if (currentBody) {
+        currentBody.appendChild(node.cloneNode(true));
+      } else {
+        container.appendChild(node.cloneNode(true));
+      }
+    });
+    flushSection();
   });
 });
