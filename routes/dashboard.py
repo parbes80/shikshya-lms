@@ -8,7 +8,8 @@ from models.course import Course, Category, Review
 from models.learning import Enrollment, Quiz, QuizAttempt, Submission, Assignment, LessonProgress, LiveClass
 from models.evaluation import Evaluation, EvaluationSubmission
 from models.interaction import (Certificate, Payment, Notification, MembershipPlan, UserSubscription,
-                                DiscussionTopic, DiscussionReply, Attendance)
+                                DiscussionTopic, DiscussionReply, Attendance, Notice, Lab,
+                                PasswordResetRequest)
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -248,6 +249,15 @@ def delete_user(user_id):
         DiscussionReply.query.filter_by(user_id=uid).delete(synchronize_session=False)
         LiveClass.query.filter_by(teacher_id=uid).delete(synchronize_session=False)
         Submission.query.filter_by(student_id=uid).delete(synchronize_session=False)
+        Review.query.filter_by(student_id=uid).delete(synchronize_session=False)
+        Enrollment.query.filter_by(student_id=uid).delete(synchronize_session=False)
+        Notice.query.filter_by(author_id=uid).delete(synchronize_session=False)
+        Lab.query.filter_by(created_by=uid).delete(synchronize_session=False)
+        UserSubscription.query.filter_by(user_id=uid).delete(synchronize_session=False)
+
+        PasswordResetRequest.query.filter_by(resolved_by=uid).update(
+            {'resolved_by': None}, synchronize_session=False
+        )
 
         for c in Course.query.filter_by(teacher_id=uid).all():
             db.session.delete(c)
