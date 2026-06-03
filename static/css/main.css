@@ -357,6 +357,10 @@ header {
     padding: 0 1rem;
   }
 
+  .app-container {
+    overflow-x: hidden;
+  }
+
   .hamburger {
     display: flex;
   }

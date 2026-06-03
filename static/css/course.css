@@ -66,11 +66,16 @@
 }
 
 /* Course Details Landing Page */
+.details-container {
+  overflow-x: hidden;
+}
+
 .course-hero {
   background: linear-gradient(135deg, var(--bg-card), var(--bg-app));
   border-bottom: 1px solid var(--border-color);
   padding: 3rem 2rem;
   margin: -2rem -2rem 2rem -2rem;
+  overflow-x: hidden;
 }
 
 .course-hero-content {
@@ -358,12 +363,13 @@
 
 @media (max-width: 768px) {
   .course-hero {
-    padding: 2rem 1rem !important;
-    margin: -1rem -1rem 1rem -1rem !important;
+    padding: 1.5rem 1rem !important;
+    margin: -1rem 0 1rem 0 !important;
+    border-radius: 0 !important;
   }
   .course-hero-content {
     grid-template-columns: 1fr !important;
-    gap: 1.5rem !important;
+    gap: 1.25rem !important;
   }
   .course-hero-details h1 {
     font-size: 1.6rem;
@@ -423,8 +429,8 @@
     max-height: 200px !important;
   }
   .course-hero {
-    padding: 1.5rem 0.75rem !important;
-    margin: -0.75rem -0.75rem 1rem !important;
+    padding: 1rem 0.75rem !important;
+    margin: 0 0 1rem 0 !important;
   }
 }
 
