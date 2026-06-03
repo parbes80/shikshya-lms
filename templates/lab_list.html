@@ -14,7 +14,7 @@
   </div>
 
   {% if labs %}
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 1.25rem;">
       {% for lab in labs %}
         <div class="card" style="overflow: hidden;">
           {% if lab.video_url %}

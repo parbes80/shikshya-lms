@@ -61,7 +61,7 @@
 
 .courses-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
   gap: 1.5rem;
 }
 
@@ -415,5 +415,22 @@
   .tab-btn {
     font-size: 0.65rem;
     padding: 0.35rem 0.25rem;
+  }
+  .player-sidebar {
+    height: 200px !important;
+  }
+  .video-section {
+    max-height: 200px !important;
+  }
+  .course-hero {
+    padding: 1.5rem 0.75rem !important;
+    margin: -0.75rem -0.75rem 1rem !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .tab-btn {
+    font-size: 0.6rem;
+    padding: 0.3rem 0.2rem;
   }
 }
