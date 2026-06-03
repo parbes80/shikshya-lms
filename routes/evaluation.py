@@ -218,13 +218,13 @@ def submit(eval_id):
         flash('This exam has not started yet. It opens at ' + evaluation.scheduled_at.strftime('%I:%M %p on %b %d, %Y') + '.', 'warning')
         return redirect(url_for('eval.detail', eval_id=eval_id))
 
-        if request.method == 'POST':
-            notes = request.form.get('notes', '').strip()
-            file_url = ''
-            file = request.files.get('file')
-            if file and file.filename:
-                url = upload_file(file, folder='shikshya/submissions')
-                file_url = url or ''
+    if request.method == 'POST':
+        notes = request.form.get('notes', '').strip()
+        file_url = ''
+        file = request.files.get('file')
+        if file and file.filename:
+            url = upload_file(file, folder='shikshya/submissions')
+            file_url = url or ''
 
         submission = EvaluationSubmission(
             evaluation_id=eval_id,

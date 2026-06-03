@@ -46,73 +46,8 @@
   <!-- Admin control split grid -->
   <div class="content-grid">
     
-    <!-- Left column: Users lists and teacher approvals -->
+    <!-- Left column: Course management and payments -->
     <div>
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-user-clock" style="color: var(--accent);"></i> Pending Teacher Approvals</h2>
-      <div class="card" style="margin-bottom: 2rem;">
-        {% if stats.unapproved_teachers %}
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
-              <thead>
-                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
-                  <th style="padding: 0.75rem;">Username</th>
-                  <th style="padding: 0.75rem;">Email Address</th>
-                  <th style="padding: 0.75rem;">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for teach in stats.unapproved_teachers %}
-                  <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 0.75rem;"><strong>{{ teach.username }}</strong></td>
-                    <td style="padding: 0.75rem;">{{ teach.email }}</td>
-                    <td style="padding: 0.75rem;">
-                      <a href="{{ url_for('dashboard.approve_teacher', user_id=teach.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve Teacher</a>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
-          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All instructors are verified and approved!</p>
-        {% endif %}
-      </div>
-
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-video" style="color: var(--primary);"></i> Pending Course Approvals</h2>
-      <div class="card" style="margin-bottom: 2rem;">
-        {% if unpublished_courses %}
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
-              <thead>
-                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
-                  <th style="padding: 0.75rem;">Course</th>
-                  <th style="padding: 0.75rem;">Teacher</th>
-                  <th style="padding: 0.75rem;">Price</th>
-                  <th style="padding: 0.75rem;">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for c in unpublished_courses %}
-                  <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 0.75rem;"><strong>{{ c.title }}</strong></td>
-                    <td style="padding: 0.75rem;">{{ c.teacher.username }}</td>
-                    <td style="padding: 0.75rem;">{% if c.price == 0 %}Free{% else %}Rs. {{ "{:,.0f}".format(c.price) }}{% endif %}</td>
-                    <td style="padding: 0.75rem; display: flex; gap: 0.25rem; flex-wrap: wrap;">
-                      <a href="{{ url_for('dashboard.approve_course', course_id=c.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve</a>
-                      <form action="{{ url_for('course.delete_course', course_id=c.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete course &quot;{{ c.title|escape }}&quot;?')">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i></button>
-                      </form>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      {% else %}
-        <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All courses are published and visible to students.</p>
-      {% endif %}
 
       <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-video" style="color: var(--primary);"></i> All Courses</h2>
       <div class="card" style="margin-bottom: 2rem;">
@@ -200,8 +135,74 @@
 
     </div>
 
-    <!-- Right column: Users, Billing, Plans, and Categories -->
+    <!-- Right column: Users, approvals, Billing, Plans, and Categories -->
     <div>
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-user-clock" style="color: var(--accent);"></i> Pending Teacher Approvals</h2>
+      <div class="card" style="margin-bottom: 2rem;">
+        {% if stats.unapproved_teachers %}
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
+                  <th style="padding: 0.75rem;">Username</th>
+                  <th style="padding: 0.75rem;">Email Address</th>
+                  <th style="padding: 0.75rem;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for teach in stats.unapproved_teachers %}
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.75rem;"><strong>{{ teach.username }}</strong></td>
+                    <td style="padding: 0.75rem;">{{ teach.email }}</td>
+                    <td style="padding: 0.75rem;">
+                      <a href="{{ url_for('dashboard.approve_teacher', user_id=teach.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve Teacher</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All instructors are verified and approved!</p>
+        {% endif %}
+      </div>
+
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-video" style="color: var(--primary);"></i> Pending Course Approvals</h2>
+      <div class="card" style="margin-bottom: 2rem;">
+        {% if unpublished_courses %}
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
+                  <th style="padding: 0.75rem;">Course</th>
+                  <th style="padding: 0.75rem;">Teacher</th>
+                  <th style="padding: 0.75rem;">Price</th>
+                  <th style="padding: 0.75rem;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in unpublished_courses %}
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.75rem;"><strong>{{ c.title }}</strong></td>
+                    <td style="padding: 0.75rem;">{{ c.teacher.username }}</td>
+                    <td style="padding: 0.75rem;">{% if c.price == 0 %}Free{% else %}Rs. {{ "{:,.0f}".format(c.price) }}{% endif %}</td>
+                    <td style="padding: 0.75rem; display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                      <a href="{{ url_for('dashboard.approve_course', course_id=c.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve</a>
+                      <form action="{{ url_for('course.delete_course', course_id=c.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete course &quot;{{ c.title|escape }}&quot;?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i></button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All courses are published and visible to students.</p>
+        {% endif %}
+      </div>
+
       <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-users" style="color: var(--primary);"></i> Registered Users</h2>
       <div class="card" style="margin-bottom: 2rem;">
         <div style="overflow-x: auto;">

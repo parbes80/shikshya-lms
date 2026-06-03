@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import Blueprint, render_template, redirect, url_for, flash, abort, request
+from flask import Blueprint, render_template, redirect, url_for, flash, abort, request, current_app
 from flask_login import login_required, current_user
 from database import db
-from models.user import User, Role
+from models.user import User, Role, UserProfile
 from models.course import Course, Category, Review
-from models.learning import Enrollment, QuizAttempt, Submission, Assignment, LessonProgress
-from models.interaction import Certificate, Payment, Notification, MembershipPlan, UserSubscription
+from models.learning import Enrollment, Quiz, QuizAttempt, Submission, Assignment, LessonProgress, LiveClass
+from models.evaluation import Evaluation, EvaluationSubmission
+from models.interaction import (Certificate, Payment, Notification, MembershipPlan, UserSubscription,
+                                DiscussionTopic, DiscussionReply, Attendance)
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -211,7 +213,34 @@ def delete_user(user_id):
     if user.role.name == 'Admin':
         flash('Cannot delete admin accounts.', 'danger')
         return redirect(url_for('dashboard.admin'))
-    db.session.delete(user)
-    db.session.commit()
-    flash(f'User {user.username} deleted.', 'success')
+
+    try:
+        uid = user.id
+
+        EvaluationSubmission.query.filter(
+            (EvaluationSubmission.student_id == uid) | (EvaluationSubmission.graded_by == uid)
+        ).delete(synchronize_session=False)
+
+        Evaluation.query.filter_by(created_by=uid).delete(synchronize_session=False)
+
+        QuizAttempt.query.filter_by(student_id=uid).delete(synchronize_session=False)
+        Certificate.query.filter_by(student_id=uid).delete(synchronize_session=False)
+        Attendance.query.filter_by(student_id=uid).delete(synchronize_session=False)
+        Payment.query.filter_by(student_id=uid).delete(synchronize_session=False)
+        DiscussionTopic.query.filter_by(author_id=uid).delete(synchronize_session=False)
+        DiscussionReply.query.filter_by(user_id=uid).delete(synchronize_session=False)
+        LiveClass.query.filter_by(teacher_id=uid).delete(synchronize_session=False)
+        Submission.query.filter_by(student_id=uid).delete(synchronize_session=False)
+
+        for c in Course.query.filter_by(teacher_id=uid).all():
+            db.session.delete(c)
+
+        db.session.delete(user)
+        db.session.commit()
+        flash(f'User {user.username} deleted.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Failed to delete user {user_id}: {e}')
+        flash('Failed to delete user. Check server logs.', 'danger')
+
     return redirect(url_for('dashboard.admin'))
