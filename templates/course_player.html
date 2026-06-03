@@ -116,7 +116,7 @@
         <button class="tab-btn" data-tab="lesson-downloads">Certificates</button>
       </div>
 
-      {% if active_lesson %}
+      {% if active_lesson and active_lesson.content_type == 'video' and active_lesson.video_url %}
       <div class="tab-pane active" id="lesson-content">
         <div class="card" style="padding: 2rem; font-size: 0.95rem; line-height: 1.6;">
           <h3>Lecture Notes</h3>
@@ -134,6 +134,12 @@
               <p style="color: var(--text-muted);">No additional text notes for this lecture.</p>
             {% endif %}
           </div>
+        </div>
+      </div>
+      {% elif active_lesson %}
+      <div class="tab-pane active" id="lesson-content">
+        <div class="card" style="padding: 2rem; font-size: 0.95rem; line-height: 1.6;">
+          <p style="color: var(--text-muted);">Lecture notes are displayed above in the main content area.</p>
         </div>
       </div>
       {% endif %}
