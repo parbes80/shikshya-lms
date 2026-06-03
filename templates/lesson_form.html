@@ -11,7 +11,7 @@
   </div>
 
   <div class="card" style="padding: 2.5rem;">
-    <form method="POST" action="{% if action == 'edit' %}{{ url_for('course.edit_lesson', lesson_id=lesson.id) }}{% else %}{{ url_for('course.add_lesson', module_id=module.id) }}{% endif %}">
+    <form method="POST" enctype="multipart/form-data" action="{% if action == 'edit' %}{{ url_for('course.edit_lesson', lesson_id=lesson.id) }}{% else %}{{ url_for('course.add_lesson', module_id=module.id) }}{% endif %}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
       <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
@@ -44,9 +44,20 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Document / PDF URL (optional)</label>
-        <input type="text" name="document_url" class="form-control" placeholder="https://example.com/lecture-notes.pdf" value="{{ lesson.document_url if lesson else '' }}">
+        <label class="form-label">Upload Document (PDF, DOC, DOCX, PPT) — optional</label>
+        <input type="file" name="document_file" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx">
+        {% if lesson and lesson.document_url %}
+        <small style="color: var(--text-muted);">Current file: <a href="{{ lesson.document_url }}" target="_blank">{{ lesson.document_url.split('/')[-1][:40] }}</a> | <a href="{{ lesson.document_url }}" download style="color: var(--primary);">Download</a></small>
+        {% endif %}
       </div>
+
+      <div class="form-group">
+        <label class="form-label">Or paste Document URL (optional)</label>
+        <input type="text" name="document_url" class="form-control" placeholder="https://example.com/lecture-notes.pdf" value="{{ lesson.document_url if lesson else '' }}">
+        <small style="color: var(--text-muted);">Only used if no file uploaded above.</small>
+      </div>
+
+      <hr style="border-color: var(--border-color); margin: 1.5rem 0;">
 
       <div class="form-group">
         <label class="form-label">Lecture Notes (Rich Text Editor)</label>
@@ -66,31 +77,45 @@
 <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
-  var editor = new Quill('#lesson-editor', {
-    theme: 'snow',
-    placeholder: 'Write your lecture notes here... Include real-world examples, code demos, and use cases.',
-    modules: {
-      toolbar: [
-        [{ 'header': [1,2,3,false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        [{ 'indent': '-1'}, { 'indent': '+1' }],
-        ['blockquote', 'code-block'],
-        [{ 'align': [] }],
-        ['link', 'image'],
-        ['clean']
-      ]
+  (function() {
+    var editor = null;
+    var editorEl = document.getElementById('lesson-editor');
+    var hiddenInput = document.getElementById('text-content-hidden');
+
+    if (typeof Quill !== 'undefined') {
+      editor = new Quill(editorEl, {
+        theme: 'snow',
+        placeholder: 'Write your lecture notes here... Include real-world examples, code demos, and use cases.',
+        modules: {
+          toolbar: [
+            [{ 'header': [1,2,3,false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            ['blockquote', 'code-block'],
+            [{ 'align': [] }],
+            ['link', 'image'],
+            ['clean']
+          ]
+        }
+      });
+
+      {% if lesson and lesson.text_content %}
+      editor.root.innerHTML = {{ lesson.text_content|tojson|safe }};
+      {% endif %}
     }
-  });
 
-  {% if lesson and lesson.text_content %}
-  editor.root.innerHTML = {{ lesson.text_content|tojson|safe }};
-  {% endif %}
-
-  document.querySelector('form').addEventListener('submit', function() {
-    var html = editor.root.innerHTML;
-    document.getElementById('text-content-hidden').value = html === '<p><br></p>' || html === '<p></p>' || html.trim() === '' ? '' : html;
-  });
+    document.querySelector('form').addEventListener('submit', function() {
+      if (editor) {
+        var html = editor.root.innerHTML;
+        if (html !== '<p><br></p>' && html !== '<p></p>' && html.trim() !== '') {
+          hiddenInput.value = html;
+        } else {
+          hiddenInput.value = '';
+        }
+      }
+    });
+  })();
 </script>
 {% endblock %}

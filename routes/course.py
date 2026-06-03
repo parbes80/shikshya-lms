@@ -356,6 +356,13 @@ def add_lesson(module_id):
     duration = int(request.form.get('duration', 10))
     text_content = request.form.get('text_content', '')
 
+    file = request.files.get('document_file')
+    if file and file.filename:
+        from utils.cloudinary_upload import upload_file
+        result = upload_file(file, folder='lesson_documents')
+        if result:
+            document_url = result
+
     order = len(module.lessons) + 1
 
     lesson = Lesson(
@@ -396,6 +403,14 @@ def edit_lesson(lesson_id):
     lesson.document_url = request.form.get('document_url', '')
     lesson.duration_minutes = int(request.form.get('duration', 10))
     lesson.text_content = request.form.get('text_content', '')
+
+    file = request.files.get('document_file')
+    if file and file.filename:
+        from utils.cloudinary_upload import upload_file
+        result = upload_file(file, folder='lesson_documents')
+        if result:
+            lesson.document_url = result
+
     db.session.commit()
 
     flash('Lesson updated successfully!', 'success')
