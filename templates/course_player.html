@@ -28,6 +28,17 @@
                     <span style="flex: 1;">{{ les.title }}</span>
                     <small style="font-size: 0.75rem; color: var(--text-muted);">{{ les.duration_minutes }}m</small>
                   </a>
+                  {% if active_lesson and active_lesson.id == les.id and lesson_headings %}
+                  <ul class="subtopic-list">
+                    {% for hid, htext, htag in lesson_headings %}
+                    <li class="subtopic-item" style="padding-left: 1.8rem;">
+                      <a href="#{{ hid }}" style="font-size: 0.78rem; {% if htag == 'h1' %}font-weight: 600;{% elif htag == 'h3' %}padding-left: 0.6rem; font-size: 0.72rem;{% endif %}">
+                        {{ htext }}
+                      </a>
+                    </li>
+                    {% endfor %}
+                  </ul>
+                  {% endif %}
                 </li>
               {% endfor %}
             </ul>
@@ -56,7 +67,9 @@
         {% if stripped %}
         <div class="notes-section">
           <div class="lesson-notes-content" style="color: var(--text-main); font-size: 0.95rem; line-height: 1.7; max-width: 100%;">
-            {% if active_lesson.text_content|trim|list|first == '<' %}
+            {% if lesson_content_html %}
+              {{ lesson_content_html|safe }}
+            {% elif active_lesson.text_content|trim|list|first == '<' %}
               {{ active_lesson.text_content|safe }}
             {% else %}
               {{ active_lesson.text_content|markdown|safe }}
@@ -136,7 +149,9 @@
               {% set stripped = active_lesson.text_content|striptags|trim if active_lesson.text_content else '' %}
               {% if stripped %}
                 <div class="lesson-notes-content">
-                  {% if active_lesson.text_content|trim|list|first == '<' %}
+                  {% if lesson_content_html %}
+                    {{ lesson_content_html|safe }}
+                  {% elif active_lesson.text_content|trim|list|first == '<' %}
                     {{ active_lesson.text_content|safe }}
                   {% else %}
                     {{ active_lesson.text_content|markdown|safe }}

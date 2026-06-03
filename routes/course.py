@@ -14,6 +14,41 @@ from utils.cloudinary_upload import upload_file
 course_bp = Blueprint('course', __name__)
 
 
+def process_lesson_headings(text_content):
+    """
+    Extract headings from HTML content, add id anchors, and return
+    (processed_html, headings_list) where headings_list is
+    [(id, text, level), ...].
+    """
+    if not text_content:
+        return text_content, []
+
+    headings = []
+    seen = {}
+
+    def _heading_replacer(m):
+        tag = m.group(1)
+        content = m.group(2).strip()
+        # strip any nested HTML from heading text for the id
+        plain = re.sub(r'<[^>]+>', '', content)
+        base_id = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]+', '-', plain.lower()).strip('-')
+        if not base_id:
+            base_id = 'heading'
+        count = seen.get(base_id, 0)
+        seen[base_id] = count + 1
+        unique_id = f'{base_id}-{count}' if count else base_id
+        headings.append((unique_id, plain, tag))
+        return f'<{tag} id="{unique_id}">{content}</{tag}>'
+
+    processed = re.sub(
+        r'<h([1-6])(\s[^>]*)?>(.*?)</h\1>',
+        _heading_replacer,
+        text_content,
+        flags=re.IGNORECASE | re.DOTALL
+    )
+    return processed, headings
+
+
 def slugify(text):
     text = text.lower().strip()
     text = re.sub(r'[^\w\s-]', '', text)
@@ -238,6 +273,12 @@ def player(slug):
 
     active_progress = progress_map.get(active_lesson.id) if active_lesson else None
 
+    # process lesson text for sub-topic navigation
+    lesson_headings = []
+    lesson_content_html = None
+    if active_lesson and active_lesson.text_content:
+        lesson_content_html, lesson_headings = process_lesson_headings(active_lesson.text_content)
+
     discussions = DiscussionTopic.query.filter_by(course_id=course.id).order_by(DiscussionTopic.created_at.desc()).all()
     quizzes = Quiz.query.filter_by(course_id=course.id).all()
     assignments = Assignment.query.filter_by(course_id=course.id).all()
@@ -252,7 +293,9 @@ def player(slug):
         discussions=discussions,
         quizzes=quizzes,
         assignments=assignments,
-        live_classes=live_classes
+        live_classes=live_classes,
+        lesson_headings=lesson_headings,
+        lesson_content_html=lesson_content_html
     )
 
 
