@@ -14,6 +14,66 @@ from models.interaction import Notification, DiscussionTopic, DiscussionReply, C
 api_bp = Blueprint('api', __name__)
 
 
+def _update_course_progress(enrollment):
+    """Recalculate overall course progress including lessons, quizzes, and assignments."""
+    course = enrollment.course
+    student_id = enrollment.student_id
+
+    total_lessons = sum(len(m.lessons) for m in course.modules)
+    quiz_ids = [q.id for q in Quiz.query.filter_by(course_id=course.id).all()]
+    assignment_ids = [a.id for a in Assignment.query.filter_by(course_id=course.id).all()]
+    total_items = total_lessons + len(quiz_ids) + len(assignment_ids)
+
+    if total_items == 0:
+        enrollment.progress_percent = 0.0
+        db.session.commit()
+        return
+
+    completed_lessons = LessonProgress.query.filter_by(enrollment_id=enrollment.id, is_completed=True).count()
+
+    completed_quizzes = 0
+    if quiz_ids:
+        completed_quizzes = db.session.query(QuizAttempt.quiz_id).filter(
+            QuizAttempt.student_id == student_id,
+            QuizAttempt.is_passed == True,
+            QuizAttempt.quiz_id.in_(quiz_ids)
+        ).distinct(QuizAttempt.quiz_id).count()
+
+    completed_assignments = 0
+    if assignment_ids:
+        completed_assignments = Submission.query.filter(
+            Submission.student_id == student_id,
+            Submission.assignment_id.in_(assignment_ids)
+        ).count()
+
+    completed = completed_lessons + completed_quizzes + completed_assignments
+    enrollment.progress_percent = round((completed / total_items) * 100, 1)
+
+    if enrollment.progress_percent >= 100.0 and not enrollment.is_completed:
+        enrollment.is_completed = True
+        enrollment.completed_at = datetime.utcnow()
+
+        cert_code = f"CERT-{course.id:03d}-{student_id:04d}-{uuid.uuid4().hex[:6].upper()}"
+        existing_cert = Certificate.query.filter_by(student_id=student_id, course_id=course.id).first()
+        if not existing_cert:
+            cert = Certificate(
+                unique_code=cert_code,
+                student_id=student_id,
+                course_id=course.id,
+                qr_code_data=url_for('main.verify_certificate_public', unique_code=cert_code, _external=True)
+            )
+            db.session.add(cert)
+            notif = Notification(
+                user_id=student_id,
+                title="Course Completed! \U0001f393",
+                message=f"Congratulations! You completed '{course.title}' and earned a certificate.",
+                notif_type="success"
+            )
+            db.session.add(notif)
+
+    db.session.commit()
+
+
 @api_bp.route('/api/progress/video', methods=['POST'])
 @login_required
 def track_video_progress():
@@ -37,40 +97,8 @@ def track_video_progress():
     if is_completed:
         progress.is_completed = True
 
-    db.session.commit()
-
     enrollment = progress.enrollment
-    course = enrollment.course
-    total_lessons = sum(len(m.lessons) for m in course.modules)
-
-    if total_lessons > 0:
-        completed_lessons = LessonProgress.query.filter_by(enrollment_id=enrollment.id, is_completed=True).count()
-        enrollment.progress_percent = round((completed_lessons / total_lessons) * 100, 1)
-
-        if enrollment.progress_percent >= 100.0 and not enrollment.is_completed:
-            enrollment.is_completed = True
-            enrollment.completed_at = datetime.utcnow()
-
-            cert_code = f"CERT-{course.id:03d}-{current_user.id:04d}-{uuid.uuid4().hex[:6].upper()}"
-            existing_cert = Certificate.query.filter_by(student_id=current_user.id, course_id=course.id).first()
-            if not existing_cert:
-                cert = Certificate(
-                    unique_code=cert_code,
-                    student_id=current_user.id,
-                    course_id=course.id,
-                    qr_code_data=url_for('main.verify_certificate_public', unique_code=cert_code, _external=True)
-                )
-                db.session.add(cert)
-
-                notif = Notification(
-                    user_id=current_user.id,
-                    title="Course Completed! \U0001f393",
-                    message=f"Congratulations! You completed '{course.title}' and earned a certificate.",
-                    notif_type="success"
-                )
-                db.session.add(notif)
-
-        db.session.commit()
+    _update_course_progress(enrollment)
 
     return jsonify({
         'success': True,
@@ -128,13 +156,7 @@ def submit_quiz():
     if is_passed:
         enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=quiz.course_id).first()
         if enrollment:
-            for m in quiz.course.modules:
-                for l in m.lessons:
-                    prog = LessonProgress.query.filter_by(enrollment_id=enrollment.id, lesson_id=l.id).first()
-                    if prog and not prog.is_completed:
-                        prog.is_completed = True
-                        prog.video_progress_seconds = 9999
-                        break
+            _update_course_progress(enrollment)
 
     notif = Notification(
         user_id=current_user.id,
@@ -307,6 +329,11 @@ def grade_submission(submission_id):
     sub.feedback = feedback
     sub.is_graded = True
 
+    # update student's course progress
+    enrollment = Enrollment.query.filter_by(student_id=sub.student_id, course_id=sub.assignment.course_id).first()
+    if enrollment:
+        _update_course_progress(enrollment)
+
     notif = Notification(
         user_id=sub.student_id,
         title="Assignment Graded! \U0001f4dd",
@@ -417,6 +444,8 @@ def submit_assignment(assignment_id):
             is_late=is_late
         )
         db.session.add(submission)
+
+    _update_course_progress(enrollment)
 
     teacher_notif = Notification(
         user_id=assignment.course.teacher_id,
