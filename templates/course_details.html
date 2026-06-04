@@ -28,7 +28,7 @@
           </div>
           {% if is_enrolled %}
             <div style="background: rgba(16, 185, 129, 0.15); color: var(--secondary); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); font-weight: bold; margin-bottom: 0.5rem; font-size: 0.85rem;">
-              <i class="fas fa-check-circle"></i> Enrolled ({{ enrollment.progress_percent }}% complete)
+              <i class="fas fa-check-circle"></i> Enrolled{% if enrollment %} ({{ enrollment.progress_percent }}% complete){% endif %}
             </div>
             <a href="{{ url_for('course.player', slug=course.slug) }}" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.6rem;"><i class="fas fa-play"></i> Go to Course Player</a>
           {% elif pending_payment %}
@@ -74,7 +74,7 @@
 
         {% if is_enrolled %}
           <div style="background: rgba(16, 185, 129, 0.15); color: var(--secondary); padding: 0.75rem 1rem; border-radius: var(--radius-md); font-weight: bold; margin-bottom: 1rem;">
-            <i class="fas fa-check-circle"></i> Enrolled ({{ enrollment.progress_percent }}% complete)
+            <i class="fas fa-check-circle"></i> Enrolled{% if enrollment %} ({{ enrollment.progress_percent }}% complete){% endif %}
           </div>
           <a href="{{ url_for('course.player', slug=course.slug) }}" class="btn btn-primary" style="width: 100%; justify-content: center;"><i class="fas fa-play"></i> Go to Course Player</a>
         {% elif pending_payment %}
