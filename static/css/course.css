@@ -342,7 +342,7 @@
 .notes-section {
   width: 100%;
   max-width: 100%;
-  padding: 2.5rem 3rem;
+  padding: 1.5rem 1.25rem;
   background: var(--bg-card);
   overflow-y: auto;
 }
@@ -361,10 +361,13 @@
 }
 
 .lesson-details-section {
-  padding: 1.25rem 2.5rem 2rem;
   max-width: 100%;
   width: 100%;
   margin: 0 auto;
+}
+
+.lesson-details-section:has(.tab-pane.active) {
+  padding: 1.25rem 2.5rem 2rem;
 }
 
 .tab-pane h3 {
@@ -711,7 +714,7 @@
     padding: 1rem !important;
   }
   .notes-section {
-    padding: 1.25rem;
+    padding: 1rem 0.75rem;
     overflow-y: visible;
   }
   .lesson-notes-content img {
