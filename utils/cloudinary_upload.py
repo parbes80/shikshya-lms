@@ -70,31 +70,39 @@ def upload_file(file_input, folder='shikshya', public_id=None, resource_type='au
 
 def parse_cloudinary_public_id(url):
     """Extract public_id (without extension) from a Cloudinary URL."""
-    # Pattern: /resource_type/type/v1_0/folder/public_id.ext or /resource_type/type/folder/public_id
-    match = re.search(r'/(raw|image|video|auto)/upload/(?:v\d+/)?(.+?)\.\w+$', url)
-    if match:
-        return match.group(2)
+    # Match: /resource_type/type/v1234/folder/file.ext
+    m = re.search(r'/(raw|image|video|auto)/upload/(?:v\d+/)?(.+?)\.\w+(?:\?.*)?$', url)
+    if m:
+        return m.group(2)
+    # Fallback: no extension
+    m = re.search(r'/(raw|image|video|auto)/upload/(?:v\d+/)?(.+?)(?:\?.*)?$', url)
+    if m:
+        return m.group(2).rstrip('/')
     return None
 
 
-def get_signed_download_url(url, resource_type='raw', expires_secs=300):
+def get_signed_download_url(url, expires_secs=300):
     """Generate a signed Cloudinary download URL valid for expires_secs."""
     if not url or not is_configured():
         return url
     public_id = parse_cloudinary_public_id(url)
     if not public_id:
         return url
-    try:
-        from datetime import datetime, timedelta
-        from cloudinary.utils import private_download_url
-        expires_at = int((datetime.utcnow() + timedelta(seconds=expires_secs)).timestamp())
-        return private_download_url(
-            public_id, 'pdf',
-            resource_type=resource_type,
-            type='upload',
-            attachment=True,
-            expires_at=expires_at
-        )
-    except Exception as e:
-        logger.error(f'Failed to generate signed URL: {e}')
-        return url
+    from cloudinary.utils import cloudinary_url
+    # Determine correct resource_type via the API
+    import cloudinary.api
+    for rtype in ('raw', 'image', 'video'):
+        try:
+            cloudinary.api.resource(public_id, resource_type=rtype)
+            signed_url, _ = cloudinary_url(
+                public_id,
+                resource_type=rtype,
+                type='upload',
+                sign_url=True,
+                secure=True,
+                attachment=True
+            )
+            return signed_url
+        except Exception:
+            continue
+    return url
