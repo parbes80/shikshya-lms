@@ -74,56 +74,48 @@
   height: 100%;
   overflow: hidden;
   padding: 0;
-  border-radius: var(--radius-lg);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .course-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   border-color: transparent;
 }
 
 .course-thumbnail {
   position: relative;
   width: 100%;
-  height: 190px;
+  height: 150px;
   overflow: hidden;
-}
-
-.course-thumbnail::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.4));
-  pointer-events: none;
 }
 
 .course-thumbnail img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.4s ease;
+  transition: transform 0.3s ease;
 }
 
 .course-card:hover .course-thumbnail img {
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
 
 .difficulty-badge {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  padding: 0.2rem 0.65rem;
+  top: 10px;
+  left: 10px;
+  padding: 0.15rem 0.5rem;
   border-radius: 20px;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   color: #fff;
   z-index: 10;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
 .difficulty-badge.beginner { background: var(--secondary); }
@@ -131,7 +123,7 @@
 .difficulty-badge.advanced { background: #ef4444; }
 
 .course-content {
-  padding: 1rem 1.25rem 1rem;
+  padding: 0.75rem 1rem 0.65rem;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -139,22 +131,22 @@
 
 .course-category {
   display: inline-block;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: var(--primary);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
-  margin-bottom: 0.4rem;
+  letter-spacing: 0.2px;
+  margin-bottom: 0.25rem;
   background: var(--primary-light);
-  padding: 0.15rem 0.55rem;
-  border-radius: 4px;
+  padding: 0.1rem 0.45rem;
+  border-radius: 3px;
   align-self: flex-start;
 }
 
 .course-title {
-  font-size: 1.05rem;
-  margin-bottom: 0.4rem;
-  line-height: 1.35;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.3;
   font-weight: 700;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -169,10 +161,10 @@
 }
 
 .course-desc {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: var(--text-muted);
-  margin-bottom: 0.75rem;
-  line-height: 1.45;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
   flex: 1;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -185,35 +177,35 @@
   align-items: center;
   justify-content: space-between;
   border-top: 1px solid var(--border-color);
-  padding-top: 0.75rem;
+  padding-top: 0.5rem;
   margin-top: auto;
 }
 
 .course-teacher {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8rem;
+  gap: 0.4rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
 .course-teacher-initial {
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--primary);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .course-price {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: var(--text-main);
 }
