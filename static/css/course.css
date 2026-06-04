@@ -110,6 +110,45 @@
   .course-hero-content .course-hero-preview {
     margin-top: 0;
   }
+  .courses-grid {
+    gap: 2rem;
+  }
+  .course-thumbnail {
+    height: 180px;
+  }
+  .course-thumbnail::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.15));
+    pointer-events: none;
+  }
+  .course-content {
+    padding: 1rem 1.15rem 0.8rem;
+  }
+  .course-category {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.55rem;
+  }
+  .course-title {
+    font-size: 1.05rem;
+  }
+  .course-desc {
+    font-size: 0.85rem;
+    -webkit-line-clamp: 3;
+  }
+  .course-footer {
+    padding-top: 0.6rem;
+  }
+  .course-teacher {
+    font-size: 0.8rem;
+  }
+  .course-price {
+    font-size: 1rem;
+  }
 }
 
 .course-hero-details h1 {
