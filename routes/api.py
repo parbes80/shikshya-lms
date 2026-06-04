@@ -471,8 +471,14 @@ def download_lesson_doc(lesson_id):
     doc_url = lesson.document_url
     if not doc_url or doc_url.strip().lower() in ('none', 'null', ''):
         abort(404)
-    if not doc_url.startswith(('http://', 'https://', '//')):
-        doc_url = url_for('static', filename=doc_url, _external=True)
+
+    if doc_url.startswith(('http://', 'https://', '//')):
+        from utils.cloudinary_upload import get_signed_download_url
+        signed = get_signed_download_url(doc_url)
+        if signed != doc_url:
+            return redirect(signed)
+    else:
+        doc_url = url_for('static', filename=doc_url)
 
     try:
         resp = requests.get(doc_url, stream=True, timeout=30)

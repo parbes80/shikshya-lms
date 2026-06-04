@@ -1,7 +1,9 @@
 import os
+import re
 import logging
 import cloudinary
 import cloudinary.uploader
+import cloudinary.utils
 from flask import current_app
 
 logger = logging.getLogger(__name__)
@@ -64,3 +66,35 @@ def upload_file(file_input, folder='shikshya', public_id=None, resource_type='au
                 os.remove(temp_path)
             except OSError:
                 pass
+
+
+def parse_cloudinary_public_id(url):
+    """Extract public_id (without extension) from a Cloudinary URL."""
+    # Pattern: /resource_type/type/v1_0/folder/public_id.ext or /resource_type/type/folder/public_id
+    match = re.search(r'/(raw|image|video|auto)/upload/(?:v\d+/)?(.+?)\.\w+$', url)
+    if match:
+        return match.group(2)
+    return None
+
+
+def get_signed_download_url(url, resource_type='raw', expires_secs=300):
+    """Generate a signed Cloudinary download URL valid for expires_secs."""
+    if not url or not is_configured():
+        return url
+    public_id = parse_cloudinary_public_id(url)
+    if not public_id:
+        return url
+    try:
+        from datetime import datetime, timedelta
+        from cloudinary.utils import private_download_url
+        expires_at = int((datetime.utcnow() + timedelta(seconds=expires_secs)).timestamp())
+        return private_download_url(
+            public_id, 'pdf',
+            resource_type=resource_type,
+            type='upload',
+            attachment=True,
+            expires_at=expires_at
+        )
+    except Exception as e:
+        logger.error(f'Failed to generate signed URL: {e}')
+        return url
