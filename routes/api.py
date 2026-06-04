@@ -473,15 +473,12 @@ def download_lesson_doc(lesson_id):
         abort(404)
 
     if doc_url.startswith(('http://', 'https://', '//')):
-        from utils.cloudinary_upload import get_signed_download_url
-        signed = get_signed_download_url(doc_url)
-        if signed != doc_url:
-            return redirect(signed)
+        proxy_url = doc_url
     else:
-        doc_url = url_for('static', filename=doc_url)
+        proxy_url = url_for('static', filename=doc_url, _external=True)
 
     try:
-        resp = requests.get(doc_url, stream=True, timeout=30)
+        resp = requests.get(proxy_url, stream=True, timeout=30, headers={'User-Agent': 'Shikshya-LMS/1.0'})
         if resp.status_code != 200:
             abort(502)
         content = resp.content

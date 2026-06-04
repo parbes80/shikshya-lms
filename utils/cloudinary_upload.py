@@ -70,12 +70,14 @@ def upload_file(file_input, folder='shikshya', public_id=None, resource_type='au
 
 def parse_cloudinary_public_id(url):
     """Extract public_id (without extension) from a Cloudinary URL."""
-    # Match: /resource_type/type/v1234/folder/file.ext
-    m = re.search(r'/(raw|image|video|auto)/upload/(?:v\d+/)?(.+?)\.\w+(?:\?.*)?$', url)
+    # Strip optional Cloudinary signature segment: s--XXXX--/
+    sig = r'(?:s--[^/]+--/)?'
+    # Match with extension
+    m = re.search(r'/(raw|image|video|auto)/upload/' + sig + r'(?:v\d+/)?(.+?)\.\w+(?:\?.*)?$', url)
     if m:
         return m.group(2)
     # Fallback: no extension
-    m = re.search(r'/(raw|image|video|auto)/upload/(?:v\d+/)?(.+?)(?:\?.*)?$', url)
+    m = re.search(r'/(raw|image|video|auto)/upload/' + sig + r'(?:v\d+/)?(.+?)(?:\?.*)?$', url)
     if m:
         return m.group(2).rstrip('/')
     return None
