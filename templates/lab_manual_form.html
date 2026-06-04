@@ -66,17 +66,35 @@
       <h3 style="margin-bottom: 1rem;">Attachments</h3>
 
       <div class="form-group">
-        <label class="form-label">Upload Images (Cloudinary URLs, one per line)</label>
-        <textarea name="image_urls" class="form-control" rows="3" placeholder="Paste Cloudinary image URLs, one per line">{{ manual.image_urls if manual else '' }}</textarea>
-        <small style="color: var(--text-muted);">After uploading images to Cloudinary, paste their URLs here (one per line).</small>
+        <label class="form-label">Upload Images</label>
+        <input type="file" name="images" class="form-control" accept="image/*" multiple>
+        <small style="color: var(--text-muted);">You can select multiple images at once. Supported formats: JPG, PNG, GIF, WebP.</small>
+        {% if manual and manual.images_list() %}
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem;">
+          {% for img_url in manual.images_list() %}
+          <div style="position: relative; width: 100px; height: 80px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
+            <img src="{{ img_url }}" alt="Lab image" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+            <label style="position: absolute; top: 2px; right: 2px; background: rgba(239,68,68,0.9); color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; cursor: pointer;">
+              <input type="checkbox" name="delete_images" value="{{ img_url }}" style="display: none;">
+              ✕
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+        <small style="color: var(--text-muted);">Check ✕ on images to delete them.</small>
+        {% endif %}
       </div>
 
       <div class="form-group">
         <label class="form-label">Upload PDF</label>
         <input type="file" name="pdf_file" class="form-control" accept=".pdf,.doc,.docx">
         {% if manual and manual.pdf_url %}
-        <small style="color: var(--text-muted);">Current: <a href="{{ manual.pdf_url }}" target="_blank">{{ manual.pdf_url.split('/')[-1] }}</a></small>
-        <input type="hidden" name="pdf_url" value="{{ manual.pdf_url }}">
+        <div style="margin-top: 0.5rem;">
+          <span style="font-size: 0.85rem;">Current: <a href="{{ manual.pdf_url }}" target="_blank">{{ manual.pdf_url.split('/')[-1] }}</a></span>
+          <label style="margin-left: 0.75rem; font-size: 0.85rem; color: #ef4444;">
+            <input type="checkbox" name="delete_pdf" value="1"> Remove PDF
+          </label>
+        </div>
         {% endif %}
       </div>
     </div>

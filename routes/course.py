@@ -840,17 +840,22 @@ def create_lab_manual(course_id):
             except:
                 pass
 
-        image_urls = request.form.get('image_urls', '')
-        pdf_url = request.form.get('pdf_url', '')
-        if pdf_url and pdf_url.strip().lower() in ('none', 'null', ''):
-            pdf_url = ''
+        image_urls = []
+        images = request.files.getlist('images')
+        for img in images:
+            if img and img.filename:
+                result = upload_file(img, folder='lab_manuals')
+                if result:
+                    image_urls.append(result)
 
+        pdf_url = ''
         pdf_file = request.files.get('pdf_file')
         if pdf_file and pdf_file.filename:
             result = upload_file(pdf_file, folder='lab_manuals')
             if result:
                 pdf_url = result
 
+        import json
         order = len(LabManual.query.filter_by(course_id=course.id).all()) + 1
 
         manual = LabManual(
@@ -864,7 +869,7 @@ def create_lab_manual(course_id):
             observations=request.form.get('observations', ''),
             result=request.form.get('result', ''),
             conclusion=request.form.get('conclusion', ''),
-            image_urls=image_urls,
+            image_urls=json.dumps(image_urls),
             pdf_url=pdf_url,
             sort_order=order,
             created_by=current_user.id
@@ -909,18 +914,30 @@ def edit_lab_manual(manual_id):
         manual.observations = request.form.get('observations', '')
         manual.result = request.form.get('result', '')
         manual.conclusion = request.form.get('conclusion', '')
-        manual.image_urls = request.form.get('image_urls', '')
 
-        pdf_url = request.form.get('pdf_url', '')
-        if pdf_url and pdf_url.strip().lower() in ('none', 'null', ''):
-            pdf_url = ''
-        pdf_file = request.files.get('pdf_file')
-        if pdf_file and pdf_file.filename:
-            result = upload_file(pdf_file, folder='lab_manuals')
-            if result:
-                manual.pdf_url = result
+        import json
+        existing_images = manual.images_list()
+        delete_images = request.form.getlist('delete_images')
+        remaining_images = [url for url in existing_images if url not in delete_images]
+
+        images = request.files.getlist('images')
+        new_images = []
+        for img in images:
+            if img and img.filename:
+                result = upload_file(img, folder='lab_manuals')
+                if result:
+                    new_images.append(result)
+
+        manual.image_urls = json.dumps(remaining_images + new_images)
+
+        if request.form.get('delete_pdf'):
+            manual.pdf_url = ''
         else:
-            manual.pdf_url = pdf_url
+            pdf_file = request.files.get('pdf_file')
+            if pdf_file and pdf_file.filename:
+                result = upload_file(pdf_file, folder='lab_manuals')
+                if result:
+                    manual.pdf_url = result
 
         db.session.commit()
         flash('Lab manual updated!', 'success')
