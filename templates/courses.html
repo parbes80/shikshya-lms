@@ -46,7 +46,7 @@
                 <p class="course-desc">{{ course.description[:110] }}...</p>
                 <div class="course-footer">
                   <div class="course-teacher">
-                    <i class="fas fa-user-circle" style="font-size: 1.2rem; color: var(--primary);"></i>
+                    <div class="course-teacher-initial">{{ course.teacher.username[:1].upper() }}</div>
                     <span>{{ course.teacher.username }}</span>
                   </div>
                   <div class="course-price {% if course.price == 0.0 %}free{% endif %}">
