@@ -122,6 +122,7 @@
               <a href="{{ url_for('course.create_quiz', course_id=course.id) }}" class="btn btn-outline"><i class="fas fa-question-circle"></i> Add Quiz</a>
               <a href="{{ url_for('course.create_assignment', course_id=course.id) }}" class="btn btn-outline"><i class="fas fa-tasks"></i> Add Assignment</a>
               <a href="{{ url_for('course.create_live_class', course_id=course.id) }}" class="btn btn-outline" style="color: #ea4335; border-color: #ea4335;"><i class="fab fa-google"></i> Live Class</a>
+              <a href="{{ url_for('course.lab_manuals', course_id=course.id) }}" class="btn btn-outline" style="color: #f59e0b; border-color: #f59e0b;"><i class="fas fa-flask"></i> Lab Manuals</a>
               <a href="{{ url_for('course.attendance', course_id=course.id) }}" class="btn btn-outline" style="color: #10b981; border-color: #10b981;"><i class="fas fa-clipboard-check"></i> Attendance</a>
               <a href="{{ url_for('eval.index', course_id=course.id) }}" class="btn btn-outline" style="color: #8b5cf6; border-color: #8b5cf6;"><i class="fas fa-clipboard-check"></i> Evaluations</a>
             </div>

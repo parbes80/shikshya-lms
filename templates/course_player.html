@@ -407,6 +407,34 @@
         </div>
       </div>
 
+      <div class="tab-pane" id="lesson-labmanuals">
+        <div class="tab-pane-inner">
+          <h3 style="margin-bottom: 1rem;"><i class="fas fa-flask" style="color: #f59e0b;"></i> Lab Manuals</h3>
+          {% if lab_manuals %}
+            {% for m in lab_manuals %}
+            <div class="card" style="padding: 1rem 1.25rem; margin-bottom: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                  <a href="{{ url_for('course.view_lab_manual', manual_id=m.id) }}" target="_blank" style="font-weight: 600; color: var(--text-main);">{{ m.title }}</a>
+                  <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                    {% if m.date_performed %}
+                    <span>{{ m.date_performed.strftime('%b %d, %Y') }}</span>
+                    {% endif %}
+                    {% if m.software_used %}
+                    <span style="margin-left: 1rem;"><i class="fas fa-code"></i> {{ m.software_used }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <a href="{{ url_for('course.view_lab_manual', manual_id=m.id) }}" target="_blank" class="btn btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-eye"></i> View</a>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <p style="color: var(--text-muted); text-align: center; padding: 1.5rem;">No lab manuals for this course yet.</p>
+          {% endif %}
+        </div>
+      </div>
+
       <div class="tab-pane" id="lesson-downloads">
         <div class="card" style="text-align: center; padding: 3rem;">
           <i class="fas fa-certificate" style="font-size: 4rem; color: var(--primary); margin-bottom: 1.5rem;"></i>
@@ -434,6 +462,7 @@
   {% if active_lesson and (active_lesson.document_url|asset_url) %}
   <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" data-tab="lesson-doc"><i class="fas fa-download"></i> Doc</a>
   {% endif %}
+  <a href="#" data-tab="lesson-labmanuals"><i class="fas fa-flask"></i> Lab</a>
   <a href="#" data-tab="lesson-downloads"><i class="fas fa-certificate"></i> Cert</a>
 </nav>
 {% endblock %}

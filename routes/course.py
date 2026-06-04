@@ -8,7 +8,7 @@ from flask_login import login_required, current_user
 from database import db
 from models.course import Course, Category, Module, Lesson, Review
 from models.learning import Enrollment, LessonProgress, Quiz, Question, Choice, Assignment, LiveClass
-from models.interaction import Payment, DiscussionTopic, Attendance, Coupon, Notification
+from models.interaction import Payment, DiscussionTopic, Attendance, Coupon, Notification, LabManual
 from utils.cloudinary_upload import upload_file
 
 course_bp = Blueprint('course', __name__)
@@ -283,6 +283,7 @@ def player(slug):
     quizzes = Quiz.query.filter_by(course_id=course.id).all()
     assignments = Assignment.query.filter_by(course_id=course.id).all()
     live_classes = LiveClass.query.filter_by(course_id=course.id).order_by(LiveClass.start_time.desc()).all()
+    lab_manuals = LabManual.query.filter_by(course_id=course.id).order_by(LabManual.sort_order).all()
 
     return render_template(
         'course_player.html',
@@ -294,6 +295,7 @@ def player(slug):
         quizzes=quizzes,
         assignments=assignments,
         live_classes=live_classes,
+        lab_manuals=lab_manuals,
         lesson_headings=lesson_headings,
         lesson_content_html=lesson_content_html
     )
@@ -803,3 +805,149 @@ def delete_course(course_id):
     if current_user.role.name == 'Admin':
         return redirect(url_for('dashboard.admin'))
     return redirect(url_for('dashboard.teacher'))
+
+
+@course_bp.route('/courses/<int:course_id>/lab-manuals', methods=['GET'])
+@login_required
+def lab_manuals(course_id):
+    course = Course.query.get_or_404(course_id)
+    if course.teacher_id != current_user.id and current_user.role.name != 'Admin':
+        abort(403)
+    manuals = LabManual.query.filter_by(course_id=course.id).order_by(LabManual.sort_order).all()
+    return render_template('lab_manuals.html', course=course, manuals=manuals)
+
+
+@course_bp.route('/courses/<int:course_id>/lab-manuals/create', methods=['GET', 'POST'])
+@login_required
+def create_lab_manual(course_id):
+    course = Course.query.get_or_404(course_id)
+    if course.teacher_id != current_user.id:
+        abort(403)
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        if not title:
+            flash('Title is required.', 'danger')
+            return redirect(url_for('course.lab_manuals', course_id=course.id))
+
+        date_str = request.form.get('date_performed', '')
+        date_performed = None
+        if date_str:
+            try:
+                from datetime import date as dt_date
+                parts = date_str.split('-')
+                date_performed = dt_date(int(parts[0]), int(parts[1]), int(parts[2]))
+            except:
+                pass
+
+        image_urls = request.form.get('image_urls', '')
+        pdf_url = request.form.get('pdf_url', '')
+        if pdf_url and pdf_url.strip().lower() in ('none', 'null', ''):
+            pdf_url = ''
+
+        pdf_file = request.files.get('pdf_file')
+        if pdf_file and pdf_file.filename:
+            result = upload_file(pdf_file, folder='lab_manuals')
+            if result:
+                pdf_url = result
+
+        order = len(LabManual.query.filter_by(course_id=course.id).all()) + 1
+
+        manual = LabManual(
+            course_id=course.id,
+            title=title,
+            date_performed=date_performed,
+            software_used=request.form.get('software_used', ''),
+            objectives=request.form.get('objectives', ''),
+            theory=request.form.get('theory', ''),
+            procedure=request.form.get('procedure', ''),
+            observations=request.form.get('observations', ''),
+            result=request.form.get('result', ''),
+            conclusion=request.form.get('conclusion', ''),
+            image_urls=image_urls,
+            pdf_url=pdf_url,
+            sort_order=order,
+            created_by=current_user.id
+        )
+        db.session.add(manual)
+        db.session.commit()
+        flash('Lab manual created successfully!', 'success')
+        return redirect(url_for('course.lab_manuals', course_id=course.id))
+
+    return render_template('lab_manual_form.html', course=course, manual=None, action='create')
+
+
+@course_bp.route('/lab-manuals/<int:manual_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_lab_manual(manual_id):
+    manual = LabManual.query.get_or_404(manual_id)
+    if manual.course.teacher_id != current_user.id:
+        abort(403)
+
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        if not title:
+            flash('Title is required.', 'danger')
+            return redirect(url_for('course.lab_manuals', course_id=manual.course_id))
+
+        date_str = request.form.get('date_performed', '')
+        if date_str:
+            try:
+                from datetime import date as dt_date
+                parts = date_str.split('-')
+                manual.date_performed = dt_date(int(parts[0]), int(parts[1]), int(parts[2]))
+            except:
+                manual.date_performed = None
+        else:
+            manual.date_performed = None
+
+        manual.title = title
+        manual.software_used = request.form.get('software_used', '')
+        manual.objectives = request.form.get('objectives', '')
+        manual.theory = request.form.get('theory', '')
+        manual.procedure = request.form.get('procedure', '')
+        manual.observations = request.form.get('observations', '')
+        manual.result = request.form.get('result', '')
+        manual.conclusion = request.form.get('conclusion', '')
+        manual.image_urls = request.form.get('image_urls', '')
+
+        pdf_url = request.form.get('pdf_url', '')
+        if pdf_url and pdf_url.strip().lower() in ('none', 'null', ''):
+            pdf_url = ''
+        pdf_file = request.files.get('pdf_file')
+        if pdf_file and pdf_file.filename:
+            result = upload_file(pdf_file, folder='lab_manuals')
+            if result:
+                manual.pdf_url = result
+        else:
+            manual.pdf_url = pdf_url
+
+        db.session.commit()
+        flash('Lab manual updated!', 'success')
+        return redirect(url_for('course.lab_manuals', course_id=manual.course_id))
+
+    return render_template('lab_manual_form.html', course=manual.course, manual=manual, action='edit')
+
+
+@course_bp.route('/lab-manuals/<int:manual_id>/delete', methods=['POST'])
+@login_required
+def delete_lab_manual(manual_id):
+    manual = LabManual.query.get_or_404(manual_id)
+    if manual.course.teacher_id != current_user.id:
+        abort(403)
+    db.session.delete(manual)
+    db.session.commit()
+    flash('Lab manual deleted.', 'success')
+    return redirect(url_for('course.lab_manuals', course_id=manual.course_id))
+
+
+@course_bp.route('/lab-manuals/<int:manual_id>')
+@login_required
+def view_lab_manual(manual_id):
+    manual = LabManual.query.get_or_404(manual_id)
+    enrollment = Enrollment.query.filter_by(
+        student_id=current_user.id, course_id=manual.course_id
+    ).first()
+    if not enrollment and manual.course.teacher_id != current_user.id and current_user.role.name != 'Admin':
+        abort(403)
+    return render_template('lab_manual_view.html', manual=manual)

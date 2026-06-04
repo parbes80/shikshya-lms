@@ -48,6 +48,14 @@ def create_app():
             return path
         return url_for('static', filename=path)
 
+    @app.template_filter('nl2br')
+    def nl2br_filter(text):
+        if not text:
+            return ''
+        import html
+        escaped = html.escape(text)
+        return escaped.replace('\n', '<br>\n')
+
     @app.template_filter('markdown')
     def render_markdown(text):
         if not text:

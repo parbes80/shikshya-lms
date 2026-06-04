@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}{{ manual.title }}{% endblock %}
+{% block content %}
+<div style="max-width: 850px; margin: 0 auto;">
+  <a href="{{ url_for('course.details', slug=manual.course.slug) if current_user.role.name == 'Student' else url_for('course.lab_manuals', course_id=manual.course_id) }}" style="color: var(--primary); font-size: 0.9rem; margin-bottom: 1rem; display: inline-block;">
+    <i class="fas fa-arrow-left"></i> Back
+  </a>
+
+  <div class="card" style="padding: 2rem 2.5rem;">
+    <div style="text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid var(--border-color);">
+      <h1 style="font-size: 1.6rem; font-weight: 800;">{{ manual.title }}</h1>
+      <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 1.5rem; margin-top: 0.75rem; font-size: 0.9rem; color: var(--text-muted);">
+        {% if manual.date_performed %}
+        <span><i class="fas fa-calendar-alt"></i> <strong>Date:</strong> {{ manual.date_performed.strftime('%B %d, %Y') }}</span>
+        {% endif %}
+        {% if manual.software_used %}
+        <span><i class="fas fa-laptop-code"></i> <strong>Software:</strong> {{ manual.software_used }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if manual.objectives %}
+    <section style="margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">Objectives</h2>
+      <div style="font-size: 0.95rem; line-height: 1.7; color: var(--text-main);">{{ manual.objectives|nl2br|safe }}</div>
+    </section>
+    {% endif %}
+
+    {% if manual.theory %}
+    <section style="margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">Theory / Background</h2>
+      <div style="font-size: 0.95rem; line-height: 1.7; color: var(--text-main);">{{ manual.theory|nl2br|safe }}</div>
+    </section>
+    {% endif %}
+
+    {% if manual.procedure %}
+    <section style="margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">Procedure</h2>
+      <div style="font-size: 0.95rem; line-height: 1.7; color: var(--text-main);">{{ manual.procedure|nl2br|safe }}</div>
+    </section>
+    {% endif %}
+
+    {% if manual.observations %}
+    <section style="margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">Observations</h2>
+      <div style="font-size: 0.95rem; line-height: 1.7; color: var(--text-main);">{{ manual.observations|nl2br|safe }}</div>
+    </section>
+    {% endif %}
+
+    {% set images = manual.images_list() %}
+    {% if images %}
+    <section style="margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem;">Screenshots / Output</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+        {% for img_url in images %}
+        <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden;">
+          <a href="{{ img_url }}" target="_blank">
+            <img src="{{ img_url }}" alt="Lab image" style="width: 100%; height: auto; display: block;">
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if manual.result %}
+    <section style="margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">Result / Output</h2>
+      <div style="font-size: 0.95rem; line-height: 1.7; color: var(--text-main);">{{ manual.result|nl2br|safe }}</div>
+    </section>
+    {% endif %}
+
+    {% if manual.conclusion %}
+    <section style="margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">Conclusion</h2>
+      <div style="font-size: 0.95rem; line-height: 1.7; color: var(--text-main);">{{ manual.conclusion|nl2br|safe }}</div>
+    </section>
+    {% endif %}
+
+    {% if manual.pdf_url %}
+    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); text-align: center;">
+      <a href="{{ manual.pdf_url }}" target="_blank" class="btn btn-primary" style="padding: 0.6rem 1.5rem;">
+        <i class="fas fa-file-pdf"></i> Download Full Lab Report (PDF)
+      </a>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+      Created by <strong>{{ manual.author.username }}</strong> on {{ manual.created_at.strftime('%B %d, %Y') }}
+    </div>
+  </div>
+</div>
+{% endblock %}
