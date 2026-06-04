@@ -664,8 +664,7 @@
     font-size: 1.6rem;
   }
   .courses-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
+    grid-template-columns: 1fr;
   }
   .tabs-header {
     overflow-x: auto;
