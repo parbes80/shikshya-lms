@@ -1,6 +1,7 @@
 import os
 import uuid
 import io
+import requests
 import qrcode
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -471,8 +472,23 @@ def download_lesson_doc(lesson_id):
     if not doc_url or doc_url.strip().lower() in ('none', 'null', ''):
         abort(404)
     if not doc_url.startswith(('http://', 'https://', '//')):
-        doc_url = url_for('static', filename=doc_url)
-    return redirect(doc_url)
+        doc_url = url_for('static', filename=doc_url, _external=True)
+
+    try:
+        resp = requests.get(doc_url, stream=True, timeout=30)
+        if resp.status_code != 200:
+            abort(502)
+        content = resp.content
+        filename = f"{lesson.title.replace(' ', '_')}_notes.pdf"
+        return send_file(
+            io.BytesIO(content),
+            mimetype=resp.headers.get('Content-Type', 'application/pdf'),
+            as_attachment=True,
+            download_name=filename
+        )
+    except Exception as e:
+        current_app.logger.error(f'Download proxy failed: {e}')
+        abort(502)
 
 
 @api_bp.route('/api/certificates/<unique_code>/qrcode')

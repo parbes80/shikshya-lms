@@ -21,3 +21,6 @@ cloudinary==1.40.0
 
 # PDF report generation
 weasyprint==69.0
+
+# HTTP requests (download proxy)
+requests==2.31.0
