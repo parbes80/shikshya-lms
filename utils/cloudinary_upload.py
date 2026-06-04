@@ -83,28 +83,30 @@ def parse_cloudinary_public_id(url):
     return None
 
 
-def get_signed_download_url(url, expires_secs=300):
-    """Generate a signed Cloudinary download URL valid for expires_secs."""
+def get_signed_download_url(url, expires_secs=3600):
+    """Generate a signed private download URL valid for expires_secs."""
     if not url or not is_configured():
         return url
     public_id = parse_cloudinary_public_id(url)
     if not public_id:
         return url
-    from cloudinary.utils import cloudinary_url
-    # Determine correct resource_type via the API
     import cloudinary.api
+    from datetime import datetime, timezone
+    expiry = int(datetime.now(timezone.utc).timestamp()) + expires_secs
+    ext = os.path.splitext(url.split('?')[0])[1].lstrip('.') or 'pdf'
     for rtype in ('raw', 'image', 'video'):
         try:
             cloudinary.api.resource(public_id, resource_type=rtype)
-            signed_url, _ = cloudinary_url(
-                public_id,
+            from cloudinary.utils import private_download_url
+            signed = private_download_url(
+                public_id, ext,
                 resource_type=rtype,
                 type='upload',
-                sign_url=True,
-                secure=True,
-                attachment=True
+                attachment=True,
+                expires_at=expiry
             )
-            return signed_url
+            if signed:
+                return signed
         except Exception:
             continue
     return url

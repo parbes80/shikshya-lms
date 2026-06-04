@@ -473,6 +473,11 @@ def download_lesson_doc(lesson_id):
         abort(404)
 
     if doc_url.startswith(('http://', 'https://', '//')):
+        from utils.cloudinary_upload import get_signed_download_url
+        signed = get_signed_download_url(doc_url)
+        if signed and signed != doc_url:
+            return redirect(signed)
+        # fallback: proxy through Flask
         proxy_url = doc_url
     else:
         proxy_url = url_for('static', filename=doc_url, _external=True)
