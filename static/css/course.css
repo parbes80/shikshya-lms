@@ -83,6 +83,10 @@
   margin: 0 auto;
 }
 
+.mobile-enroll-inline {
+  display: none;
+}
+
 .course-hero-content .course-hero-details,
 .course-hero-content .course-hero-preview {
   max-width: 600px;

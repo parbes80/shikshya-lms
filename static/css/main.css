@@ -457,6 +457,9 @@ header {
   .course-hero-preview img {
     max-height: 180px;
   }
+  .mobile-enroll-inline {
+    display: none;
+  }
 
   .section-title {
     font-size: 1.5rem;
