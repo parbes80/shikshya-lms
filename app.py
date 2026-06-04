@@ -142,6 +142,9 @@ def create_app():
             if 'evaluations' not in existing_tables:
                 db.create_all()
                 app.logger.info('Created new tables (evaluations)')
+            if 'lab_manuals' not in existing_tables:
+                db.create_all()
+                app.logger.info('Created new tables (lab_manuals)')
             if 'evaluations' in existing_tables:
                 ecols = [c['name'] for c in insp.get_columns('evaluations')]
                 if 'question_pdf_url' not in ecols:
