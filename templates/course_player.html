@@ -55,6 +55,37 @@
     {% if active_lesson %}
     {% set is_vid = active_lesson.content_type == 'video' and active_lesson.video_url %}
     {% set doc_url = active_lesson.document_url|asset_url %}
+
+      <!-- TOP BAR: Title + Actions -->
+      <div style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; min-width: 0; flex: 1;">
+          <h4 style="font-size: 1.15rem; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ active_lesson.title }}</h4>
+          <span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem; flex-shrink: 0;">{{ active_lesson.content_type|capitalize }}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+          {% if doc_url %}
+          <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" class="btn btn-sm btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">
+            <i class="fas fa-file-pdf" style="color: #ef4444;"></i> PDF
+          </a>
+          {% endif %}
+          {% if is_vid %}
+          <label for="speed-btn" style="font-size: 0.8rem; color: var(--text-muted);"><i class="fas fa-cog"></i></label>
+          <select id="speed-btn" class="form-control" style="width: 80px; padding: 0.25rem; font-size: 0.8rem; border-radius: var(--radius-sm);">
+            <option value="1.0">1.0x</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2.0">2.0x</option>
+          </select>
+          {% else %}
+          {% set prog = active_progress %}
+          <button id="mark-complete-btn" class="btn btn-sm {% if prog and prog.is_completed %}btn-secondary{% else %}btn-primary{% endif %}" data-lesson-id="{{ active_lesson.id }}" style="flex-shrink: 0;">
+            <i class="fas {% if prog and prog.is_completed %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
+            {% if prog and prog.is_completed %}Completed{% else %}Mark Complete{% endif %}
+          </button>
+          {% endif %}
+        </div>
+      </div>
+
       {% if is_vid %}
       <section class="video-section">
           <video id="lesson-video" controls data-lesson-id="{{ active_lesson.id }}" data-start-seconds="{{ active_progress.video_progress_seconds if active_progress else 0 }}">
@@ -75,7 +106,7 @@
           </ul>
         </div>
         {% endif %}
-        <div class="notes-section">
+        <div class="notes-section" style="max-width: 100%;">
           <div class="lesson-notes-content" style="color: var(--text-main); font-size: 0.95rem; line-height: 1.7; max-width: 100%;">
             {% if lesson_content_html %}
               {{ lesson_content_html|safe }}
@@ -100,30 +131,6 @@
         </div>
         {% endif %}
       {% endif %}
-
-      <div style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-        <div style="display: flex; align-items: center; gap: 1rem; min-width: 0; flex: 1;">
-          <h4 style="font-size: 1.15rem; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ active_lesson.title }}</h4>
-          <span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem; flex-shrink: 0;">{{ active_lesson.content_type|capitalize }}</span>
-        </div>
-        {% if is_vid %}
-        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); flex-shrink: 0;">
-          <label for="speed-btn"><i class="fas fa-cog"></i> Playback Speed:</label>
-          <select id="speed-btn" class="form-control" style="width: 80px; padding: 0.25rem; font-size: 0.8rem; border-radius: var(--radius-sm);">
-            <option value="1.0">1.0x</option>
-            <option value="1.25">1.25x</option>
-            <option value="1.5">1.5x</option>
-            <option value="2.0">2.0x</option>
-          </select>
-        </div>
-        {% else %}
-        {% set prog = active_progress %}
-        <button id="mark-complete-btn" class="btn btn-sm {% if prog and prog.is_completed %}btn-secondary{% else %}btn-primary{% endif %}" data-lesson-id="{{ active_lesson.id }}" style="flex-shrink: 0;">
-          <i class="fas {% if prog and prog.is_completed %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
-          {% if prog and prog.is_completed %}Completed{% else %}Mark Complete{% endif %}
-        </button>
-        {% endif %}
-      </div>
     {% else %}
       <div style="text-align: center; padding: 4rem 2rem;">
         <i class="fas fa-book-open" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
@@ -164,11 +171,6 @@
               <p style="color: var(--text-muted);">No additional text notes for this lecture.</p>
             {% endif %}
           </div>
-          {% if doc_url %}
-          <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
-            <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Download PDF</a>
-          </div>
-          {% endif %}
         </div>
       </div>
       {% endif %}

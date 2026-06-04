@@ -341,6 +341,7 @@
 
 .notes-section {
   width: 100%;
+  max-width: 100%;
   padding: 2.5rem 3rem;
   background: var(--bg-card);
   overflow-y: auto;
@@ -361,7 +362,7 @@
 
 .lesson-details-section {
   padding: 1.25rem 2.5rem 2rem;
-  max-width: 1100px;
+  max-width: 100%;
   width: 100%;
   margin: 0 auto;
 }
