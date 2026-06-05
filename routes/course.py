@@ -28,7 +28,7 @@ def process_lesson_headings(text_content):
 
     def _heading_replacer(m):
         tag = m.group(1)
-        content = m.group(2).strip()
+        content = m.group(3).strip()
         # strip any nested HTML from heading text for the id
         plain = re.sub(r'<[^>]+>', '', content)
         base_id = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]+', '-', plain.lower()).strip('-')
@@ -38,7 +38,7 @@ def process_lesson_headings(text_content):
         seen[base_id] = count + 1
         unique_id = f'{base_id}-{count}' if count else base_id
         headings.append((unique_id, plain, tag))
-        return f'<{tag} id="{unique_id}">{content}</{tag}>'
+        return f'<{tag} id="{unique_id}">{m.group(3)}</{tag}>'
 
     processed = re.sub(
         r'<h([1-6])(\s[^>]*)?>(.*?)</h\1>',
