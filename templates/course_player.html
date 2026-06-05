@@ -96,16 +96,6 @@
       {% else %}
         {% set stripped = active_lesson.text_content|striptags|trim if active_lesson.text_content else '' %}
         {% if stripped %}
-        {% if lesson_headings %}
-        <div class="subtopic-card">
-          <strong style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">In this section</strong>
-          <ul class="subtopic-inline-list">
-            {% for hid, htext, htag in lesson_headings %}
-            <li><a href="#{{ hid }}" style="font-size: 0.85rem;">{{ htext }}</a></li>
-            {% endfor %}
-          </ul>
-        </div>
-        {% endif %}
         <div class="notes-section" style="max-width: 100%;">
           <div class="lesson-notes-content" style="color: var(--text-main); font-size: 0.95rem; line-height: 1.7; max-width: 100%;">
             {% if lesson_content_html %}
@@ -148,16 +138,6 @@
           <div style="margin-top: 0.75rem;">
             {% set stripped = active_lesson.text_content|striptags|trim if active_lesson.text_content else '' %}
             {% if stripped %}
-              {% if lesson_headings %}
-              <div class="subtopic-card">
-                <strong style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">In this section</strong>
-                <ul class="subtopic-inline-list">
-                  {% for hid, htext, htag in lesson_headings %}
-                  <li><a href="#{{ hid }}" style="font-size: 0.85rem;">{{ htext }}</a></li>
-                  {% endfor %}
-                </ul>
-              </div>
-              {% endif %}
               <div class="lesson-notes-content">
                 {% if lesson_content_html %}
                   {{ lesson_content_html|safe }}
