@@ -27,7 +27,7 @@ def process_lesson_headings(text_content):
     seen = {}
 
     def _heading_replacer(m):
-        tag = m.group(1)
+        tag = f'h{m.group(1)}'
         content = m.group(3).strip()
         # strip any nested HTML from heading text for the id
         plain = re.sub(r'<[^>]+>', '', content)
