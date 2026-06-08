@@ -144,6 +144,77 @@ def admin():
     )
 
 
+@dashboard_bp.route('/dashboard/admin/bulk-import-users', methods=['GET', 'POST'])
+@role_required('Admin')
+def admin_bulk_import_users():
+    if request.method == 'POST':
+        file = request.files.get('csv_file')
+        if not file or not file.filename:
+            flash('Please upload a CSV file.', 'danger')
+            return render_template('admin_bulk_import.html')
+
+        import csv
+        import io
+
+        stream = io.StringIO(file.stream.read().decode('utf-8-sig'))
+        reader = csv.DictReader(stream)
+
+        required = {'username', 'email', 'password'}
+        if not reader.fieldnames or not required.issubset(reader.fieldnames):
+            flash('CSV must have columns: username, email, password, full_name (optional), role (optional)', 'danger')
+            return render_template('admin_bulk_import.html')
+
+        created = 0
+        errors = []
+
+        for i, row in enumerate(reader, start=2):
+            username = row.get('username', '').strip()
+            email = row.get('email', '').strip()
+            password = row.get('password', '').strip()
+            full_name = row.get('full_name', '').strip()
+            role_name = row.get('role', 'Student').strip()
+
+            if not username or not email or not password:
+                errors.append(f"Row {i}: username, email, and password are required")
+                continue
+
+            if User.query.filter((User.username == username) | (User.email == email)).first():
+                errors.append(f"Row {i}: '{username}' / '{email}' already exists")
+                continue
+
+            role = Role.query.filter_by(name=role_name).first()
+            if not role:
+                errors.append(f"Row {i}: invalid role '{role_name}' (use: Student, Teacher, Admin)")
+                continue
+
+            user = User(
+                username=username,
+                email=email,
+                full_name=full_name or None,
+                role=role,
+                is_approved=(role_name == 'Student')
+            )
+            user.set_password(password)
+            db.session.add(user)
+            db.session.flush()
+
+            profile = UserProfile(user_id=user.id)
+            db.session.add(profile)
+            created += 1
+
+        db.session.commit()
+
+        msg = f'Successfully created {created} user(s).'
+        if errors:
+            msg += f' {len(errors)} error(s): ' + '; '.join(errors[:5])
+            if len(errors) > 5:
+                msg += f' (and {len(errors) - 5} more)'
+        flash(msg, 'success' if not errors else 'warning')
+        return redirect(url_for('dashboard.admin_bulk_import_users'))
+
+    return render_template('admin_bulk_import.html')
+
+
 @dashboard_bp.route('/dashboard/admin/approve-teacher/<int:user_id>')
 @role_required('Admin')
 def approve_teacher(user_id):

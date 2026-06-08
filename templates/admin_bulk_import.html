@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Bulk Import Users{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 2rem auto; padding: 0 1rem;">
+  <div style="margin-bottom: 2rem;">
+    <a href="{{ url_for('dashboard.admin') }}" style="color: var(--primary); font-size: 0.85rem;">&larr; Back to Admin Panel</a>
+    <h1 style="font-size: 1.8rem; margin-top: 0.5rem;">Bulk Import Users</h1>
+    <p style="color: var(--text-muted);">Upload a CSV file to create multiple student accounts at once.</p>
+  </div>
+
+  <div class="card" style="padding: 2rem;">
+    <h3 style="margin-bottom: 1rem;">CSV Format</h3>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">Your CSV must include these columns:</p>
+    <pre style="background: var(--bg-app); padding: 1rem; border-radius: var(--radius-sm); font-size: 0.8rem; overflow-x: auto; white-space: pre-wrap;">
+username,email,password,full_name,role
+student1,student1@example.com,Pass1234,Student One,Student
+student2,student2@example.com,Pass1234,Student Two,Student
+teacher1,teacher1@example.com,Pass1234,Teacher One,Teacher</pre>
+    <ul style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.75rem; padding-left: 1.25rem;">
+      <li><strong>username</strong>, <strong>email</strong>, <strong>password</strong> — required</li>
+      <li><strong>full_name</strong> — optional</li>
+      <li><strong>role</strong> — optional (defaults to <code>Student</code>; use <code>Student</code>, <code>Teacher</code>, or <code>Admin</code>)</li>
+      <li>Students are auto-approved; Teachers/Admins require manual approval</li>
+      <li>Duplicate usernames or emails are skipped with an error</li>
+    </ul>
+  </div>
+
+  <div class="card" style="padding: 2rem; margin-top: 1.5rem;">
+    <form method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group">
+        <label class="form-label">Select CSV File</label>
+        <input type="file" name="csv_file" class="form-control" accept=".csv" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
+        <i class="fas fa-upload"></i> Import Users
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
