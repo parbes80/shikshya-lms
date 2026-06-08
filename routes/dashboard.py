@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Blueprint, render_template, redirect, url_for, flash, abort, request, current_app
@@ -213,6 +214,29 @@ def admin_bulk_import_users():
         return redirect(url_for('dashboard.admin_bulk_import_users'))
 
     return render_template('admin_bulk_import.html')
+
+
+@dashboard_bp.route('/dashboard/admin/add-category', methods=['POST'])
+@role_required('Admin')
+def add_category():
+    name = request.form.get('name', '').strip()
+    icon = request.form.get('icon', 'fa-graduation-cap').strip()
+    if not name:
+        flash('Category name is required.', 'danger')
+        return redirect(url_for('dashboard.admin'))
+
+    slug = name.lower().replace(' ', '-').replace('/', '-')
+    slug = re.sub(r'[^a-z0-9-]', '', slug)
+
+    if Category.query.filter_by(name=name).first():
+        flash(f'Category "{name}" already exists.', 'danger')
+        return redirect(url_for('dashboard.admin'))
+
+    cat = Category(name=name, slug=slug, icon_class=icon)
+    db.session.add(cat)
+    db.session.commit()
+    flash(f'Category "{name}" created.', 'success')
+    return redirect(url_for('dashboard.admin'))
 
 
 @dashboard_bp.route('/dashboard/admin/approve-teacher/<int:user_id>')

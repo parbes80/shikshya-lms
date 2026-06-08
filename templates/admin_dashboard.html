@@ -294,15 +294,16 @@
           {% endfor %}
         </ul>
 
-        <form style="background: var(--bg-app); padding: 1rem; border-radius: var(--radius-md);" onsubmit="event.preventDefault(); alert('Category configuration saved! (Seed or dynamic db implementation completed.)')">
+        <form action="{{ url_for('dashboard.add_category') }}" method="POST" style="background: var(--bg-app); padding: 1rem; border-radius: var(--radius-md);">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem;">Add New Category</h4>
           <div class="form-group" style="margin-bottom: 0.75rem;">
             <label class="form-label" style="font-size: 0.8rem;" for="cat-name-input">Category Name</label>
-            <input type="text" id="cat-name-input" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" placeholder="e.g. Cyber Security" required>
+            <input type="text" name="name" id="cat-name-input" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" placeholder="e.g. Cyber Security" required>
           </div>
           <div class="form-group" style="margin-bottom: 0.75rem;">
             <label class="form-label" style="font-size: 0.8rem;" for="cat-icon-input">FontAwesome Icon Class</label>
-            <input type="text" id="cat-icon-input" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" placeholder="e.g. fa-shield-alt" value="fa-shield-alt" required>
+            <input type="text" name="icon" id="cat-icon-input" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" placeholder="e.g. fa-shield-alt" value="fa-graduation-cap">
           </div>
           <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; width: 100%; justify-content: center;">Create Category</button>
         </form>
