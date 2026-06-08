@@ -72,12 +72,15 @@ class Quiz(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     course_id = db.Column(db.Integer, db.ForeignKey('courses.id', ondelete='CASCADE'), nullable=False)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('lessons.id', ondelete='SET NULL'), nullable=True)
     title = db.Column(db.String(150), nullable=False)
     time_limit_minutes = db.Column(db.Integer, default=15)
     passing_score = db.Column(db.Integer, default=60)
 
     questions = db.relationship('Question', backref='quiz', lazy=True, cascade="all, delete-orphan")
     attempts = db.relationship('QuizAttempt', backref='quiz', lazy=True, cascade="all, delete-orphan")
+
+    lesson = db.relationship('Lesson', backref=db.backref('quizzes', lazy=True))
 
     def __repr__(self):
         return f'<Quiz {self.title}>'

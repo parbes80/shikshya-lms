@@ -132,7 +132,8 @@
             <div style="margin-top: 1rem;">
               <div class="teacher-section-header">Quizzes</div>
               <ul class="content-list">
-                {% for q in course.quizzes %}
+                {% set course_quizzes = course.quizzes|selectattr('lesson_id', 'none')|list %}
+                {% for q in course_quizzes %}
                 <li class="content-item">
                   <span><i class="fas fa-pencil-alt" style="color: var(--accent);"></i> {{ q.title }} ({{ q.questions|length }} questions, {{ q.time_limit_minutes }}min)</span>
                   <span class="lesson-actions">
@@ -143,6 +144,25 @@
                     </form>
                   </span>
                 </li>
+                {% endfor %}
+                {% for mod in course.modules %}
+                  {% for les in mod.lessons %}
+                    {% set lesson_quizzes = course.quizzes|selectattr('lesson_id', 'equalto', les.id)|list %}
+                    {% if lesson_quizzes %}
+                      {% for q in lesson_quizzes %}
+                      <li class="content-item" style="padding-left: 1.5rem; border-left: 2px solid var(--primary);">
+                        <span><i class="fas fa-pencil-alt" style="color: var(--accent);"></i> <small style="color: var(--text-muted);">{{ mod.title }} &raquo; {{ les.title }}:</small> {{ q.title }} ({{ q.questions|length }} questions, {{ q.time_limit_minutes }}min)</span>
+                        <span class="lesson-actions">
+                          <a href="{{ url_for('course.edit_quiz', course_id=course.id, quiz_id=q.id) }}" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;"><i class="fas fa-edit"></i></a>
+                          <form action="{{ url_for('course.delete_quiz', course_id=course.id, quiz_id=q.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this quiz?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem; color: #ef4444; border-color: #ef4444;"><i class="fas fa-trash"></i></button>
+                          </form>
+                        </span>
+                      </li>
+                      {% endfor %}
+                    {% endif %}
+                  {% endfor %}
                 {% endfor %}
               </ul>
             </div>

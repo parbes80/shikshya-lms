@@ -28,6 +28,19 @@
         <input type="text" name="title" id="quiz-title" class="form-control" placeholder="e.g. Python Basics Assessment" value="{{ quiz.title if quiz else '' }}" required>
       </div>
 
+      <div class="form-group">
+        <label class="form-label" for="quiz-lesson">Link to Lesson (optional)</label>
+        <select name="lesson_id" id="quiz-lesson" class="form-control" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+          <option value="">-- Course-level quiz (not tied to a lesson) --</option>
+          {% for les in lessons %}
+          <option value="{{ les.id }}" {% if quiz and quiz.lesson_id == les.id %}selected{% endif %}>
+            {{ les.module.title }} &raquo; {{ les.title }}
+          </option>
+          {% endfor %}
+        </select>
+        <small style="color: var(--text-muted); font-size: 0.75rem;">If linked, this quiz will only appear when that lesson is active in the player.</small>
+      </div>
+
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
         <div class="form-group">
           <label class="form-label" for="quiz-time">Time Limit (minutes)</label>

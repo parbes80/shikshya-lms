@@ -279,8 +279,16 @@ def player(slug):
     if active_lesson and active_lesson.text_content:
         lesson_content_html, lesson_headings = process_lesson_headings(active_lesson.text_content)
 
+    from sqlalchemy import or_
+
     discussions = DiscussionTopic.query.filter_by(course_id=course.id).order_by(DiscussionTopic.created_at.desc()).all()
-    quizzes = Quiz.query.filter_by(course_id=course.id).all()
+    if active_lesson:
+        quizzes = Quiz.query.filter(
+            Quiz.course_id == course.id,
+            or_(Quiz.lesson_id == None, Quiz.lesson_id == active_lesson.id)
+        ).all()
+    else:
+        quizzes = Quiz.query.filter_by(course_id=course.id).all()
     assignments = Assignment.query.filter_by(course_id=course.id).all()
     live_classes = LiveClass.query.filter_by(course_id=course.id).order_by(LiveClass.start_time.desc()).all()
     lab_manuals = LabManual.query.filter_by(course_id=course.id).order_by(LabManual.sort_order).all()
@@ -505,6 +513,7 @@ def create_quiz(course_id):
         title = request.form.get('title', '').strip()
         time_limit = int(request.form.get('time_limit_minutes', 10))
         passing_score = int(request.form.get('passing_score', 60))
+        lesson_id = request.form.get('lesson_id', type=int)
 
         if not title:
             flash(f'{label} title is required.', 'danger')
@@ -512,6 +521,7 @@ def create_quiz(course_id):
 
         quiz = Quiz(
             course_id=course.id,
+            lesson_id=lesson_id or None,
             title=title,
             time_limit_minutes=time_limit,
             passing_score=passing_score
@@ -560,7 +570,8 @@ def create_quiz(course_id):
 
     return render_template('quiz_form.html', course=course, action='create',
                            from_eval=from_eval, eval_type=eval_type,
-                           is_test_paper=is_test_paper, label=label, quiz=None)
+                           is_test_paper=is_test_paper, label=label, quiz=None,
+                           lessons=Lesson.query.filter(Lesson.module_id.in_([m.id for m in course.modules])).order_by(Lesson.sort_order).all())
 
 
 @course_bp.route('/courses/<int:course_id>/quiz/<int:quiz_id>/edit', methods=['GET', 'POST'])
@@ -584,6 +595,7 @@ def edit_quiz(course_id, quiz_id):
         title = request.form.get('title', '').strip()
         time_limit = int(request.form.get('time_limit_minutes', 10))
         passing_score = int(request.form.get('passing_score', 60))
+        lesson_id = request.form.get('lesson_id', type=int)
 
         if not title:
             flash(f'{label} title is required.', 'danger')
@@ -592,6 +604,7 @@ def edit_quiz(course_id, quiz_id):
         quiz.title = title
         quiz.time_limit_minutes = time_limit
         quiz.passing_score = passing_score
+        quiz.lesson_id = lesson_id or None
 
         for q in quiz.questions[:]:
             db.session.delete(q)
@@ -638,7 +651,8 @@ def edit_quiz(course_id, quiz_id):
 
     return render_template('quiz_form.html', course=course, quiz=quiz, action='edit',
                            from_eval=from_eval, eval_type=eval_type,
-                           is_test_paper=is_test_paper, label=label)
+                           is_test_paper=is_test_paper, label=label,
+                           lessons=Lesson.query.filter(Lesson.module_id.in_([m.id for m in course.modules])).order_by(Lesson.sort_order).all())
 
 
 @course_bp.route('/courses/<int:course_id>/quiz/<int:quiz_id>/delete', methods=['POST'])

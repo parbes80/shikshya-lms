@@ -159,6 +159,10 @@ def create_app():
                 db.session.execute(sa.text('ALTER TABLE users ADD COLUMN full_name VARCHAR(120)'))
                 db.session.commit()
                 app.logger.info('Added full_name column to users')
+            if 'quizzes' in existing_tables and 'lesson_id' not in [c['name'] for c in insp.get_columns('quizzes')]:
+                db.session.execute(sa.text('ALTER TABLE quizzes ADD COLUMN lesson_id INTEGER REFERENCES lessons(id) ON DELETE SET NULL'))
+                db.session.commit()
+                app.logger.info('Added lesson_id column to quizzes')
         if not Role.query.first():
             from seed import seed_database
             seed_database()
