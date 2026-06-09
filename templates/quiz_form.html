@@ -108,7 +108,7 @@ question_text,question_type,points,choice_1,choice_2,choice_3,choice_4,correct
                 {% for c in q.choices %}
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                   <input type="radio" name="correct_choice_{{ loop.parent.index0 }}" value="{{ loop.index0 }}" {% if c.is_correct %}checked{% endif %} style="accent-color: var(--secondary);">
-                  <input type="text" name="choice_text_{{ loop.parent.index0 }}[]" class="form-control" placeholder="Choice {{ loop.index + 1 }}" value="{{ c.text }}" {% if loop.index0 < 2 %}required{% endif %} style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                  <input type="text" name="choice_text_{{ loop.parent.index0 }}[]" class="form-control" placeholder="Choice {{ loop.index + 1 }}" value="{{ c.text }}" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
                 </div>
                 {% endfor %}
               </div>
@@ -144,7 +144,7 @@ question_text,question_type,points,choice_1,choice_2,choice_3,choice_4,correct
               {% for k in range(4) %}
               <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                 <input type="radio" name="correct_choice_0" value="{{ k }}" {% if k == 0 %}checked{% endif %} style="accent-color: var(--secondary);">
-                <input type="text" name="choice_text_0[]" class="form-control" placeholder="Choice {{ k + 1 }}" {% if k < 2 %}required{% endif %} style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                <input type="text" name="choice_text_0[]" class="form-control" placeholder="Choice {{ k + 1 }}" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
               </div>
               {% endfor %}
               <small style="color: var(--text-muted); font-size: 0.75rem;">Select the radio button next to the <strong>correct</strong> answer.</small>
@@ -183,7 +183,7 @@ question_text,question_type,points,choice_1,choice_2,choice_3,choice_4,correct
       choicesHtml += `
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
           <input type="radio" name="correct_choice_${idx}" value="${k}" ${k === 0 ? 'checked' : ''} style="accent-color: var(--secondary);">
-          <input type="text" name="choice_text_${idx}[]" class="form-control" placeholder="Choice ${k + 1}" ${k < 2 ? 'required' : ''} style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+          <input type="text" name="choice_text_${idx}[]" class="form-control" placeholder="Choice ${k + 1}" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
         </div>
       `;
     }

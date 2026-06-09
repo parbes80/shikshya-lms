@@ -532,14 +532,31 @@ def create_quiz(course_id):
         csv_file = request.files.get('csv_file')
         if csv_file and csv_file.filename:
             import csv, io
-            stream = io.StringIO(csv_file.stream.read().decode('utf-8-sig'))
+            raw = csv_file.stream.read()
+            try:
+                stream = io.StringIO(raw.decode('utf-8-sig'))
+            except UnicodeDecodeError:
+                stream = io.StringIO(raw.decode('latin-1'))
             reader = csv.DictReader(stream)
+            # normalize column names: lowercase, strip, replace spaces with underscores
+            reader.fieldnames = [fn.strip().lower().replace(' ', '_') for fn in reader.fieldnames]
+            required_cols = {'question_text'}
+            if not reader.fieldnames or not required_cols.issubset(reader.fieldnames):
+                flash(f'CSV must have a "question_text" column. Found: {reader.fieldnames}', 'danger')
+                return render_template('quiz_form.html', course=course, action='create',
+                                       from_eval=from_eval, eval_type=eval_type,
+                                       is_test_paper=is_test_paper, label=label, quiz=None,
+                                       lessons=Lesson.query.filter(Lesson.module_id.in_([m.id for m in course.modules])).order_by(Lesson.sort_order).all())
+            row_count = 0
             for row in reader:
                 q_text = row.get('question_text', '').strip()
                 if not q_text:
                     continue
                 q_type = row.get('question_type', 'MCQ').strip()
-                points = int(row.get('points', 10))
+                try:
+                    points = int(row.get('points', 10))
+                except (ValueError, TypeError):
+                    points = 10
                 question = Question(
                     quiz_id=quiz.id, text=q_text,
                     question_type=q_type, points=points
@@ -556,8 +573,11 @@ def create_quiz(course_id):
                         question_id=question.id, text=c_text,
                         is_correct=(j == correct_idx)
                     ))
-            q_count = len(list(reader))  # won't work after iteration
-            flash(f'{label} "{quiz.title}" created from CSV!', 'success')
+                row_count += 1
+            if row_count == 0:
+                flash('No valid questions found in CSV. Check that "question_text" column has data.', 'warning')
+            else:
+                flash(f'Imported {row_count} question(s) from CSV.', 'success')
         else:
             question_texts = request.form.getlist('question_text[]')
             question_types = request.form.getlist('question_type[]')
@@ -644,14 +664,27 @@ def edit_quiz(course_id, quiz_id):
         csv_file = request.files.get('csv_file')
         if csv_file and csv_file.filename:
             import csv, io
-            stream = io.StringIO(csv_file.stream.read().decode('utf-8-sig'))
+            raw = csv_file.stream.read()
+            try:
+                stream = io.StringIO(raw.decode('utf-8-sig'))
+            except UnicodeDecodeError:
+                stream = io.StringIO(raw.decode('latin-1'))
             reader = csv.DictReader(stream)
+            reader.fieldnames = [fn.strip().lower().replace(' ', '_') for fn in reader.fieldnames]
+            required_cols = {'question_text'}
+            if not reader.fieldnames or not required_cols.issubset(reader.fieldnames):
+                flash(f'CSV must have a "question_text" column. Found: {reader.fieldnames}', 'danger')
+                return redirect(redirect_back)
+            row_count = 0
             for row in reader:
                 q_text = row.get('question_text', '').strip()
                 if not q_text:
                     continue
                 q_type = row.get('question_type', 'MCQ').strip()
-                points = int(row.get('points', 10))
+                try:
+                    points = int(row.get('points', 10))
+                except (ValueError, TypeError):
+                    points = 10
                 question = Question(
                     quiz_id=quiz.id, text=q_text,
                     question_type=q_type, points=points
@@ -668,6 +701,11 @@ def edit_quiz(course_id, quiz_id):
                         question_id=question.id, text=c_text,
                         is_correct=(j == correct_idx)
                     ))
+                row_count += 1
+            if row_count == 0:
+                flash('No valid questions found in CSV. Check that "question_text" column has data.', 'warning')
+            else:
+                flash(f'Imported {row_count} question(s) from CSV.', 'success')
         else:
             question_texts = request.form.getlist('question_text[]')
             question_types = request.form.getlist('question_type[]')
