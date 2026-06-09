@@ -17,7 +17,7 @@
   <div class="card" style="padding: 2.5rem; position: relative;">
     <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--primary);"></div>
 
-    <form id="quiz-form" action="{% if action == 'edit' %}{{ url_for('course.edit_quiz', course_id=course.id, quiz_id=quiz.id) }}{% else %}{{ url_for('course.create_quiz', course_id=course.id) }}{% endif %}" method="POST">
+    <form id="quiz-form" enctype="multipart/form-data" action="{% if action == 'edit' %}{{ url_for('course.edit_quiz', course_id=course.id, quiz_id=quiz.id) }}{% else %}{{ url_for('course.create_quiz', course_id=course.id) }}{% endif %}" method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       {% if from_eval %}
       <input type="hidden" name="from_eval" value="1">
@@ -54,7 +54,30 @@
 
       <hr style="border-color: var(--border-color); margin: 1.5rem 0;">
 
-      <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Questions</h3>
+      <div style="background: var(--bg-app); border: 2px dashed var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.5rem;">
+        <h3 style="font-size: 1rem; margin-bottom: 0.75rem;"><i class="fas fa-file-csv"></i> Import Questions from CSV</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Upload a CSV file to add many questions at once. If a CSV is uploaded, manual questions below are ignored.</p>
+        <div class="form-group">
+          <label class="form-label" style="font-size: 0.8rem;">CSV File</label>
+          <input type="file" name="csv_file" class="form-control" accept=".csv">
+        </div>
+        <details style="font-size: 0.8rem; color: var(--text-muted); cursor: pointer;">
+          <summary>View CSV format example</summary>
+          <pre style="background: var(--bg-card); padding: 0.75rem; border-radius: var(--radius-sm); margin-top: 0.5rem; overflow-x: auto; font-size: 0.75rem;">
+question_text,question_type,points,choice_1,choice_2,choice_3,choice_4,correct
+"What is 2+2?",MCQ,10,3,4,5,2,2
+"Python is a compiled language?",TF,10,True,False,,,1</pre>
+          <ul style="margin-top: 0.5rem; padding-left: 1.25rem;">
+            <li><code>question_text</code> — required</li>
+            <li><code>question_type</code> — <code>MCQ</code> or <code>TF</code> (defaults to MCQ)</li>
+            <li><code>points</code> — defaults to 10</li>
+            <li><code>choice_1</code> to <code>choice_4</code> — at least 2 required for MCQ</li>
+            <li><code>correct</code> — 1-based index of the correct choice (e.g. <code>2</code> means choice_2 is correct)</li>
+          </ul>
+        </details>
+      </div>
+
+      <h3 style="font-size: 1.2rem; margin-bottom: 1rem;">Manual Questions</h3>
       <div id="questions-container">
         {% if quiz %}
           {% for q in quiz.questions %}

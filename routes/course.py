@@ -529,43 +529,74 @@ def create_quiz(course_id):
         db.session.add(quiz)
         db.session.flush()
 
-        question_texts = request.form.getlist('question_text[]')
-        question_types = request.form.getlist('question_type[]')
-        question_points = request.form.getlist('points[]')
-
-        for i in range(len(question_texts)):
-            q_text = question_texts[i].strip()
-            if not q_text:
-                continue
-
-            q_type = question_types[i] if i < len(question_types) else 'MCQ'
-            points = int(question_points[i]) if i < len(question_points) else 10
-
-            question = Question(
-                quiz_id=quiz.id,
-                text=q_text,
-                question_type=q_type,
-                points=points
-            )
-            db.session.add(question)
-            db.session.flush()
-
-            choice_texts = request.form.getlist(f'choice_text_{i}[]')
-            correct_idx = request.form.get(f'correct_choice_{i}')
-            for j in range(len(choice_texts)):
-                c_text = choice_texts[j].strip()
-                if not c_text:
+        csv_file = request.files.get('csv_file')
+        if csv_file and csv_file.filename:
+            import csv, io
+            stream = io.StringIO(csv_file.stream.read().decode('utf-8-sig'))
+            reader = csv.DictReader(stream)
+            for row in reader:
+                q_text = row.get('question_text', '').strip()
+                if not q_text:
                     continue
-                is_correct = (str(j) == correct_idx)
-                choice = Choice(
-                    question_id=question.id,
-                    text=c_text,
-                    is_correct=is_correct
+                q_type = row.get('question_type', 'MCQ').strip()
+                points = int(row.get('points', 10))
+                question = Question(
+                    quiz_id=quiz.id, text=q_text,
+                    question_type=q_type, points=points
                 )
-                db.session.add(choice)
+                db.session.add(question)
+                db.session.flush()
+                choices = [row.get(f'choice_{k}', '').strip() for k in range(1, 5)]
+                correct_raw = row.get('correct', '').strip()
+                correct_idx = int(correct_raw) - 1 if correct_raw.isdigit() else -1
+                for j, c_text in enumerate(choices):
+                    if not c_text:
+                        continue
+                    db.session.add(Choice(
+                        question_id=question.id, text=c_text,
+                        is_correct=(j == correct_idx)
+                    ))
+            q_count = len(list(reader))  # won't work after iteration
+            flash(f'{label} "{quiz.title}" created from CSV!', 'success')
+        else:
+            question_texts = request.form.getlist('question_text[]')
+            question_types = request.form.getlist('question_type[]')
+            question_points = request.form.getlist('points[]')
+
+            for i in range(len(question_texts)):
+                q_text = question_texts[i].strip()
+                if not q_text:
+                    continue
+
+                q_type = question_types[i] if i < len(question_types) else 'MCQ'
+                points = int(question_points[i]) if i < len(question_points) else 10
+
+                question = Question(
+                    quiz_id=quiz.id,
+                    text=q_text,
+                    question_type=q_type,
+                    points=points
+                )
+                db.session.add(question)
+                db.session.flush()
+
+                choice_texts = request.form.getlist(f'choice_text_{i}[]')
+                correct_idx = request.form.get(f'correct_choice_{i}')
+                for j in range(len(choice_texts)):
+                    c_text = choice_texts[j].strip()
+                    if not c_text:
+                        continue
+                    is_correct = (str(j) == correct_idx)
+                    choice = Choice(
+                        question_id=question.id,
+                        text=c_text,
+                        is_correct=is_correct
+                    )
+                    db.session.add(choice)
 
         db.session.commit()
-        flash(f'{label} "{quiz.title}" created with {len(question_texts)} questions!', 'success')
+        q_count = Question.query.filter_by(quiz_id=quiz.id).count()
+        flash(f'{label} "{quiz.title}" created with {q_count} questions!', 'success')
         return redirect(redirect_back)
 
     return render_template('quiz_form.html', course=course, action='create',
@@ -610,40 +641,68 @@ def edit_quiz(course_id, quiz_id):
             db.session.delete(q)
         db.session.flush()
 
-        question_texts = request.form.getlist('question_text[]')
-        question_types = request.form.getlist('question_type[]')
-        question_points = request.form.getlist('points[]')
-
-        for i in range(len(question_texts)):
-            q_text = question_texts[i].strip()
-            if not q_text:
-                continue
-
-            q_type = question_types[i] if i < len(question_types) else 'MCQ'
-            points = int(question_points[i]) if i < len(question_points) else 10
-
-            question = Question(
-                quiz_id=quiz.id,
-                text=q_text,
-                question_type=q_type,
-                points=points
-            )
-            db.session.add(question)
-            db.session.flush()
-
-            choice_texts = request.form.getlist(f'choice_text_{i}[]')
-            correct_idx = request.form.get(f'correct_choice_{i}')
-            for j in range(len(choice_texts)):
-                c_text = choice_texts[j].strip()
-                if not c_text:
+        csv_file = request.files.get('csv_file')
+        if csv_file and csv_file.filename:
+            import csv, io
+            stream = io.StringIO(csv_file.stream.read().decode('utf-8-sig'))
+            reader = csv.DictReader(stream)
+            for row in reader:
+                q_text = row.get('question_text', '').strip()
+                if not q_text:
                     continue
-                is_correct = (str(j) == correct_idx)
-                choice = Choice(
-                    question_id=question.id,
-                    text=c_text,
-                    is_correct=is_correct
+                q_type = row.get('question_type', 'MCQ').strip()
+                points = int(row.get('points', 10))
+                question = Question(
+                    quiz_id=quiz.id, text=q_text,
+                    question_type=q_type, points=points
                 )
-                db.session.add(choice)
+                db.session.add(question)
+                db.session.flush()
+                choices = [row.get(f'choice_{k}', '').strip() for k in range(1, 5)]
+                correct_raw = row.get('correct', '').strip()
+                correct_idx = int(correct_raw) - 1 if correct_raw.isdigit() else -1
+                for j, c_text in enumerate(choices):
+                    if not c_text:
+                        continue
+                    db.session.add(Choice(
+                        question_id=question.id, text=c_text,
+                        is_correct=(j == correct_idx)
+                    ))
+        else:
+            question_texts = request.form.getlist('question_text[]')
+            question_types = request.form.getlist('question_type[]')
+            question_points = request.form.getlist('points[]')
+
+            for i in range(len(question_texts)):
+                q_text = question_texts[i].strip()
+                if not q_text:
+                    continue
+
+                q_type = question_types[i] if i < len(question_types) else 'MCQ'
+                points = int(question_points[i]) if i < len(question_points) else 10
+
+                question = Question(
+                    quiz_id=quiz.id,
+                    text=q_text,
+                    question_type=q_type,
+                    points=points
+                )
+                db.session.add(question)
+                db.session.flush()
+
+                choice_texts = request.form.getlist(f'choice_text_{i}[]')
+                correct_idx = request.form.get(f'correct_choice_{i}')
+                for j in range(len(choice_texts)):
+                    c_text = choice_texts[j].strip()
+                    if not c_text:
+                        continue
+                    is_correct = (str(j) == correct_idx)
+                    choice = Choice(
+                        question_id=question.id,
+                        text=c_text,
+                        is_correct=is_correct
+                    )
+                    db.session.add(choice)
 
         db.session.commit()
         flash(f'{label} "{quiz.title}" updated!', 'success')
