@@ -65,6 +65,7 @@
             <i class="fas fa-hand-pointer" style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;"></i>
             <small style="font-size: 0.75rem;">Select provider above</small>
           </div>
+          <img id="qr-esewa-img" src="https://res.cloudinary.com/db7dimqfu/image/upload/v1781072033/ESEWA_huymnu.jpg" alt="eSewa QR" style="display: none; width: 180px; height: 180px; object-fit: contain;">
           <canvas id="qr-canvas" style="display: none; width: 180px; height: 180px;"></canvas>
         </div>
       </div>
@@ -112,8 +113,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const val = this.value;
     const qp = document.getElementById('qr-placeholder');
     const qc = document.getElementById('qr-canvas');
+    const qe = document.getElementById('qr-esewa-img');
     qp.style.display = 'none';
     qc.style.display = 'none';
+    qe.style.display = 'none';
 
     if (!val) {
       qp.style.display = 'block';
@@ -121,11 +124,12 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    const upi = { 'eSewa QR': 'esewa@shikshya.edu.np', 'Khalti QR': 'khalti@shikshya.edu.np' };
-    if (upi[val]) {
+    if (val === 'eSewa QR') {
+      qe.style.display = 'block';
+    } else {
       qc.style.display = 'block';
       new QRCode(qc, {
-        text: 'upi://pay?pa=' + upi[val] + '&pn=Shikshya&am=' + (price - currentDiscount) + '&tn=' + encodeURIComponent('{{ course.title }}'),
+        text: 'upi://pay?pa=khalti@shikshya.edu.np&pn=Shikshya&am=' + (price - currentDiscount) + '&tn=' + encodeURIComponent('{{ course.title }}'),
         width: 180, height: 180
       });
     }
