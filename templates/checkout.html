@@ -44,6 +44,18 @@
       <small id="coupon-msg" style="font-size: 0.75rem;"></small>
     </div>
 
+    <!-- Payment Provider Selection (above QR) -->
+    <div style="margin-bottom: 1.5rem; padding: 1.5rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+      <p style="font-weight: 600; margin-bottom: 1rem; font-size: 0.9rem;"><i class="fas fa-university"></i> Choose Payment Method</p>
+      <div class="form-group" style="margin-bottom: 0;">
+        <select name="payment_method" id="payment-method" class="form-control" required style="padding: 0.75rem 1rem; font-size: 1rem;">
+          <option value="">-- Select Provider --</option>
+          <option value="eSewa QR">eSewa (QR)</option>
+          <option value="Khalti QR">Khalti (QR)</option>
+        </select>
+      </div>
+    </div>
+
     <!-- QR Code Section -->
     <div style="text-align: center; margin-bottom: 1.5rem; padding: 1.5rem; background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
       <p style="font-weight: 600; margin-bottom: 1rem; font-size: 0.9rem;"><i class="fas fa-qrcode" style="color: var(--primary);"></i> Scan & Pay</p>
@@ -51,7 +63,7 @@
         <div style="width: 200px; height: 200px; margin: 0 auto; background: #fff; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; border: 2px dashed var(--border-color); padding: 10px;">
           <div id="qr-placeholder" style="text-align: center; color: var(--text-muted);">
             <i class="fas fa-hand-pointer" style="font-size: 2.5rem; display: block; margin-bottom: 0.5rem;"></i>
-            <small style="font-size: 0.75rem;">Select provider below</small>
+            <small style="font-size: 0.75rem;">Select provider above</small>
           </div>
           <canvas id="qr-canvas" style="display: none; width: 180px; height: 180px;"></canvas>
         </div>
@@ -72,15 +84,6 @@
     <form method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="coupon_code" id="hidden-coupon" value="">
-
-      <div class="form-group">
-        <label class="form-label" style="font-weight: 600;">Payment Provider</label>
-        <select name="payment_method" id="payment-method" class="form-control" required>
-          <option value="">-- Select Provider --</option>
-          <option value="eSewa QR">eSewa (QR)</option>
-          <option value="Khalti QR">Khalti (QR)</option>
-        </select>
-      </div>
 
       <div class="form-group">
         <label class="form-label" style="font-weight: 600;">Transaction / Reference ID *</label>
