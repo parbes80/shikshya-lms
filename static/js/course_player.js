@@ -116,10 +116,9 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           markBtn.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
           markBtn.className = 'btn btn-sm btn-secondary';
-          showToast('Lesson marked as completed!');
-          if (data.progress_percent >= 100.0) {
-            showToast('Congratulations! Course completed! \U0001f393');
-          }
+          showToast('Lesson completed!');
+          // reload to unlock quizzes
+          setTimeout(function() { location.reload(); }, 1200);
         } else {
           showToast(data.error || 'Failed to mark as complete.');
         }
@@ -254,9 +253,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const toast = document.createElement('div');
     toast.className = 'alert alert-info';
     toast.style.position = 'fixed';
-    toast.style.bottom = '20px';
-    toast.style.left = '20px';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
     toast.style.zIndex = '2000';
+    toast.style.fontSize = '0.8rem';
+    toast.style.padding = '0.5rem 1rem';
     toast.style.animation = 'slideIn 0.3s forwards';
     toast.innerHTML = `
       <span>${message}</span>
