@@ -352,7 +352,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // mobile sidebar toggle (global for onclick)
 window.toggleSidebar = function() {
   var sidebar = document.querySelector('.player-sidebar');
+  var overlay = document.querySelector('.player-sidebar-overlay');
   if (sidebar) {
     sidebar.classList.toggle('sidebar-open');
+    if (overlay) overlay.classList.toggle('active');
   }
+  document.body.style.overflow = sidebar && sidebar.classList.contains('sidebar-open') ? 'hidden' : '';
 };

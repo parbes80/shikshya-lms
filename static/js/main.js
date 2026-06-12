@@ -125,6 +125,19 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(err => console.log('Error fetching notifications:', err));
   }
 
+  const sidebarToggle = document.getElementById('sidebar-toggle-btn');
+  const sidebar = document.getElementById('navigation-sidebar');
+  if (sidebarToggle && sidebar) {
+    sidebarToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+    });
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 992 && sidebar.classList.contains('active') && !sidebar.contains(e.target) && e.target !== sidebarToggle && !sidebarToggle.contains(e.target)) {
+        sidebar.classList.remove('active');
+      }
+    });
+  }
+
   function markAsRead(id, element) {
     csrfFetch(`/api/notifications/${id}/read`, {
       method: 'POST',

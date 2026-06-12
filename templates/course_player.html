@@ -40,13 +40,16 @@
 {% block content %}
 <div class="player-container">
 
+  <!-- Sidebar overlay for mobile -->
+  <div class="player-sidebar-overlay" id="player-sidebar-overlay" onclick="toggleSidebar()"></div>
+
   <aside class="player-sidebar">
     <div class="player-sidebar-header">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="flex-between">
         <h3 class="player-course-title">{{ course.title }}</h3>
-        <button id="sidebar-toggle" class="btn btn-sm btn-outline" style="display: none; padding: 0.2rem 0.5rem; font-size: 0.8rem;" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+        <button id="sidebar-toggle" class="btn btn-sm btn-outline sidebar-close-btn" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
       </div>
-      <div style="font-size: 0.8rem; color: var(--text-muted);">
+      <div class="text-sm text-muted">
         Instructor: <strong>{{ course.teacher.username }}</strong>
       </div>
     </div>
@@ -125,13 +128,13 @@
     {% set doc_url = active_lesson.document_url|asset_url %}
 
       <!-- TOP BAR: Title + Actions -->
-      <div style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-        <div style="display: flex; align-items: center; gap: 1rem; min-width: 0; flex: 1;">
-          <button id="sidebar-hamburger" class="btn btn-sm btn-outline" style="display: none; padding: 0.2rem 0.5rem; font-size: 0.8rem;" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-          <h4 style="font-size: 1.15rem; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ active_lesson.title }}</h4>
+      <div class="flex-between flex-wrap gap-2" style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1rem;">
+        <div class="flex-center gap-4 flex-1" style="min-width: 0;">
+          <button id="sidebar-hamburger" class="btn btn-sm btn-outline sidebar-hamburger-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+          <h4 class="truncate text-lg font-bold" style="font-size: 1.15rem;">{{ active_lesson.title }}</h4>
           <span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem; flex-shrink: 0;">{{ active_lesson.content_type|capitalize }}</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+        <div class="flex-center gap-2" style="flex-shrink: 0;">
           {% if doc_url %}
           <a href="{{ url_for('api.download_lesson_doc', lesson_id=active_lesson.id) }}" target="_blank" class="btn btn-sm btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">
             <i class="fas fa-file-pdf" style="color: #ef4444;"></i> PDF
@@ -139,11 +142,11 @@
           {% endif %}
           {% if active_lesson.text_content and active_lesson.text_content not in ('None', 'null', '') %}
           <a href="{{ url_for('api.export_lesson_pdf', lesson_id=active_lesson.id) }}" target="_blank" class="btn btn-sm btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">
-            <i class="fas fa-print" style="color: var(--text-muted);"></i> Print
+            <i class="fas fa-print text-muted"></i> Print
           </a>
           {% endif %}
           {% if is_vid %}
-          <label for="speed-btn" style="font-size: 0.8rem; color: var(--text-muted);"><i class="fas fa-cog"></i></label>
+          <label for="speed-btn" class="text-sm text-muted"><i class="fas fa-cog"></i></label>
           <select id="speed-btn" class="form-control" style="width: 80px; padding: 0.25rem; font-size: 0.8rem; border-radius: var(--radius-sm);">
             <option value="1.0">1.0x</option>
             <option value="1.25">1.25x</option>
@@ -171,7 +174,7 @@
         {% set stripped = active_lesson.text_content|striptags|trim if active_lesson.text_content else '' %}
         {% if stripped %}
         <div class="notes-section" style="max-width: 100%;">
-          <div class="lesson-notes-content" style="color: var(--text-main); font-size: 0.95rem; line-height: 1.7; max-width: 100%;">
+          <div class="lesson-notes-content">
             {% if lesson_content_html %}
               {{ lesson_content_html|safe }}
             {% elif active_lesson.text_content|trim|list|first == '<' %}
@@ -231,19 +234,19 @@
 
       <div class="tab-pane" id="lesson-quizzes">
         <h3>Syllabus Examinations</h3>
-        <div class="list-container" style="margin-top: 1rem;">
+        <div class="list-container mt-3">
           {% if quizzes %}
             {% if active_lesson and active_lesson.quizzes and not lesson_completed %}
-            <div class="list-row" style="flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; padding: 1.5rem;">
+            <div class="list-row flex-col flex-center gap-3 text-center" style="padding: 1.5rem;">
               <i class="fas fa-lock" style="font-size: 2rem; color: var(--text-muted);"></i>
-              <p style="color: var(--text-muted); margin: 0;">Complete the lesson to unlock the quiz.</p>
+              <p class="text-muted m-0">Complete the lesson to unlock the quiz.</p>
             </div>
             {% endif %}
             {% for quiz in quizzes %}
               <div class="list-row">
                 <div>
                   <strong>{{ quiz.title }}</strong><br>
-                  <small style="color: var(--text-muted);">Timer: {{ quiz.time_limit_minutes }} mins | Passing Score: {{ quiz.passing_score }}%</small>
+                  <small class="text-muted">Timer: {{ quiz.time_limit_minutes }} mins | Passing Score: {{ quiz.passing_score }}%</small>
                 </div>
                 {% if quiz.lesson_id and not lesson_completed %}
                 <span class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--bg-card-hover); color: var(--text-muted); cursor: not-allowed;" title="Complete the lesson first"><i class="fas fa-lock"></i> Locked</span>
@@ -253,7 +256,7 @@
               </div>
             {% endfor %}
           {% else %}
-            <p style="color: var(--text-muted); text-align: center; padding: 1.5rem;">{% if active_lesson %}No quizzes for this lesson.{% else %}No quizzes created for this course yet.{% endif %}</p>
+            <p class="text-muted text-center" style="padding: 1.5rem;">{% if active_lesson %}No quizzes for this lesson.{% else %}No quizzes created for this course yet.{% endif %}</p>
           {% endif %}
         </div>
       </div>

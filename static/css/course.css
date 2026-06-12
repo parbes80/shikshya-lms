@@ -690,6 +690,15 @@
   }
 }
 
+/* Player sidebar overlay for mobile */
+.player-sidebar-overlay {
+  display: none;
+}
+
+.sidebar-hamburger-btn {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .course-hero {
     padding: 1.5rem 1rem !important;
@@ -723,7 +732,33 @@
     margin: 0 !important;
   }
   .player-sidebar {
-    height: 180px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 300px;
+    height: 100%;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  .player-sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+  .player-sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+  }
+  .player-sidebar-overlay.active {
+    display: block;
+  }
+  .sidebar-close-btn {
+    display: inline-flex !important;
+  }
+  .sidebar-hamburger-btn {
+    display: inline-flex !important;
   }
   .player-main {
     padding: 0;

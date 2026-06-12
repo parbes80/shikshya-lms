@@ -88,7 +88,12 @@
 
     {% if current_user.is_authenticated and not no_sidebar %}
       <aside class="sidebar" id="navigation-sidebar">
-        <h4 style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 1rem; padding: 0 1rem; font-weight: bold;">User Control</h4>
+        <div class="flex-between mb-4 px-4">
+          <h4 class="text-xs text-muted" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Menu</h4>
+          <button class="sidebar-toggle-btn" id="sidebar-close-btn" onclick="document.getElementById('navigation-sidebar').classList.remove('active')" style="display: none; padding: 0; border: none; background: none; cursor: pointer; color: var(--text-muted); font-size: 1rem;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
         <ul class="sidebar-menu">
           {% if current_user.role.name == 'Student' %}
             <li class="sidebar-item"><a href="{{ url_for('dashboard.student') }}"><i class="fas fa-columns"></i> Dashboard</a></li>
@@ -114,6 +119,11 @@
     {% endif %}
 
     <main class="main-content {% if not current_user.is_authenticated or no_sidebar %}no-sidebar{% endif %}">
+      {% if current_user.is_authenticated and not no_sidebar %}
+        <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" style="display: none;">
+          <i class="fas fa-bars"></i> Menu
+        </button>
+      {% endif %}
       {% block content %}{% endblock %}
     </main>
 
