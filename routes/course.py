@@ -293,12 +293,14 @@ def player(slug):
     live_classes = LiveClass.query.filter_by(course_id=course.id).order_by(LiveClass.start_time.desc()).all()
     lab_manuals = LabManual.query.filter_by(course_id=course.id).order_by(LabManual.sort_order).all()
 
-    # compute quiz count per lesson for sidebar
+    # compute quizzes grouped by lesson for sidebar
     all_quizzes = Quiz.query.filter_by(course_id=course.id).all()
+    lesson_quizzes_map = {}
     lesson_quiz_counts = {}
     for q in all_quizzes:
         lid = q.lesson_id or 0
         lesson_quiz_counts[lid] = lesson_quiz_counts.get(lid, 0) + 1
+        lesson_quizzes_map.setdefault(lid, []).append(q)
 
     # whether the active lesson is completed (for gating quizzes)
     lesson_completed = active_progress and active_progress.is_completed
@@ -317,6 +319,7 @@ def player(slug):
         lesson_headings=lesson_headings,
         lesson_content_html=lesson_content_html,
         lesson_quiz_counts=lesson_quiz_counts,
+        lesson_quizzes_map=lesson_quizzes_map,
         lesson_completed=lesson_completed
     )
 
