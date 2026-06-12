@@ -284,6 +284,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // collapsible module chapters in sidebar
+  window.toggleModule = function(heading) {
+    const body = heading.nextElementSibling;
+    const chevron = heading.querySelector('i');
+    if (body && body.classList.contains('module-body')) {
+      if (body.style.display === 'none') {
+        body.style.display = '';
+        chevron.className = 'fas fa-chevron-down';
+      } else {
+        body.style.display = 'none';
+        chevron.className = 'fas fa-chevron-right';
+      }
+    }
+  };
+
   // collapsible sections by heading
   document.querySelectorAll('.lesson-notes-content').forEach(container => {
     const headings = container.querySelectorAll('h1, h2, h3');

@@ -39,8 +39,13 @@
 
     <div class="curriculum-tree">
       {% for mod in course.modules %}
+        {% set mod_has_active = active_lesson and active_lesson in mod.lessons %}
         <div class="player-module">
-          <h4 class="player-module-title">Ch {{ loop.index }}: {{ mod.title }}</h4>
+          <h4 class="player-module-title" style="cursor: pointer; display: flex; align-items: center; gap: 0.5rem;" onclick="toggleModule(this)">
+            <i class="fas fa-chevron-{% if mod_has_active %}down{% else %}right{% endif %}" style="font-size: 0.7rem; transition: transform 0.2s;"></i>
+            Ch {{ loop.index }}: {{ mod.title }}
+          </h4>
+          <div class="module-body" style="{% if not mod_has_active %}display: none;{% endif %}">
           {% if mod.lessons %}
             <ul class="player-lessons-list">
               {% for les in mod.lessons %}
