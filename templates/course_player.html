@@ -3,6 +3,29 @@
 
 {% set no_sidebar = true %}
 
+{% block extra_css %}
+<style>
+  .lesson-notes-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.75rem 0;
+  }
+  .lesson-notes-content table th,
+  .lesson-notes-content table td {
+    border: 1px solid #94a3b8;
+    padding: 8px 10px;
+    vertical-align: top;
+  }
+  .lesson-notes-content table th {
+    background: #f1f5f9;
+    font-weight: 600;
+  }
+  .lesson-notes-content table tr:nth-child(even) {
+    background: #f8fafc;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="player-container">
 
