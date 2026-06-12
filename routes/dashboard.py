@@ -1,6 +1,7 @@
 import re
 from datetime import datetime, timedelta
 from functools import wraps
+from sqlalchemy import desc
 from flask import Blueprint, render_template, redirect, url_for, flash, abort, request, current_app
 from flask_login import login_required, current_user
 from database import db
@@ -370,3 +371,74 @@ def delete_user(user_id):
         flash(f'Failed to delete user: {e}', 'danger')
 
     return redirect(url_for('dashboard.admin'))
+
+
+@dashboard_bp.route('/dashboard/teacher/analytics/<int:course_id>')
+@login_required
+def teacher_analytics(course_id):
+    if current_user.role.name not in ('Teacher', 'Admin'):
+        abort(403)
+
+    course = Course.query.get_or_404(course_id)
+    if course.teacher_id != current_user.id and current_user.role.name != 'Admin':
+        abort(403)
+
+    enrollments = Enrollment.query.filter_by(course_id=course.id).all()
+    total_students = len(enrollments)
+    completed_count = sum(1 for e in enrollments if e.is_completed)
+    avg_progress = round(sum(e.progress_percent for e in enrollments) / total_students, 1) if enrollments else 0
+
+    # per-lesson stats
+    lesson_stats = []
+    for m in course.modules:
+        for les in m.lessons:
+            total = LessonProgress.query.filter(
+                LessonProgress.lesson_id == les.id,
+                LessonProgress.enrollment_id.in_([e.id for e in enrollments])
+            ).count()
+            completed = LessonProgress.query.filter(
+                LessonProgress.lesson_id == les.id,
+                LessonProgress.is_completed == True,
+                LessonProgress.enrollment_id.in_([e.id for e in enrollments])
+            ).count()
+            lesson_stats.append({
+                'module_title': m.title,
+                'lesson': les,
+                'enrolled': total,
+                'completed': completed,
+                'stuck': total - completed
+            })
+
+    # per-quiz stats
+    quizzes = Quiz.query.filter_by(course_id=course.id).all()
+    quiz_stats = []
+    for q in quizzes:
+        attempts = QuizAttempt.query.filter_by(quiz_id=q.id).all()
+        total_attempts = len(attempts)
+        passed = sum(1 for a in attempts if a.is_passed)
+        avg_score = round(sum(a.score for a in attempts) / total_attempts, 1) if attempts else 0
+        unique_students = len(set(a.student_id for a in attempts))
+        quiz_stats.append({
+            'quiz': q,
+            'total_attempts': total_attempts,
+            'unique_students': unique_students,
+            'passed': passed,
+            'avg_score': avg_score,
+            'pass_rate': round(passed / total_attempts * 100, 1) if attempts else 0
+        })
+
+    # recent activity
+    recent_attempts = QuizAttempt.query.join(Quiz).filter(
+        Quiz.course_id == course.id
+    ).order_by(desc(QuizAttempt.completed_at)).limit(10).all()
+
+    return render_template(
+        'teacher_analytics.html',
+        course=course,
+        total_students=total_students,
+        completed_count=completed_count,
+        avg_progress=avg_progress,
+        lesson_stats=lesson_stats,
+        quiz_stats=quiz_stats,
+        recent_attempts=recent_attempts
+    )

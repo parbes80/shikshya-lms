@@ -528,6 +528,7 @@ def create_quiz(course_id):
         title = request.form.get('title', '').strip()
         time_limit = int(request.form.get('time_limit_minutes', 10))
         passing_score = int(request.form.get('passing_score', 60))
+        max_attempts = int(request.form.get('max_attempts', 0))
         lesson_id = request.form.get('lesson_id', type=int)
 
         if not title:
@@ -539,7 +540,8 @@ def create_quiz(course_id):
             lesson_id=lesson_id or None,
             title=title,
             time_limit_minutes=time_limit,
-            passing_score=passing_score
+            passing_score=passing_score,
+            max_attempts=max_attempts
         )
         db.session.add(quiz)
         db.session.flush()
@@ -661,6 +663,7 @@ def edit_quiz(course_id, quiz_id):
         title = request.form.get('title', '').strip()
         time_limit = int(request.form.get('time_limit_minutes', 10))
         passing_score = int(request.form.get('passing_score', 60))
+        max_attempts = int(request.form.get('max_attempts', 0))
         lesson_id = request.form.get('lesson_id', type=int)
 
         if not title:
@@ -670,6 +673,7 @@ def edit_quiz(course_id, quiz_id):
         quiz.title = title
         quiz.time_limit_minutes = time_limit
         quiz.passing_score = passing_score
+        quiz.max_attempts = max_attempts
         quiz.lesson_id = lesson_id or None
 
         for q in quiz.questions[:]:

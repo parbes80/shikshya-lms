@@ -76,6 +76,7 @@ class Quiz(db.Model):
     title = db.Column(db.String(150), nullable=False)
     time_limit_minutes = db.Column(db.Integer, default=15)
     passing_score = db.Column(db.Integer, default=60)
+    max_attempts = db.Column(db.Integer, default=0)  # 0 = unlimited
 
     questions = db.relationship('Question', backref='quiz', lazy=True, cascade="all, delete-orphan")
     attempts = db.relationship('QuizAttempt', backref='quiz', lazy=True, cascade="all, delete-orphan")
@@ -123,6 +124,8 @@ class QuizAttempt(db.Model):
     is_passed = db.Column(db.Boolean, default=False)
     started_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    student = db.relationship('User', backref=db.backref('quiz_attempts', lazy='dynamic'))
 
     def __repr__(self):
         return f'<QuizAttempt Student {self.student_id} Score: {self.score}>'

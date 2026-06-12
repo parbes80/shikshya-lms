@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% block title %}Analytics: {{ course.title }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 2rem auto; padding: 0 1rem;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <a href="{{ url_for('dashboard.teacher') }}" style="color: var(--text-muted); font-size: 0.85rem;">&larr; Back to Dashboard</a>
+      <h2 style="margin-top: 0.25rem;">Analytics: {{ course.title }}</h2>
+    </div>
+  </div>
+
+  <!-- Overview Cards -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+    <div class="card" style="padding: 1.5rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">{{ total_students }}</div>
+      <div style="color: var(--text-muted); font-size: 0.8rem;">Enrolled Students</div>
+    </div>
+    <div class="card" style="padding: 1.5rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 800; color: var(--secondary);">{{ avg_progress }}%</div>
+      <div style="color: var(--text-muted); font-size: 0.8rem;">Avg Progress</div>
+    </div>
+    <div class="card" style="padding: 1.5rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 800; color: var(--accent);">{{ completed_count }}</div>
+      <div style="color: var(--text-muted); font-size: 0.8rem;">Completed</div>
+    </div>
+    <div class="card" style="padding: 1.5rem; text-align: center;">
+      <div style="font-size: 2rem; font-weight: 800; color: #ef4444;">{{ total_students - completed_count }}</div>
+      <div style="color: var(--text-muted); font-size: 0.8rem;">In Progress</div>
+    </div>
+  </div>
+
+  <!-- Per-Lesson Stats -->
+  <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1rem;">Lesson Completion</h3>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+        <thead>
+          <tr style="background: var(--bg-app);">
+            <th style="text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Chapter</th>
+            <th style="text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Lesson</th>
+            <th style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Enrolled</th>
+            <th style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Completed</th>
+            <th style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Stuck</th>
+            <th style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in lesson_stats %}
+          <tr>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--text-muted);">{{ s.module_title }}</td>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border-color);"><a href="{{ url_for('course.player', slug=course.slug, lesson_id=s.lesson.id) }}">{{ s.lesson.title }}</a></td>
+            <td style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">{{ s.enrolled }}</td>
+            <td style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--secondary);">{{ s.completed }}</td>
+            <td style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color); color: {% if s.stuck > 0 %}#ef4444{% else %}var(--text-muted){% endif %};">{{ s.stuck }}</td>
+            <td style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">{{ "%.0f"|format(s.completed / s.enrolled * 100) if s.enrolled else 0 }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Per-Quiz Stats -->
+  <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+    <h3 style="margin-bottom: 1rem;">Quiz Performance</h3>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+        <thead>
+          <tr style="background: var(--bg-app);">
+            <th style="text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Quiz</th>
+            <th style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Unique Students</th>
+            <th style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Total Attempts</th>
+            <th style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Passed</th>
+            <th style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Avg Score</th>
+            <th style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Pass Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in quiz_stats %}
+          <tr>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border-color);">{{ s.quiz.title }}</td>
+            <td style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">{{ s.unique_students }}</td>
+            <td style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">{{ s.total_attempts }}</td>
+            <td style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color); color: var(--secondary);">{{ s.passed }}</td>
+            <td style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">{{ s.avg_score }}%</td>
+            <td style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
+              <span style="color: {% if s.pass_rate >= 60 %}var(--secondary){% elif s.pass_rate >= 30 %}var(--accent){% else %}#ef4444{% endif %};">{{ s.pass_rate }}%</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="card" style="padding: 1.5rem;">
+    <h3 style="margin-bottom: 1rem;">Recent Quiz Attempts</h3>
+    {% if recent_attempts %}
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+        <thead>
+          <tr style="background: var(--bg-app);">
+            <th style="text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Student</th>
+            <th style="text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Quiz</th>
+            <th style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Score</th>
+            <th style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Result</th>
+            <th style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for att in recent_attempts %}
+          <tr>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border-color);">{{ att.student.username }}</td>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border-color);">{{ att.quiz.title }}</td>
+            <td style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">{{ "%.1f"|format(att.score) }}%</td>
+            <td style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
+              <span style="color: {% if att.is_passed %}var(--secondary){% else %}#ef4444{% endif %};">{% if att.is_passed %}PASSED{% else %}FAILED{% endif %}</span>
+            </td>
+            <td style="text-align: center; padding: 0.5rem; border-bottom: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-muted);">{{ att.completed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">No quiz attempts yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

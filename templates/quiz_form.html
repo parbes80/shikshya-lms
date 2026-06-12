@@ -41,7 +41,7 @@
         <small style="color: var(--text-muted); font-size: 0.75rem;">If linked, this quiz will only appear when that lesson is active in the player.</small>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
         <div class="form-group">
           <label class="form-label" for="quiz-time">Time Limit (minutes)</label>
           <input type="number" name="time_limit_minutes" id="quiz-time" class="form-control" value="{{ quiz.time_limit_minutes if quiz else 10 }}" min="1" required>
@@ -49,6 +49,10 @@
         <div class="form-group">
           <label class="form-label" for="quiz-passing">Passing Score (%)</label>
           <input type="number" name="passing_score" id="quiz-passing" class="form-control" value="{{ quiz.passing_score if quiz else 60 }}" min="1" max="100" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="quiz-max-attempts">Max Attempts <small style="color: var(--text-muted); font-weight: normal;">(0 = unlimited)</small></label>
+          <input type="number" name="max_attempts" id="quiz-max-attempts" class="form-control" value="{{ quiz.max_attempts if quiz else 0 }}" min="0">
         </div>
       </div>
 

@@ -128,6 +128,12 @@ def submit_quiz():
             if not lp or not lp.is_completed:
                 return jsonify({'error': 'Complete the lesson first to submit this quiz.'}), 403
 
+    # retry limit check
+    if quiz.max_attempts and current_user.role.name == 'Student':
+        attempts_count = QuizAttempt.query.filter_by(quiz_id=quiz.id, student_id=current_user.id).count()
+        if attempts_count >= quiz.max_attempts:
+            return jsonify({'error': f'Maximum {quiz.max_attempts} attempt(s) reached.'}), 403
+
     questions = quiz.questions
 
     total_points = sum(q.points for q in questions)
@@ -372,7 +378,22 @@ def take_quiz_view(quiz_id):
             flash('Complete the lesson first to unlock the quiz.', 'warning')
             return redirect(url_for('course.player', slug=quiz.course.slug, lesson_id=quiz.lesson_id))
 
-    return render_template('quiz.html', quiz=quiz)
+    # retry limit check
+    attempts_count = QuizAttempt.query.filter_by(quiz_id=quiz.id, student_id=current_user.id).count()
+    if quiz.max_attempts and attempts_count >= quiz.max_attempts:
+        flash(f'You have reached the maximum of {quiz.max_attempts} attempt(s) for this quiz.', 'danger')
+        return redirect(url_for('course.player', slug=quiz.course.slug))
+
+    # shuffle questions and choices so each student sees a different order
+    import random
+    questions = list(quiz.questions)
+    random.shuffle(questions)
+    for q in questions:
+        choices = list(q.choices)
+        random.shuffle(choices)
+        q._shuffled_choices = choices
+
+    return render_template('quiz.html', quiz=quiz, questions=questions, attempts_count=attempts_count)
 
 
 @api_bp.route('/api/quizzes/<int:quiz_id>/report')
