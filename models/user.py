@@ -36,7 +36,6 @@ class User(db.Model, UserMixin):
     profile = db.relationship('UserProfile', backref='user', uselist=False, cascade="all, delete-orphan")
     enrollments = db.relationship('Enrollment', backref='student', lazy=True, cascade="all, delete-orphan")
     submissions = db.relationship('Submission', backref='student', lazy=True)
-    quiz_attempts = db.relationship('QuizAttempt', backref='student', lazy=True)
     certificates = db.relationship('Certificate', backref='student', lazy=True)
     notifications = db.relationship('Notification', backref='user', lazy=True, cascade="all, delete-orphan")
     payments = db.relationship('Payment', backref='student', lazy=True)
