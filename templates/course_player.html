@@ -45,10 +45,14 @@
             <ul class="player-lessons-list">
               {% for les in mod.lessons %}
                 {% set prog = progress_map.get(les.id) %}
+                {% set qcount = lesson_quiz_counts.get(les.id, 0) %}
                 <li class="player-lesson-item {% if active_lesson and active_lesson.id == les.id %}active{% endif %}">
                   <a href="{{ url_for('course.player', slug=course.slug, lesson_id=les.id) }}">
                     <i class="{% if prog and prog.is_completed %}fas fa-check-circle completed{% else %}far fa-circle{% endif %} lesson-check-icon" id="check-{{ les.id }}"></i>
                     <span style="flex: 1;">{{ les.title }}</span>
+                    {% if qcount %}
+                    <span class="quiz-badge" style="font-size: 0.65rem; background: {% if prog and prog.is_completed %}var(--secondary){% else %}var(--text-muted){% endif %}; color: #fff; border-radius: 999px; padding: 1px 6px; margin-right: 4px;">{{ qcount }} quiz</span>
+                    {% endif %}
                     <small style="font-size: 0.75rem; color: var(--text-muted);">{{ les.duration_minutes }}m</small>
                   </a>
                   {% if active_lesson and active_lesson.id == les.id and lesson_headings %}
@@ -182,13 +186,23 @@
         <h3>Syllabus Examinations</h3>
         <div class="list-container" style="margin-top: 1rem;">
           {% if quizzes %}
+            {% if active_lesson and active_lesson.quizzes and not lesson_completed %}
+            <div class="list-row" style="flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; padding: 1.5rem;">
+              <i class="fas fa-lock" style="font-size: 2rem; color: var(--text-muted);"></i>
+              <p style="color: var(--text-muted); margin: 0;">Complete the lesson to unlock the quiz.</p>
+            </div>
+            {% endif %}
             {% for quiz in quizzes %}
               <div class="list-row">
                 <div>
                   <strong>{{ quiz.title }}</strong><br>
                   <small style="color: var(--text-muted);">Timer: {{ quiz.time_limit_minutes }} mins | Passing Score: {{ quiz.passing_score }}%</small>
                 </div>
+                {% if quiz.lesson_id and not lesson_completed %}
+                <span class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--bg-card-hover); color: var(--text-muted); cursor: not-allowed;" title="Complete the lesson first"><i class="fas fa-lock"></i> Locked</span>
+                {% else %}
                 <a href="{{ url_for('api.take_quiz_view', quiz_id=quiz.id) }}" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"><i class="fas fa-pencil-alt"></i> Take Exam</a>
+                {% endif %}
               </div>
             {% endfor %}
           {% else %}

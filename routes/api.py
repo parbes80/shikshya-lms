@@ -119,6 +119,15 @@ def submit_quiz():
         return jsonify({'error': 'quiz_id required'}), 400
 
     quiz = Quiz.query.get_or_404(quiz_id)
+
+    # lesson-gated quiz: must complete the lesson first
+    if quiz.lesson_id and current_user.role.name == 'Student':
+        enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=quiz.course_id).first()
+        if enrollment:
+            lp = LessonProgress.query.filter_by(enrollment_id=enrollment.id, lesson_id=quiz.lesson_id).first()
+            if not lp or not lp.is_completed:
+                return jsonify({'error': 'Complete the lesson first to submit this quiz.'}), 403
+
     questions = quiz.questions
 
     total_points = sum(q.points for q in questions)
@@ -355,6 +364,13 @@ def take_quiz_view(quiz_id):
     enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=quiz.course_id).first()
     if not enrollment and quiz.course.teacher_id != current_user.id:
         abort(403)
+
+    # lesson-gated quiz: must complete the lesson first
+    if quiz.lesson_id and current_user.role.name == 'Student':
+        lp = LessonProgress.query.filter_by(enrollment_id=enrollment.id, lesson_id=quiz.lesson_id).first()
+        if not lp or not lp.is_completed:
+            flash('Complete the lesson first to unlock the quiz.', 'warning')
+            return redirect(url_for('course.player', slug=quiz.course.slug, lesson_id=quiz.lesson_id))
 
     return render_template('quiz.html', quiz=quiz)
 
