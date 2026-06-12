@@ -1,8 +1,8 @@
-import re
+import re, io
 from datetime import datetime, timedelta
 from functools import wraps
 from sqlalchemy import desc
-from flask import Blueprint, render_template, redirect, url_for, flash, abort, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, abort, request, current_app, send_file
 from flask_login import login_required, current_user
 from database import db
 from models.user import User, Role, UserProfile
@@ -483,4 +483,49 @@ def teacher_analytics(course_id):
         lesson_stats=lesson_stats,
         quiz_stats=quiz_stats,
         recent_attempts=recent_attempts
+    )
+
+
+@dashboard_bp.route('/dashboard/teacher/analytics/<int:course_id>/export-csv')
+@login_required
+def teacher_analytics_export(course_id):
+    if current_user.role.name not in ('Teacher', 'Admin'):
+        abort(403)
+    course = Course.query.get_or_404(course_id)
+    if course.teacher_id != current_user.id and current_user.role.name != 'Admin':
+        abort(403)
+
+    import csv, io
+    enrollments = Enrollment.query.filter_by(course_id=course.id).all()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Student', 'Email', 'Progress %', 'Completed', 'Enrolled At'])
+
+    for e in enrollments:
+        writer.writerow([
+            e.student.username,
+            e.student.email,
+            e.progress_percent,
+            'Yes' if e.is_completed else 'No',
+            e.enrolled_at.strftime('%Y-%m-%d') if e.enrolled_at else ''
+        ])
+
+    # per-lesson breakdown
+    writer.writerow([])
+    writer.writerow(['Lesson Progress'])
+    writer.writerow(['Student'] + [les.title for m in course.modules for les in m.lessons])
+    for e in enrollments:
+        row = [e.student.username]
+        for m in course.modules:
+            for les in m.lessons:
+                lp = LessonProgress.query.filter_by(enrollment_id=e.id, lesson_id=les.id).first()
+                row.append('Completed' if lp and lp.is_completed else 'Pending')
+        writer.writerow(row)
+
+    csv_bytes = output.getvalue().encode('utf-8-sig')
+    return send_file(
+        io.BytesIO(csv_bytes),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'{course.slug}_progress.csv'
     )

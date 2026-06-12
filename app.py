@@ -167,6 +167,10 @@ def create_app():
                 db.session.execute(sa.text('ALTER TABLE quizzes ADD COLUMN max_attempts INTEGER DEFAULT 0'))
                 db.session.commit()
                 app.logger.info('Added max_attempts column to quizzes')
+            if 'lessons' in existing_tables and 'publish_at' not in [c['name'] for c in insp.get_columns('lessons')]:
+                db.session.execute(sa.text('ALTER TABLE lessons ADD COLUMN publish_at TIMESTAMP'))
+                db.session.commit()
+                app.logger.info('Added publish_at column to lessons')
         if not Role.query.first():
             from seed import seed_database
             seed_database()

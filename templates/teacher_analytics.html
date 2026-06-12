@@ -9,6 +9,7 @@
       <a href="{{ url_for('dashboard.teacher') }}" style="color: var(--text-muted); font-size: 0.85rem;">&larr; Back to Dashboard</a>
       <h2 style="margin-top: 0.25rem;">Analytics: {{ course.title }}</h2>
     </div>
+    <a href="{{ url_for('dashboard.teacher_analytics_export', course_id=course.id) }}" class="btn btn-outline"><i class="fas fa-download"></i> Export CSV</a>
   </div>
 
   <!-- Overview Cards -->

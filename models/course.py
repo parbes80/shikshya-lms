@@ -73,6 +73,7 @@ class Lesson(db.Model):
     text_content = db.Column(db.Text, nullable=True)
     sort_order = db.Column(db.Integer, default=1)
     duration_minutes = db.Column(db.Integer, default=10)
+    publish_at = db.Column(db.DateTime, nullable=True)
 
     progresses = db.relationship('LessonProgress', backref='lesson', lazy=True, cascade="all, delete-orphan")
 

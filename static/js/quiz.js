@@ -14,13 +14,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentIdx = 0;
   let timeRemaining = durationMinutes * 60;
+  let submitted = false;
+
+  function disableAllInputs() {
+    document.querySelectorAll('.question-card input, .question-card button').forEach(function(el) { el.disabled = true; });
+  }
 
   const timerInterval = setInterval(() => {
+    if (submitted) { clearInterval(timerInterval); return; }
+
     if (timeRemaining <= 0) {
       clearInterval(timerInterval);
       timerDisplay.textContent = "00:00 - TIME EXPIRED";
       timerDisplay.style.color = '#ef4444';
       timerDisplay.style.fontWeight = 'bold';
+      if (prevBtn) prevBtn.disabled = true;
+      if (nextBtn) nextBtn.disabled = true;
+      if (submitBtn) submitBtn.disabled = true;
+      disableAllInputs();
       submitQuiz();
       return;
     }
@@ -32,6 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (timeRemaining < 60) {
       timerDisplay.style.color = '#ef4444';
+      timerDisplay.style.animation = 'pulse 1s infinite';
+    }
+    if (timeRemaining === 30) {
+      showToast('30 seconds remaining!');
     }
   }, 1000);
 
@@ -71,6 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
     submitBtn.addEventListener('click', () => {
       if (confirm('Are you sure you want to submit your quiz?')) {
         clearInterval(timerInterval);
+        submitBtn.disabled = true;
+        if (prevBtn) prevBtn.disabled = true;
+        if (nextBtn) nextBtn.disabled = true;
+        disableAllInputs();
+        submitted = true;
         submitQuiz();
       }
     });
@@ -161,5 +181,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function round(val, precision) {
     const factor = Math.pow(10, precision);
     return Math.round(val * factor) / factor;
+  }
+
+  function showToast(message) {
+    var t = document.createElement('div');
+    t.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;font-size:0.8rem;padding:0.5rem 1rem;background:#1e293b;color:#fff;border-radius:8px;animation:fadeIn 0.3s forwards;';
+    t.textContent = message;
+    document.body.appendChild(t);
+    setTimeout(function() { t.style.opacity = '0'; setTimeout(function() { t.remove(); }, 300); }, 3000);
   }
 });

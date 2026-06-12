@@ -23,6 +23,17 @@
   .lesson-notes-content table tr:nth-child(even) {
     background: #f8fafc;
   }
+  @media (max-width: 768px) {
+    .player-sidebar {
+      position: fixed; top: 0; left: 0; width: 280px; height: 100%; z-index: 1000;
+      transform: translateX(-100%); transition: transform 0.25s ease;
+    }
+    .player-sidebar.sidebar-open {
+      transform: translateX(0);
+    }
+    #sidebar-toggle, #sidebar-hamburger { display: inline-flex !important; }
+    .player-main { margin-left: 0 !important; }
+  }
 </style>
 {% endblock %}
 
@@ -31,7 +42,10 @@
 
   <aside class="player-sidebar">
     <div class="player-sidebar-header">
-      <h3 class="player-course-title">{{ course.title }}</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="player-course-title">{{ course.title }}</h3>
+        <button id="sidebar-toggle" class="btn btn-sm btn-outline" style="display: none; padding: 0.2rem 0.5rem; font-size: 0.8rem;" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+      </div>
       <div style="font-size: 0.8rem; color: var(--text-muted);">
         Instructor: <strong>{{ course.teacher.username }}</strong>
       </div>
@@ -51,7 +65,15 @@
               {% for les in mod.lessons %}
                 {% set prog = progress_map.get(les.id) %}
                 {% set qcount = lesson_quiz_counts.get(les.id, 0) %}
+                {% set is_future = not is_teacher and not is_admin and les.publish_at and les.publish_at > now %}
                 <li class="player-lesson-item {% if active_lesson and active_lesson.id == les.id %}active{% endif %}">
+                  {% if is_future %}
+                  <a style="cursor: default; opacity: 0.5;">
+                    <i class="far fa-clock lesson-check-icon" style="color: var(--text-muted);"></i>
+                    <span style="flex: 1;">{{ les.title }}</span>
+                    <small style="font-size: 0.65rem; color: var(--text-muted);">Scheduled</small>
+                  </a>
+                  {% else %}
                   <a href="{{ url_for('course.player', slug=course.slug, lesson_id=les.id) }}">
                     <i class="{% if prog and prog.is_completed %}fas fa-check-circle completed{% else %}far fa-circle{% endif %} lesson-check-icon" id="check-{{ les.id }}"></i>
                     <span style="flex: 1;">{{ les.title }}</span>
@@ -84,6 +106,7 @@
                     {% endfor %}
                   </ul>
                   {% endif %}
+                  {% endif %}
                 </li>
               {% endfor %}
             </ul>
@@ -104,6 +127,7 @@
       <!-- TOP BAR: Title + Actions -->
       <div style="background: var(--bg-card); border-bottom: 1px solid var(--border-color); padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
         <div style="display: flex; align-items: center; gap: 1rem; min-width: 0; flex: 1;">
+          <button id="sidebar-hamburger" class="btn btn-sm btn-outline" style="display: none; padding: 0.2rem 0.5rem; font-size: 0.8rem;" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
           <h4 style="font-size: 1.15rem; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ active_lesson.title }}</h4>
           <span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem; flex-shrink: 0;">{{ active_lesson.content_type|capitalize }}</span>
         </div>

@@ -10,8 +10,28 @@ from models.course import Course, Category, Module, Lesson, Review
 from models.learning import Enrollment, LessonProgress, Quiz, Question, Choice, Assignment, LiveClass
 from models.interaction import Payment, DiscussionTopic, Attendance, Coupon, Notification, LabManual
 from utils.cloudinary_upload import upload_file
+from utils.mail import send_notification_email
 
 course_bp = Blueprint('course', __name__)
+
+
+def notify_enrolled_students(course, title, message):
+    """Send in-app notification and email to all enrolled students."""
+    enrollments = Enrollment.query.filter_by(course_id=course.id).all()
+    for enr in enrollments:
+        user = enr.student
+        notif = Notification(
+            user_id=user.id,
+            title=title,
+            message=message,
+            notif_type='info'
+        )
+        db.session.add(notif)
+        try:
+            send_notification_email(user, title, message)
+        except Exception:
+            pass
+    db.session.commit()
 
 
 def process_lesson_headings(text_content):
@@ -253,14 +273,27 @@ def player(slug):
 
     lesson_id = request.args.get('lesson_id', type=int)
     active_lesson = None
+    now = datetime.now()
 
     progress_map = {p.lesson_id: p for p in enrollment.lesson_progresses} if enrollment else {}
 
+    # helper: lesson is visible to students
+    def is_lesson_visible(les):
+        if is_admin or is_teacher:
+            return True
+        return les.publish_at is None or les.publish_at <= now
+
     if lesson_id:
         active_lesson = Lesson.query.get_or_404(lesson_id)
+        # teachers/admin can view any lesson; students only if published
+        if not is_admin and not is_teacher and not is_lesson_visible(active_lesson):
+            flash('This lesson is not published yet.', 'warning')
+            return redirect(url_for('course.player', slug=slug))
     else:
         for m in course.modules:
             for l in m.lessons:
+                if not is_lesson_visible(l):
+                    continue
                 p = progress_map.get(l.id)
                 if p and not p.is_completed:
                     active_lesson = l
@@ -268,8 +301,14 @@ def player(slug):
             if active_lesson:
                 break
 
-        if not active_lesson and course.modules and course.modules[0].lessons:
-            active_lesson = course.modules[0].lessons[0]
+        if not active_lesson:
+            for m in course.modules:
+                for l in m.lessons:
+                    if is_lesson_visible(l):
+                        active_lesson = l
+                        break
+                if active_lesson:
+                    break
 
     active_progress = progress_map.get(active_lesson.id) if active_lesson else None
 
@@ -320,7 +359,10 @@ def player(slug):
         lesson_content_html=lesson_content_html,
         lesson_quiz_counts=lesson_quiz_counts,
         lesson_quizzes_map=lesson_quizzes_map,
-        lesson_completed=lesson_completed
+        lesson_completed=lesson_completed,
+        is_teacher=is_teacher,
+        is_admin=is_admin,
+        now=now
     )
 
 
@@ -428,6 +470,7 @@ def add_lesson(module_id):
         video_url = ''
     duration = int(request.form.get('duration', 10))
     text_content = request.form.get('text_content', '')
+    publish_at_raw = request.form.get('publish_at', '')
 
     file = request.files.get('document_file')
     if file and file.filename:
@@ -448,8 +491,14 @@ def add_lesson(module_id):
         sort_order=order,
         duration_minutes=duration
     )
+    if publish_at_raw:
+        try:
+            lesson.publish_at = datetime.fromisoformat(publish_at_raw)
+        except:
+            pass
     db.session.add(lesson)
     db.session.commit()
+    notify_enrolled_students(module.course, 'New Lesson Added', f'A new lesson "{lesson.title}" has been added to {module.course.title}.')
 
     flash('Lesson added successfully!', 'success')
     return redirect(url_for('dashboard.teacher'))
@@ -481,6 +530,14 @@ def edit_lesson(lesson_id):
         lesson.video_url = ''
     lesson.duration_minutes = int(request.form.get('duration', 10))
     lesson.text_content = request.form.get('text_content', '')
+    publish_at_raw = request.form.get('publish_at', '')
+    if publish_at_raw:
+        try:
+            lesson.publish_at = datetime.fromisoformat(publish_at_raw)
+        except:
+            pass
+    else:
+        lesson.publish_at = None
 
     file = request.files.get('document_file')
     if file and file.filename:
@@ -633,6 +690,7 @@ def create_quiz(course_id):
 
         db.session.commit()
         q_count = Question.query.filter_by(quiz_id=quiz.id).count()
+        notify_enrolled_students(course, 'New Quiz Added', f'A new quiz "{quiz.title}" has been added to {course.title}.')
         flash(f'{label} "{quiz.title}" created with {q_count} questions!', 'success')
         return redirect(redirect_back)
 

@@ -348,3 +348,11 @@ document.addEventListener('DOMContentLoaded', () => {
     flushSection();
   });
 });
+
+// mobile sidebar toggle (global for onclick)
+window.toggleSidebar = function() {
+  var sidebar = document.querySelector('.player-sidebar');
+  if (sidebar) {
+    sidebar.classList.toggle('sidebar-open');
+  }
+};
