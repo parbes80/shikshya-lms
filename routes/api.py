@@ -550,3 +550,14 @@ def get_certificate_qrcode(unique_code):
     img_io.seek(0)
 
     return send_file(img_io, mimetype='image/png')
+
+
+@api_bp.route('/api/lesson/<int:lesson_id>/export-pdf')
+@login_required
+def export_lesson_pdf(lesson_id):
+    from models.course import Lesson
+    lesson = Lesson.query.get_or_404(lesson_id)
+    enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=lesson.module.course_id).first()
+    if not enrollment and lesson.module.course.teacher_id != current_user.id:
+        abort(403)
+    return render_template('lesson_print.html', lesson=lesson)

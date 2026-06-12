@@ -30,7 +30,7 @@ def role_required(*role_names):
 
 
 @dashboard_bp.route('/dashboard/student')
-@role_required('Student')
+@login_required
 def student():
     enrollments = Enrollment.query.filter_by(student_id=current_user.id).all()
     certificates = Certificate.query.filter_by(student_id=current_user.id).all()
@@ -57,6 +57,48 @@ def student():
         pending_payments=pending_payments,
         badges=badges
     )
+
+
+@dashboard_bp.route('/dashboard/student/gradebook')
+@login_required
+def student_gradebook():
+    enrollments = Enrollment.query.filter_by(student_id=current_user.id).all()
+    gradebook_data = []
+
+    for enr in enrollments:
+        course = enr.course
+        quizzes = Quiz.query.filter_by(course_id=course.id).all()
+        quiz_results = []
+        for q in quizzes:
+            attempts = QuizAttempt.query.filter_by(quiz_id=q.id, student_id=current_user.id).order_by(QuizAttempt.completed_at.desc()).all()
+            best = max(attempts, key=lambda a: a.score) if attempts else None
+            quiz_results.append({
+                'title': q.title,
+                'attempts': len(attempts),
+                'best_score': round(best.score, 1) if best else None,
+                'passed': best.is_passed if best else None
+            })
+
+        assignments = Assignment.query.filter_by(course_id=course.id).all()
+        assign_results = []
+        for a in assignments:
+            sub = Submission.query.filter_by(assignment_id=a.id, student_id=current_user.id).first()
+            assign_results.append({
+                'title': a.title,
+                'max_marks': a.max_marks,
+                'submitted': sub is not None,
+                'marks': sub.marks_obtained if sub and sub.is_graded else None,
+                'graded': sub.is_graded if sub else False
+            })
+
+        gradebook_data.append({
+            'course': course,
+            'enrollment': enr,
+            'quiz_results': quiz_results,
+            'assign_results': assign_results
+        })
+
+    return render_template('student_gradebook.html', gradebook_data=gradebook_data)
 
 
 @dashboard_bp.route('/dashboard/teacher')

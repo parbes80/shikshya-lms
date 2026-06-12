@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}My Gradebook{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 2rem auto; padding: 0 1rem;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <a href="{{ url_for('dashboard.student') }}" style="color: var(--text-muted); font-size: 0.85rem;">&larr; Back to Dashboard</a>
+      <h2 style="margin-top: 0.25rem;">My Gradebook</h2>
+    </div>
+  </div>
+
+  {% if gradebook_data %}
+    {% for entry in gradebook_data %}
+      <div class="card" style="padding: 1.5rem; margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <h3 style="font-size: 1.2rem;"><a href="{{ url_for('course.details', slug=entry.course.slug) }}">{{ entry.course.title }}</a></h3>
+            <small style="color: var(--text-muted);">Instructor: {{ entry.course.teacher.username }}</small>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">{{ "%.0f"|format(entry.enrollment.progress_percent) }}%</div>
+            <small style="color: var(--text-muted);">Progress</small>
+          </div>
+        </div>
+
+        <div style="height: 6px; background: var(--bg-app); border-radius: 999px; margin-bottom: 1.5rem; overflow: hidden;">
+          <div style="height: 100%; width: {{ entry.enrollment.progress_percent }}%; background: var(--secondary); border-radius: 999px; transition: width 0.3s;"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <!-- Quiz Scores -->
+          <div>
+            <h4 style="font-size: 1rem; margin-bottom: 0.75rem;"><i class="fas fa-pencil-alt" style="color: var(--primary);"></i> Quiz Scores</h4>
+            {% if entry.quiz_results %}
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+              <thead>
+                <tr style="background: var(--bg-app);">
+                  <th style="text-align: left; padding: 0.4rem; border-bottom: 1px solid var(--border-color);">Quiz</th>
+                  <th style="text-align: center; padding: 0.4rem; border-bottom: 1px solid var(--border-color);">Attempts</th>
+                  <th style="text-align: center; padding: 0.4rem; border-bottom: 1px solid var(--border-color);">Best Score</th>
+                  <th style="text-align: center; padding: 0.4rem; border-bottom: 1px solid var(--border-color);">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for qr in entry.quiz_results %}
+                <tr>
+                  <td style="padding: 0.4rem; border-bottom: 1px solid var(--border-color);">{{ qr.title }}</td>
+                  <td style="text-align: center; padding: 0.4rem; border-bottom: 1px solid var(--border-color);">{{ qr.attempts }}</td>
+                  <td style="text-align: center; padding: 0.4rem; border-bottom: 1px solid var(--border-color);">
+                    {% if qr.best_score is not none %}{{ qr.best_score }}%{% else %}&mdash;{% endif %}
+                  </td>
+                  <td style="text-align: center; padding: 0.4rem; border-bottom: 1px solid var(--border-color);">
+                    {% if qr.passed is not none %}
+                      <span style="color: {% if qr.passed %}var(--secondary){% else %}#ef4444{% endif %};">{% if qr.passed %}PASSED{% else %}FAILED{% endif %}</span>
+                    {% else %}
+                      <span style="color: var(--text-muted);">Not taken</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <p style="color: var(--text-muted); font-size: 0.85rem;">No quizzes for this course.</p>
+            {% endif %}
+          </div>
+
+          <!-- Assignment Marks -->
+          <div>
+            <h4 style="font-size: 1rem; margin-bottom: 0.75rem;"><i class="fas fa-tasks" style="color: var(--accent);"></i> Assignment Marks</h4>
+            {% if entry.assign_results %}
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+              <thead>
+                <tr style="background: var(--bg-app);">
+                  <th style="text-align: left; padding: 0.4rem; border-bottom: 1px solid var(--border-color);">Assignment</th>
+                  <th style="text-align: center; padding: 0.4rem; border-bottom: 1px solid var(--border-color);">Marks</th>
+                  <th style="text-align: center; padding: 0.4rem; border-bottom: 1px solid var(--border-color);">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ar in entry.assign_results %}
+                <tr>
+                  <td style="padding: 0.4rem; border-bottom: 1px solid var(--border-color);">{{ ar.title }}</td>
+                  <td style="text-align: center; padding: 0.4rem; border-bottom: 1px solid var(--border-color);">
+                    {% if ar.graded %}{{ ar.marks }} / {{ ar.max_marks }}{% else %}&mdash;{% endif %}
+                  </td>
+                  <td style="text-align: center; padding: 0.4rem; border-bottom: 1px solid var(--border-color);">
+                    {% if ar.graded %}
+                      <span style="color: var(--secondary);">Graded</span>
+                    {% elif ar.submitted %}
+                      <span style="color: var(--accent);">Pending</span>
+                    {% else %}
+                      <span style="color: var(--text-muted);">Not submitted</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <p style="color: var(--text-muted); font-size: 0.85rem;">No assignments for this course.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="card" style="padding: 3rem; text-align: center;">
+      <i class="fas fa-book-open" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+      <h3>No courses enrolled yet</h3>
+      <p style="color: var(--text-muted);">Enroll in a course to see your grades here.</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
