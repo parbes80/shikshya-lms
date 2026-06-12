@@ -72,7 +72,7 @@
                     {% for qz in lesson_qs %}
                     {% set unlocked = prog and prog.is_completed %}
                     <li class="subtopic-item" style="padding-left: 1.8rem;">
-                      <a href="{% if unlocked %}{{ url_for('api.take_quiz_view', quiz_id=qz.id) }}{% else %}#{% endif %}" style="font-size: 0.78rem; {% if not unlocked %}color: var(--text-muted); cursor: default;{% endif %}">
+                      <a href="{% if unlocked %}{{ url_for('api.take_quiz_view', quiz_id=qz.id) }}{% else %}{{ url_for('course.player', slug=course.slug, lesson_id=les.id) }}{% endif %}" style="font-size: 0.78rem; {% if not unlocked %}color: var(--text-muted);{% endif %}">
                         <i class="fas fa-{% if unlocked %}pencil-alt{% else %}lock{% endif %}" style="font-size: 0.7rem; margin-right: 3px;"></i> {{ qz.title }}
                       </a>
                     </li>
