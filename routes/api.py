@@ -15,6 +15,14 @@ from models.interaction import Notification, DiscussionTopic, DiscussionReply, C
 api_bp = Blueprint('api', __name__)
 
 
+def _coerce_int(value):
+    """Return an int for numeric strings, otherwise ``None``."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _update_course_progress(enrollment):
     """Recalculate overall course progress including lessons, quizzes, and assignments."""
     course = enrollment.course
@@ -111,43 +119,63 @@ def track_video_progress():
 @api_bp.route('/api/quiz/submit', methods=['POST'])
 @login_required
 def submit_quiz():
-    data = request.json or {}
-    quiz_id = data.get('quiz_id')
-    answers = data.get('answers', {})
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        data = {}
+    quiz_id = _coerce_int(data.get('quiz_id'))
+    answers = data.get('answers') or {}
 
     if not quiz_id:
         return jsonify({'error': 'quiz_id required'}), 400
 
+    if not isinstance(answers, dict):
+        return jsonify({'error': 'answers must be an object keyed by question id'}), 400
+
     quiz = Quiz.query.get_or_404(quiz_id)
 
+    # Only students may create attempts. Teachers and admins preview quizzes
+    # through the read-only view, not by polluting attempt analytics.
+    if current_user.role.name != 'Student':
+        return jsonify({'error': 'Only students can submit quizzes.'}), 403
+
+    # Enforce the course boundary before scoring. Without this check any
+    # authenticated user could harvest the answer key for any quiz.
+    enrollment = Enrollment.query.filter_by(
+        student_id=current_user.id, course_id=quiz.course_id
+    ).first()
+    if not enrollment:
+        return jsonify({'error': 'You are not enrolled in this course.'}), 403
+
     # lesson-gated quiz: must complete the lesson first
-    if quiz.lesson_id and current_user.role.name == 'Student':
-        enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=quiz.course_id).first()
-        if enrollment:
-            lp = LessonProgress.query.filter_by(enrollment_id=enrollment.id, lesson_id=quiz.lesson_id).first()
-            if not lp or not lp.is_completed:
-                return jsonify({'error': 'Complete the lesson first to submit this quiz.'}), 403
+    if quiz.lesson_id:
+        lp = LessonProgress.query.filter_by(
+            enrollment_id=enrollment.id, lesson_id=quiz.lesson_id
+        ).first()
+        if not lp or not lp.is_completed:
+            return jsonify({'error': 'Complete the lesson first to submit this quiz.'}), 403
 
     # retry limit check
-    if quiz.max_attempts and current_user.role.name == 'Student':
-        attempts_count = QuizAttempt.query.filter_by(quiz_id=quiz.id, student_id=current_user.id).count()
+    if quiz.max_attempts:
+        attempts_count = QuizAttempt.query.filter_by(
+            quiz_id=quiz.id, student_id=current_user.id
+        ).count()
         if attempts_count >= quiz.max_attempts:
             return jsonify({'error': f'Maximum {quiz.max_attempts} attempt(s) reached.'}), 403
 
     questions = quiz.questions
 
-    total_points = sum(q.points for q in questions)
+    total_points = sum(q.points or 0 for q in questions)
     score_obtained = 0
     correct_count = 0
 
     results = {}
     for q in questions:
-        selected_choice_id = answers.get(str(q.id))
+        selected_choice_id = _coerce_int(answers.get(str(q.id)))
         correct_choice = Choice.query.filter_by(question_id=q.id, is_correct=True).first()
 
         is_correct = False
-        if selected_choice_id and correct_choice and int(selected_choice_id) == correct_choice.id:
-            score_obtained += q.points
+        if selected_choice_id is not None and correct_choice and selected_choice_id == correct_choice.id:
+            score_obtained += q.points or 0
             correct_count += 1
             is_correct = True
 
@@ -170,9 +198,7 @@ def submit_quiz():
     db.session.add(attempt)
 
     if is_passed:
-        enrollment = Enrollment.query.filter_by(student_id=current_user.id, course_id=quiz.course_id).first()
-        if enrollment:
-            _update_course_progress(enrollment)
+        _update_course_progress(enrollment)
 
     notif = Notification(
         user_id=current_user.id,
@@ -278,6 +304,17 @@ def add_reply(topic_id):
         return jsonify({'error': 'Content required'}), 400
 
     topic = DiscussionTopic.query.get_or_404(topic_id)
+    course = topic.course
+
+    # Only participants of the course may reply. This prevents cross-course
+    # posting and notification spam to arbitrary topic authors.
+    enrollment = Enrollment.query.filter_by(
+        student_id=current_user.id, course_id=course.id
+    ).first()
+    is_course_owner = course.teacher_id == current_user.id
+    is_admin = current_user.role.name == 'Admin'
+    if not (enrollment or is_course_owner or is_admin):
+        return jsonify({'error': 'You do not have access to this discussion.'}), 403
 
     reply = DiscussionReply(
         topic_id=topic.id,

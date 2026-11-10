@@ -17,7 +17,7 @@ def send_email(to_email, subject, text_body, html_body=None):
     sender = config.get('MAIL_DEFAULT_SENDER', username)
 
     if not server or not username:
-        logger.warning(f"Mail not configured. Would send to {to_email}: {subject}")
+        logger.warning("Mail transport is not configured; message '%s' was not sent.", subject)
         return False
 
     msg = MIMEMultipart('alternative')
@@ -38,10 +38,10 @@ def send_email(to_email, subject, text_body, html_body=None):
             if username and password:
                 smtp.login(username, password)
             smtp.sendmail(sender, [to_email], msg.as_string())
-        logger.info(f"Email sent to {to_email}: {subject}")
+        logger.info("Email sent: %s", subject)
         return True
     except Exception as e:
-        logger.error(f"Failed to send email to {to_email}: {e}")
+        logger.error("Failed to send email '%s': %s", subject, e)
         return False
 
 
@@ -50,7 +50,7 @@ def send_password_reset_email(user, reset_link):
     text_body = (
         f"Hello {user.username},\n\n"
         f"You requested a password reset.\n\n"
-        f"Click the link below to set a new password (valid for 24 hours):\n"
+        f"Click the link below to set a new password (valid for 1 hour):\n"
         f"{reset_link}\n\n"
         f"If you did not request this, please ignore this email.\n\n"
         f"— {current_app.config['SITE_NAME']} Team"

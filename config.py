@@ -37,8 +37,13 @@ class Config:
     }
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Create tables / seed demo data on startup. Disable in tests and migrations.
+    # Create tables / run bootstrap on startup. Disable in tests and migrations.
     AUTO_INIT_DB = True
+
+    # Demo users, courses and other sample data are opt-in and must never be
+    # enabled in production. Roles are always ensured separately so that
+    # registration and the create-admin CLI work on an empty database.
+    SEED_DEMO_DATA = os.environ.get('SEED_DEMO_DATA', 'False').lower() == 'true'
 
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024

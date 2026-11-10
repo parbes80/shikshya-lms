@@ -56,9 +56,27 @@ def test_register_teacher_requires_admin_approval(client):
     assert user.is_approved is False
 
 
+def test_register_cannot_create_admin(client, app):
+    response = client.post(
+        '/register',
+        data=_registration_data(
+            username='attacker',
+            email='attacker@example.com',
+            role='Admin',
+        ),
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b'Invalid role' in response.data
+    assert User.query.filter_by(email='attacker@example.com').count() == 0
+    assert User.query.filter(User.role.has(name='Admin')).count() == 0
+
+
 @pytest.mark.parametrize('overrides, message', [
     ({'password': '123'}, b'at least 6 characters'),
     ({'role': 'Wizard'}, b'Invalid role'),
+    ({'role': 'Admin'}, b'Invalid role'),
     ({'username': '', 'email': ''}, b'All fields are required'),
 ])
 def test_register_rejects_invalid_input(client, overrides, message):
@@ -250,8 +268,88 @@ def test_forgot_password_does_not_duplicate_pending_requests(client, make_user):
         follow_redirects=True,
     )
 
-    assert b'already have a pending reset request' in response.data
+    assert b'If an account exists for that email address' in response.data
     assert PasswordResetRequest.query.filter_by(user_id=user.id).count() == 1
+
+
+def test_forgot_password_response_does_not_reveal_account_existence(
+    client, make_user
+):
+    user = make_user()
+
+    known = client.post(
+        '/forgot-password',
+        data={'email': user.email},
+        follow_redirects=True,
+    )
+    unknown = client.post(
+        '/forgot-password',
+        data={'email': 'nobody@example.com'},
+        follow_redirects=True,
+    )
+
+    generic = b'If an account exists for that email address'
+    assert known.status_code == 200
+    assert unknown.status_code == 200
+    assert generic in known.data
+    assert generic in unknown.data
+    assert user.email.encode() not in known.data
+    assert PasswordResetRequest.query.filter_by(user_id=user.id).count() == 1
+    assert PasswordResetRequest.query.filter_by(
+        email='nobody@example.com'
+    ).count() == 0
+
+
+def test_admin_reset_never_returns_reset_token(
+    client, auth, make_user, caplog
+):
+    import logging
+
+    caplog.set_level(logging.DEBUG)
+    admin = make_user(role='Admin')
+    target = make_user()
+    auth.login(admin)
+
+    response = client.post(
+        '/admin/reset-password',
+        data={'email': target.email},
+        follow_redirects=True,
+    )
+
+    token = PasswordResetToken.query.filter_by(user_id=target.id).first()
+    assert token is not None
+    assert response.status_code == 200
+    assert token.token.encode() not in response.data
+    assert b'/reset-password/' not in response.data
+    assert token.token not in caplog.text
+    assert '/reset-password/' not in caplog.text
+
+
+def test_approved_reset_never_returns_reset_token(
+    client, auth, make_user, caplog
+):
+    import logging
+
+    caplog.set_level(logging.DEBUG)
+    admin = make_user(role='Admin')
+    target = make_user()
+    reset_request = PasswordResetRequest(user_id=target.id, email=target.email)
+    db.session.add(reset_request)
+    db.session.commit()
+    auth.login(admin)
+
+    response = client.get(
+        f'/admin/approve-reset-request/{reset_request.id}',
+        follow_redirects=True,
+    )
+
+    token = PasswordResetToken.query.filter_by(user_id=target.id).first()
+    assert token is not None
+    assert response.status_code == 200
+    assert token.token.encode() not in response.data
+    assert b'/reset-password/' not in response.data
+    assert token.token not in caplog.text
+    assert '/reset-password/' not in caplog.text
 
 
 def test_reset_password_with_valid_token(client, make_user):

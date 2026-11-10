@@ -2,7 +2,7 @@ import re
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify
 from flask_login import login_required, current_user
 from database import db
-from models.user import Branch, User, UserProfile
+from models.user import Branch
 
 branch_bp = Blueprint('branch', __name__)
 
@@ -23,11 +23,7 @@ def list_branches():
 @branch_bp.route('/branches/map')
 def branches_map():
     branches = Branch.query.filter_by(is_active=True).all()
-    users = UserProfile.query.filter(
-        UserProfile.latitude.isnot(None),
-        UserProfile.longitude.isnot(None)
-    ).all()
-    return render_template('branches_map.html', branches=branches, users=users)
+    return render_template('branches_map.html', branches=branches)
 
 
 @branch_bp.route('/branches/api/data')
@@ -43,17 +39,9 @@ def branches_api():
         'phone': b.phone,
         'email': b.email,
     } for b in branches]
-    users = UserProfile.query.filter(
-        UserProfile.latitude.isnot(None),
-        UserProfile.longitude.isnot(None)
-    ).all()
-    user_data = [{
-        'username': u.user.username,
-        'city': u.city,
-        'lat': u.latitude,
-        'lng': u.longitude,
-    } for u in users]
-    return jsonify({'branches': data, 'users': user_data})
+    # This endpoint is public. It must never expose learner profiles or
+    # precise coordinates.
+    return jsonify({'branches': data})
 
 
 @branch_bp.route('/branches/create', methods=['GET', 'POST'])

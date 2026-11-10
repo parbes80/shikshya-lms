@@ -16,7 +16,19 @@ logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint('auth', __name__)
 
-VALID_ROLES = ['Student', 'Teacher', 'Admin']
+# Only self-service roles may be chosen by anonymous visitors. Administrators
+# are created by an operator (``create-admin`` CLI) and must never be
+# selectable through public registration.
+PUBLIC_REGISTRATION_ROLES = ('Student', 'Teacher')
+
+# Password reset links stay valid for one hour. Keep this in sync with the
+# reset email copy.
+RESET_TOKEN_LIFETIME_HOURS = 1
+
+FORGOT_PASSWORD_MESSAGE = (
+    'If an account exists for that email address, a password reset request '
+    'has been submitted for administrator review.'
+)
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -29,9 +41,9 @@ def register():
         full_name = request.form.get('full_name', '').strip() or username
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
-        role_name = request.form.get('role', 'Student')
+        role_name = request.form.get('role', 'Student').strip()
 
-        if role_name not in VALID_ROLES:
+        if role_name not in PUBLIC_REGISTRATION_ROLES:
             flash('Invalid role selected.', 'danger')
             return redirect(url_for('auth.register'))
 
@@ -218,23 +230,20 @@ def forgot_password():
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
         user = User.query.filter_by(email=email).first()
-        if not user:
-            flash('No account found with that email address.', 'danger')
-            return redirect(url_for('auth.forgot_password'))
 
-        existing = PasswordResetRequest.query.filter_by(
-            user_id=user.id, status='pending'
-        ).first()
-        if existing:
-            flash('You already have a pending reset request. Please wait for admin approval.', 'warning')
-            return redirect(url_for('auth.forgot_password'))
+        # Always respond identically, whether or not the address belongs to an
+        # account. This prevents account enumeration.
+        if user:
+            existing = PasswordResetRequest.query.filter_by(
+                user_id=user.id, status='pending'
+            ).first()
+            if not existing:
+                req = PasswordResetRequest(user_id=user.id, email=email)
+                db.session.add(req)
+                db.session.commit()
+                logger.info('Password reset request created for user id %s', user.id)
 
-        req = PasswordResetRequest(user_id=user.id, email=email)
-        db.session.add(req)
-        db.session.commit()
-
-        logger.info(f'Password reset request from {email} (ID: {user.id})')
-        flash('Your request has been submitted. An admin will review and send a reset link to your email shortly.', 'info')
+        flash(FORGOT_PASSWORD_MESSAGE, 'info')
         return redirect(url_for('auth.login'))
 
     return render_template('forgot_password.html')
@@ -256,7 +265,7 @@ def admin_reset_password():
 
         token = secrets.token_urlsafe(48)
         reset_link = url_for('auth.reset_password', token=token, _external=True)
-        expires = datetime.utcnow() + timedelta(hours=24)
+        expires = datetime.utcnow() + timedelta(hours=RESET_TOKEN_LIFETIME_HOURS)
 
         PasswordResetToken.query.filter_by(user_id=user.id, is_used=False).delete()
         db.session.flush()
@@ -274,9 +283,18 @@ def admin_reset_password():
         if sent:
             flash(f'Password reset link sent to {email}.', 'success')
         else:
-            logger.warning(f'Email not sent to {email}, link printed to console: {reset_link}')
-            print(f'[PASSWORD RESET] Link for {email}: {reset_link}')
-            flash(f'Password reset link generated (email not configured). Link: {reset_link}', 'warning')
+            # Never print or flash the link: it is a single-use credential.
+            logger.warning(
+                'Password reset email could not be sent for user id %s '
+                '(mail transport unavailable or rejected the message).',
+                user.id,
+            )
+            flash(
+                'The reset email could not be sent. Ask an administrator to '
+                'verify the mail configuration; the reset link was not displayed '
+                'for security reasons.',
+                'danger',
+            )
         return redirect(url_for('dashboard.admin'))
 
     pending_requests = PasswordResetRequest.query.filter_by(status='pending').order_by(PasswordResetRequest.created_at.desc()).all()
@@ -298,7 +316,7 @@ def approve_reset_request(request_id):
     user = User.query.get(req.user_id)
     token = secrets.token_urlsafe(48)
     reset_link = url_for('auth.reset_password', token=token, _external=True)
-    expires = datetime.utcnow() + timedelta(hours=24)
+    expires = datetime.utcnow() + timedelta(hours=RESET_TOKEN_LIFETIME_HOURS)
 
     PasswordResetToken.query.filter_by(user_id=user.id, is_used=False).delete()
     db.session.flush()
@@ -316,9 +334,18 @@ def approve_reset_request(request_id):
     if sent:
         flash(f'Reset link sent to {req.email}.', 'success')
     else:
-        logger.warning(f'Email not sent to {req.email}, link printed to console: {reset_link}')
-        print(f'[PASSWORD RESET] Admin approved request for {req.email}: {reset_link}')
-        flash(f'Reset link generated for {req.email} (email not configured). Link: {reset_link}', 'warning')
+        # Never print or flash the link: it is a single-use credential.
+        logger.warning(
+            'Password reset email could not be sent for reset request id %s '
+            '(mail transport unavailable or rejected the message).',
+            req.id,
+        )
+        flash(
+            'The reset email could not be sent. Ask an administrator to verify '
+            'the mail configuration; the reset link was not displayed for '
+            'security reasons.',
+            'danger',
+        )
     return redirect(url_for('auth.admin_reset_password'))
 
 

@@ -33,6 +33,11 @@ def index(course_id):
     if current_user.role.name == 'Teacher' and course.teacher_id != current_user.id:
         abort(403)
     if current_user.role.name == 'Student':
+        enrollment = Enrollment.query.filter_by(
+            student_id=current_user.id, course_id=course_id
+        ).first()
+        if not enrollment:
+            abort(403)
         evaluations = Evaluation.query.filter_by(course_id=course_id).order_by(Evaluation.scheduled_at.desc()).all()
     else:
         evaluations = Evaluation.query.filter_by(course_id=course_id).order_by(Evaluation.created_at.desc()).all()
@@ -251,8 +256,17 @@ def grade(eval_id):
     score = request.form.get('score', type=float)
     feedback = request.form.get('feedback', '').strip()
 
-    sub = EvaluationSubmission.query.get_or_404(sub_id)
-    sub.score = score
+    if sub_id is None or score is None:
+        abort(400)
+
+    # Scope the lookup to this evaluation. Looking a submission up by its
+    # primary key alone allowed a teacher to grade other courses' work.
+    sub = EvaluationSubmission.query.filter_by(
+        id=sub_id, evaluation_id=evaluation.id
+    ).first_or_404()
+
+    max_score = float(evaluation.max_score or 0.0)
+    sub.score = max(0.0, min(float(score), max_score))
     sub.feedback = feedback
     sub.graded_by = current_user.id
     sub.graded_at = datetime.utcnow()

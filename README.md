@@ -54,8 +54,9 @@ pip install -r requirements.txt
 # Create environment config
 cp .env.example .env
 # Edit .env with your SECRET_KEY
+# For local demo data also set SEED_DEMO_DATA=true
 
-# Initialize and seed database
+# Initialize the database and, only if SEED_DEMO_DATA=true, add demo data
 python seed.py
 
 # Run development server
@@ -64,19 +65,39 @@ python app.py
 
 Visit **http://localhost:5000**
 
+> Demo accounts are created only when `SEED_DEMO_DATA=true` **and** you run
+> `python seed.py` (or boot with an empty database). Never enable this flag in
+> production.
+
 ### Using Docker
 
 ```bash
 docker-compose up --build
 ```
 
-## Test Credentials
+## Development Demo Credentials
+
+These accounts exist **only** in a development database seeded with
+`SEED_DEMO_DATA=true`. They are not created in production, and the passwords
+below must never be used on a deployed instance.
 
 | Role | Username | Email | Password |
 |------|----------|-------|----------|
-| Admin | admin | admin@shikshya.edu | admin123 |
-| Teacher | teacher_sandesh | teacher@shikshya.edu | teacher123 |
-| Student | student_pradeep | student@shikshya.edu | student123 |
+| Admin | admin | admin@shikshya.edu | admin123 (dev only) |
+| Teacher | teacher_sandesh | teacher@shikshya.edu | teacher123 (dev only) |
+| Student | student_pradeep | student@shikshya.edu | student123 (dev only) |
+
+### Create a production administrator
+
+Do not reuse demo credentials in production. Create an administrator with the
+CLI, choosing a strong unique password:
+
+```bash
+python manage.py create-admin
+```
+
+The command creates the built-in roles if needed, then creates or promotes the
+given account to Admin. Passwords are prompted for and never printed.
 
 ## Project Structure
 
@@ -143,6 +164,7 @@ Shikshya/
 | `DATABASE_URL` | No | SQLite | Database connection string (PostgreSQL in prod) |
 | `SESSION_COOKIE_SECURE` | No | False | Set `True` when using HTTPS |
 | `FLASK_ENV` | No | development | Set `production` for deployment |
+| `SEED_DEMO_DATA` | No | False | Create demo users/courses on seed/boot. Development only; keep `False` in production |
 | `SITE_URL` | No | http://localhost:5000 | Public site URL (used in emails) |
 | `MAIL_SERVER` | No | smtp.gmail.com | SMTP server hostname |
 | `MAIL_PORT` | No | 587 | SMTP port |

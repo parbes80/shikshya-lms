@@ -59,13 +59,18 @@ EOF
 docker compose up -d --build
 ```
 
-### Step 4 — Seed Database
+### Step 4 — Create the First Administrator
+
+The application creates the built-in roles automatically on startup. Demo data
+is **not** seeded in production. Create a real administrator with a strong,
+unique password:
 
 ```bash
-docker compose exec web python seed.py
+docker compose exec web python manage.py create-admin
 ```
 
-Your app is now live at `http://<server-ip>`.
+The command prompts for email, username and password, and never prints the
+password. Your app is now live at `http://<server-ip>`.
 
 ### Step 5 — SSL with Let's Encrypt
 
@@ -181,8 +186,8 @@ MAIL_PASSWORD=your-app-password
 MAIL_DEFAULT_SENDER=Shikshya <you@gmail.com>
 EOF
 
-# Seed database
-python seed.py
+# Create the first administrator (roles are created automatically)
+python manage.py create-admin
 ```
 
 ### Step 4 — Gunicorn via Supervisor

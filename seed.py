@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from flask import current_app
+
 from app import create_app
 from database import db
 from models.user import Role, User, UserProfile, Branch
@@ -13,10 +15,40 @@ from datetime import datetime, timedelta
 import os
 
 
+ROLE_DEFINITIONS = (
+    ('Admin', 'Administrator with full control'),
+    ('Teacher', 'Instructor who creates courses and grades submissions'),
+    ('Student', 'Learner who enrolls in courses'),
+)
+
+DEMO_ADMIN_EMAIL = 'admin@shikshya.edu'
+
+
+def ensure_roles():
+    """Create the built-in roles if they are missing.
+
+    This is the only part of seeding that runs in production. It keeps
+    registration and the ``create-admin`` CLI usable on an empty database
+    without creating any known-password accounts.
+    """
+    created = False
+    for name, description in ROLE_DEFINITIONS:
+        if not Role.query.filter_by(name=name).first():
+            db.session.add(Role(name=name, description=description))
+            created = True
+    if created:
+        db.session.commit()
+
+
 def seed_database():
     print("Seeding database...")
+    ensure_roles()
 
-    # Idempotent category additions (always runs, skips if slug exists)
+    if not current_app.config.get('SEED_DEMO_DATA', False):
+        print("Demo data seeding is disabled (set SEED_DEMO_DATA=true in development).")
+        return
+
+    # Idempotent category additions, only when demo data is explicitly enabled.
     for cat_data in [
         ('Web Development', 'web-development', 'fa-laptop-code'),
         ('Programming Languages', 'programming-languages', 'fa-code'),
@@ -29,16 +61,13 @@ def seed_database():
             db.session.add(Category(name=cat_data[0], slug=cat_data[1], icon_class=cat_data[2]))
     db.session.commit()
 
-    if Role.query.first():
-        print("Database already seeded. Skipping.")
+    if User.query.filter_by(email=DEMO_ADMIN_EMAIL).first():
+        print("Demo data already present. Skipping.")
         return
 
-    admin_role = Role(name='Admin', description='Administrator with full control')
-    teacher_role = Role(name='Teacher', description='Instructor who creates courses and grades submissions')
-    student_role = Role(name='Student', description='Learner who enrolls in courses')
-
-    db.session.add_all([admin_role, teacher_role, student_role])
-    db.session.commit()
+    admin_role = Role.query.filter_by(name='Admin').first()
+    teacher_role = Role.query.filter_by(name='Teacher').first()
+    student_role = Role.query.filter_by(name='Student').first()
 
     if not Branch.query.first():
         db.session.add_all([
@@ -205,6 +234,12 @@ def seed_database():
 
 if __name__ == '__main__':
     app = create_app()
+    if not app.config.get('SEED_DEMO_DATA', False):
+        raise SystemExit(
+            'Refusing to seed demo data: set SEED_DEMO_DATA=true in a '
+            'development environment only. Use `python manage.py create-admin` '
+            'to create a production administrator.'
+        )
     with app.app_context():
         db.create_all()
         seed_database()

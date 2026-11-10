@@ -190,6 +190,79 @@ def test_quiz_submission_requires_quiz_id(client, auth, make_user):
     assert response.status_code == 400
 
 
+def test_quiz_submission_requires_enrollment(client, auth, make_user, make_course):
+    student = make_user()
+    data = make_course(quiz=True)
+    auth.login(student)
+
+    response = client.post('/api/quiz/submit', json={
+        'quiz_id': data.quiz.id,
+        'answers': {str(data.question.id): data.choices[0].id},
+    })
+
+    assert response.status_code == 403
+    assert 'not enrolled' in response.get_json()['error']
+    assert QuizAttempt.query.filter_by(
+        quiz_id=data.quiz.id, student_id=student.id
+    ).count() == 0
+
+
+def test_quiz_submission_rejects_other_courses_quiz(
+    client, auth, make_user, make_course, enroll
+):
+    student = make_user()
+    enrolled_course = make_course(quiz=True)
+    other_course = make_course(quiz=True)
+    enroll(student, enrolled_course.course)
+    auth.login(student)
+
+    response = client.post('/api/quiz/submit', json={
+        'quiz_id': other_course.quiz.id,
+        'answers': {str(other_course.question.id): other_course.choices[0].id},
+    })
+
+    assert response.status_code == 403
+    assert 'correct_choice_text' not in response.get_json()
+    assert QuizAttempt.query.filter_by(
+        quiz_id=other_course.quiz.id, student_id=student.id
+    ).count() == 0
+
+
+def test_quiz_submission_rejects_teacher_attempts(
+    client, auth, make_user, make_course
+):
+    data = make_course(quiz=True)
+    teacher = make_user(role='Teacher')
+    auth.login(teacher)
+
+    response = client.post('/api/quiz/submit', json={
+        'quiz_id': data.quiz.id,
+        'answers': {},
+    })
+
+    assert response.status_code == 403
+    assert QuizAttempt.query.filter_by(
+        quiz_id=data.quiz.id, student_id=teacher.id
+    ).count() == 0
+
+
+def test_quiz_submission_ignores_malformed_answer_ids(
+    client, auth, make_user, make_course, enroll
+):
+    student = make_user()
+    data = make_course(quiz=True)
+    enroll(student, data.course)
+    auth.login(student)
+
+    response = client.post('/api/quiz/submit', json={
+        'quiz_id': data.quiz.id,
+        'answers': {str(data.question.id): 'not-a-choice-id'},
+    })
+
+    assert response.status_code == 200
+    assert response.get_json()['score'] == 0.0
+
+
 def test_quiz_retry_limit_is_enforced(
     client, auth, make_user, make_course, enroll
 ):
@@ -284,10 +357,14 @@ def test_discussion_creation_requires_fields(
     assert response.status_code == 400
 
 
-def test_reply_notifies_topic_author(client, auth, make_user, make_course):
+def test_reply_notifies_topic_author(
+    client, auth, make_user, make_course, enroll
+):
     author = make_user()
     responder = make_user()
     data = make_course()
+    enroll(author, data.course)
+    enroll(responder, data.course)
     topic = DiscussionTopic(
         course_id=data.course.id,
         user_id=author.id,
@@ -305,6 +382,54 @@ def test_reply_notifies_topic_author(client, auth, make_user, make_course):
     assert response.status_code == 200
     assert response.get_json()['author'] == responder.username
     assert Notification.query.filter_by(user_id=author.id).count() == 1
+
+
+def test_reply_requires_enrollment_or_course_ownership(
+    client, auth, make_user, make_course
+):
+    author = make_user()
+    outsider = make_user()
+    data = make_course()
+    topic = DiscussionTopic(
+        course_id=data.course.id,
+        user_id=author.id,
+        title='A question',
+        content='Explain this please',
+    )
+    db.session.add(topic)
+    db.session.commit()
+    auth.login(outsider)
+
+    response = client.post(f'/api/discussions/{topic.id}/reply', data={
+        'content': 'Trying to post from another course.'
+    })
+
+    assert response.status_code == 403
+    assert db.session.get(DiscussionTopic, topic.id).replies == []
+    assert Notification.query.filter_by(user_id=author.id).count() == 0
+
+
+def test_course_teacher_can_reply_without_enrollment(
+    client, auth, make_user, make_course
+):
+    author = make_user()
+    data = make_course()
+    topic = DiscussionTopic(
+        course_id=data.course.id,
+        user_id=author.id,
+        title='A question',
+        content='Explain this please',
+    )
+    db.session.add(topic)
+    db.session.commit()
+    auth.login(data.teacher)
+
+    response = client.post(f'/api/discussions/{topic.id}/reply', data={
+        'content': 'Teacher response.'
+    })
+
+    assert response.status_code == 200
+    assert response.get_json()['author'] == data.teacher.username
 
 
 def test_assignment_submission_requires_enrollment(

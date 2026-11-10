@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import click
 import markdown as md_lib
 from flask import Flask, render_template, url_for
 from flask_login import LoginManager
@@ -11,7 +12,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from database import db, migrate
 from config import Config
-from models.user import User
+from models.user import User, Role, UserProfile
 from models.interaction import Notification
 import models  # ensure all models are registered with SQLAlchemy
 from utils.cloudinary_upload import init_cloudinary
@@ -123,6 +124,55 @@ def create_app(config_overrides=None):
     def ratelimit_exceeded(e):
         return render_template('errors/429.html'), 429
 
+    @app.cli.command('create-admin')
+    @click.option('--email', prompt='Admin email')
+    @click.option('--username', prompt='Admin username')
+    @click.option('--password', prompt=True, hide_input=True, confirmation_prompt=True)
+    @click.option('--full-name', default='', help='Optional display name')
+    def create_admin(email, username, password, full_name):
+        """Create or promote an administrator without demo credentials."""
+        email = email.strip().lower()
+        username = username.strip()
+        if not email or not username:
+            raise click.ClickException('Email and username are required.')
+        if len(password) < 8:
+            raise click.ClickException('Password must be at least 8 characters.')
+
+        with app.app_context():
+            from seed import ensure_roles
+            ensure_roles()
+            admin_role = Role.query.filter_by(name='Admin').first()
+            if admin_role is None:
+                raise click.ClickException('Admin role could not be created.')
+
+            user = User.query.filter(
+                (User.email == email) | (User.username == username)
+            ).first()
+            if user:
+                user.email = email
+                user.username = username
+                user.role_id = admin_role.id
+                user.is_approved = True
+                if full_name:
+                    user.full_name = full_name
+                user.set_password(password)
+                click.echo(f'Updated existing user "{username}" and granted Admin access.')
+            else:
+                user = User(
+                    username=username,
+                    full_name=full_name or username,
+                    email=email,
+                    role_id=admin_role.id,
+                    is_approved=True,
+                    avatar_url='images/avatar_default.jpg',
+                )
+                user.set_password(password)
+                db.session.add(user)
+                db.session.flush()
+                db.session.add(UserProfile(user_id=user.id))
+                click.echo(f'Created administrator "{username}".')
+            db.session.commit()
+
     if app.config.get('AUTO_INIT_DB', True):
         with app.app_context():
             import sqlalchemy as sa
@@ -179,9 +229,16 @@ def create_app(config_overrides=None):
                     db.session.execute(sa.text('ALTER TABLE lessons ADD COLUMN publish_at TIMESTAMP'))
                     db.session.commit()
                     app.logger.info('Added publish_at column to lessons')
-            if not Role.query.first():
-                from seed import seed_database
+            # Roles are infrastructure, not demo data: always ensure they exist
+            # so registration and the create-admin CLI work on a fresh database.
+            from seed import ensure_roles, seed_database
+            ensure_roles()
+            if app.config.get('SEED_DEMO_DATA', False):
                 seed_database()
+            else:
+                app.logger.info(
+                    'Demo data seeding disabled (SEED_DEMO_DATA is not true).'
+                )
 
     return app
 
