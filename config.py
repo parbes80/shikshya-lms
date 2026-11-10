@@ -5,14 +5,30 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent
 
 
+def normalize_database_url(url):
+    """Normalize Postgres URLs supplied by hosting providers.
+
+    Handles Heroku/Render-style ``postgres://`` URLs and makes sure SSL
+    mode is requested for every supported driver (psycopg2 and psycopg 3).
+    """
+    if url.startswith('postgres://'):
+        url = 'postgresql://' + url[len('postgres://'):]
+
+    if url.startswith(('postgresql://', 'postgresql+psycopg://', 'postgresql+psycopg2://')):
+        if 'sslmode=' not in url:
+            url += ('&' if '?' in url else '?') + 'sslmode=require'
+
+    return url
+
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
     if not SECRET_KEY:
         raise ValueError("SECRET_KEY environment variable must be set")
 
-    _db_url = os.environ.get('DATABASE_URL', f'sqlite:///{BASE_DIR}/shikshya.db')
-    if _db_url.startswith('postgresql://') and '?sslmode' not in _db_url:
-        _db_url += '?sslmode=require'
+    _db_url = normalize_database_url(
+        os.environ.get('DATABASE_URL', f'sqlite:///{BASE_DIR}/shikshya.db')
+    )
     SQLALCHEMY_DATABASE_URI = _db_url
 
     SQLALCHEMY_ENGINE_OPTIONS = {
@@ -20,6 +36,9 @@ class Config:
         'pool_recycle': 300,
     }
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Create tables / seed demo data on startup. Disable in tests and migrations.
+    AUTO_INIT_DB = True
 
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024

@@ -14,7 +14,9 @@ email-validator==2.1.1
 
 # Production
 gunicorn==22.0.0
+# PostgreSQL drivers: psycopg2 for postgresql://, psycopg 3 for postgresql+psycopg://
 psycopg2-binary==2.9.9
+psycopg[binary]>=3.1
 
 # Cloud storage for uploaded files
 cloudinary==1.40.0

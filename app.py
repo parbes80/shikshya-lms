@@ -19,9 +19,16 @@ from utils.cloudinary_upload import init_cloudinary
 csrf = CSRFProtect()
 limiter = Limiter(key_func=get_remote_address)
 
-def create_app():
+def create_app(config_overrides=None):
     app = Flask(__name__)
     app.config.from_object(Config)
+
+    # Allow tests and alternate entry points to override configuration.
+    if config_overrides:
+        if isinstance(config_overrides, dict):
+            app.config.update(config_overrides)
+        else:
+            app.config.from_object(config_overrides)
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -116,64 +123,65 @@ def create_app():
     def ratelimit_exceeded(e):
         return render_template('errors/429.html'), 429
 
-    with app.app_context():
-        import sqlalchemy as sa
-        from models.user import Role
-        if not sa.inspect(db.engine).get_table_names():
-            db.create_all()
-            app.logger.info('Created database tables')
-        else:
-            insp = sa.inspect(db.engine)
-            existing_tables = insp.get_table_names()
-            cols = [c['name'] for c in insp.get_columns('payments')] if 'payments' in existing_tables else []
-            if 'user_transaction_id' not in cols:
-                db.session.execute(sa.text('ALTER TABLE payments ADD COLUMN user_transaction_id VARCHAR(255)'))
-                db.session.commit()
-                app.logger.info('Added user_transaction_id column to payments')
-            if 'labs' not in existing_tables:
+    if app.config.get('AUTO_INIT_DB', True):
+        with app.app_context():
+            import sqlalchemy as sa
+            from models.user import Role
+            if not sa.inspect(db.engine).get_table_names():
                 db.create_all()
-                app.logger.info('Created new tables (labs)')
-            if 'password_reset_tokens' not in existing_tables:
-                db.create_all()
-                app.logger.info('Created new tables (password_reset_tokens)')
-            if 'password_reset_requests' not in existing_tables:
-                db.create_all()
-                app.logger.info('Created new tables (password_reset_requests)')
-            if 'evaluations' not in existing_tables:
-                db.create_all()
-                app.logger.info('Created new tables (evaluations)')
-            if 'lab_manuals' not in existing_tables:
-                db.create_all()
-                app.logger.info('Created new tables (lab_manuals)')
-            if 'evaluations' in existing_tables:
-                ecols = [c['name'] for c in insp.get_columns('evaluations')]
-                if 'question_pdf_url' not in ecols:
-                    db.session.execute(sa.text('ALTER TABLE evaluations ADD COLUMN question_pdf_url VARCHAR(255)'))
+                app.logger.info('Created database tables')
+            else:
+                insp = sa.inspect(db.engine)
+                existing_tables = insp.get_table_names()
+                cols = [c['name'] for c in insp.get_columns('payments')] if 'payments' in existing_tables else []
+                if 'user_transaction_id' not in cols:
+                    db.session.execute(sa.text('ALTER TABLE payments ADD COLUMN user_transaction_id VARCHAR(255)'))
                     db.session.commit()
-                    app.logger.info('Added question_pdf_url column to evaluations')
-                if 'meet_link' not in ecols:
-                    db.session.execute(sa.text('ALTER TABLE evaluations ADD COLUMN meet_link VARCHAR(255)'))
+                    app.logger.info('Added user_transaction_id column to payments')
+                if 'labs' not in existing_tables:
+                    db.create_all()
+                    app.logger.info('Created new tables (labs)')
+                if 'password_reset_tokens' not in existing_tables:
+                    db.create_all()
+                    app.logger.info('Created new tables (password_reset_tokens)')
+                if 'password_reset_requests' not in existing_tables:
+                    db.create_all()
+                    app.logger.info('Created new tables (password_reset_requests)')
+                if 'evaluations' not in existing_tables:
+                    db.create_all()
+                    app.logger.info('Created new tables (evaluations)')
+                if 'lab_manuals' not in existing_tables:
+                    db.create_all()
+                    app.logger.info('Created new tables (lab_manuals)')
+                if 'evaluations' in existing_tables:
+                    ecols = [c['name'] for c in insp.get_columns('evaluations')]
+                    if 'question_pdf_url' not in ecols:
+                        db.session.execute(sa.text('ALTER TABLE evaluations ADD COLUMN question_pdf_url VARCHAR(255)'))
+                        db.session.commit()
+                        app.logger.info('Added question_pdf_url column to evaluations')
+                    if 'meet_link' not in ecols:
+                        db.session.execute(sa.text('ALTER TABLE evaluations ADD COLUMN meet_link VARCHAR(255)'))
+                        db.session.commit()
+                        app.logger.info('Added meet_link column to evaluations')
+                if 'full_name' not in [c['name'] for c in insp.get_columns('users')]:
+                    db.session.execute(sa.text('ALTER TABLE users ADD COLUMN full_name VARCHAR(120)'))
                     db.session.commit()
-                    app.logger.info('Added meet_link column to evaluations')
-            if 'full_name' not in [c['name'] for c in insp.get_columns('users')]:
-                db.session.execute(sa.text('ALTER TABLE users ADD COLUMN full_name VARCHAR(120)'))
-                db.session.commit()
-                app.logger.info('Added full_name column to users')
-            if 'quizzes' in existing_tables and 'lesson_id' not in [c['name'] for c in insp.get_columns('quizzes')]:
-                db.session.execute(sa.text('ALTER TABLE quizzes ADD COLUMN lesson_id INTEGER REFERENCES lessons(id) ON DELETE SET NULL'))
-                db.session.commit()
-                app.logger.info('Added lesson_id column to quizzes')
-            if 'quizzes' in existing_tables and 'max_attempts' not in [c['name'] for c in insp.get_columns('quizzes')]:
-                db.session.execute(sa.text('ALTER TABLE quizzes ADD COLUMN max_attempts INTEGER DEFAULT 0'))
-                db.session.commit()
-                app.logger.info('Added max_attempts column to quizzes')
-            if 'lessons' in existing_tables and 'publish_at' not in [c['name'] for c in insp.get_columns('lessons')]:
-                db.session.execute(sa.text('ALTER TABLE lessons ADD COLUMN publish_at TIMESTAMP'))
-                db.session.commit()
-                app.logger.info('Added publish_at column to lessons')
-        if not Role.query.first():
-            from seed import seed_database
-            seed_database()
+                    app.logger.info('Added full_name column to users')
+                if 'quizzes' in existing_tables and 'lesson_id' not in [c['name'] for c in insp.get_columns('quizzes')]:
+                    db.session.execute(sa.text('ALTER TABLE quizzes ADD COLUMN lesson_id INTEGER REFERENCES lessons(id) ON DELETE SET NULL'))
+                    db.session.commit()
+                    app.logger.info('Added lesson_id column to quizzes')
+                if 'quizzes' in existing_tables and 'max_attempts' not in [c['name'] for c in insp.get_columns('quizzes')]:
+                    db.session.execute(sa.text('ALTER TABLE quizzes ADD COLUMN max_attempts INTEGER DEFAULT 0'))
+                    db.session.commit()
+                    app.logger.info('Added max_attempts column to quizzes')
+                if 'lessons' in existing_tables and 'publish_at' not in [c['name'] for c in insp.get_columns('lessons')]:
+                    db.session.execute(sa.text('ALTER TABLE lessons ADD COLUMN publish_at TIMESTAMP'))
+                    db.session.commit()
+                    app.logger.info('Added publish_at column to lessons')
+            if not Role.query.first():
+                from seed import seed_database
+                seed_database()
 
     return app
 

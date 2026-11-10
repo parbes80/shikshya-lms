@@ -261,6 +261,21 @@ sudo certbot --nginx -d shikshya.example.com --non-interactive --agree-tos -m ad
 
 ---
 
+## Render Deployment Notes
+
+- **Runtime:** Docker (the repo includes a `Dockerfile`).
+- **Start command** if using the Python runtime instead:
+  `gunicorn --config gunicorn.conf.py "app:create_app()"`
+- **Required environment variables:** `SECRET_KEY` and `DATABASE_URL`.
+- **Postgres driver:** Both drivers are installed. `postgresql://` uses
+  `psycopg2`; `postgresql+psycopg://` uses `psycopg` 3. The scheme in
+  `DATABASE_URL` must match the driver that is installed.
+- **Error `ModuleNotFoundError: No module named 'psycopg'`:** redeploy so
+  `psycopg[binary]` from `requirements.txt` is installed, or change the
+  scheme in `DATABASE_URL` to `postgresql://` and restart.
+- Free instances sleep when idle; the first request after a sleep can take
+  up to a minute.
+
 ## Management Commands
 
 | Action | Docker | Manual VPS |

@@ -27,7 +27,7 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         full_name = request.form.get('full_name', '').strip() or username
-        email = request.form.get('email', '').strip()
+        email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
         role_name = request.form.get('role', 'Student')
 
