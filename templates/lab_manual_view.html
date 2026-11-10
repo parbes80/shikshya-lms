@@ -54,8 +54,8 @@
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
         {% for img_url in images %}
         <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden;">
-          <a href="{{ img_url }}" target="_blank">
-            <img src="{{ img_url }}" alt="Lab image" style="width: 100%; height: auto; display: block;">
+          <a href="{{ img_url|asset_url }}" target="_blank">
+            <img src="{{ img_url|asset_url }}" alt="Lab image" style="width: 100%; height: auto; display: block;">
           </a>
         </div>
         {% endfor %}
@@ -79,7 +79,7 @@
 
     {% if manual.pdf_url %}
     <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); text-align: center;">
-      <a href="{{ manual.pdf_url }}" target="_blank" class="btn btn-primary" style="padding: 0.6rem 1.5rem;">
+      <a href="{{ manual.pdf_url|asset_url }}" target="_blank" class="btn btn-primary" style="padding: 0.6rem 1.5rem;">
         <i class="fas fa-file-pdf"></i> Download Full Lab Report (PDF)
       </a>
     </div>

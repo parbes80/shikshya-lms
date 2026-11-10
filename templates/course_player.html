@@ -166,7 +166,7 @@
       {% if is_vid %}
       <section class="video-section">
           <video id="lesson-video" controls data-lesson-id="{{ active_lesson.id }}" data-start-seconds="{{ active_progress.video_progress_seconds if active_progress else 0 }}">
-            <source src="{{ active_lesson.video_url }}" type="video/mp4">
+            <source src="{{ active_lesson.video_url|asset_url }}" type="video/mp4">
             Your browser does not support HTML5 video streaming.
           </video>
       </section>
@@ -178,7 +178,7 @@
             {% if lesson_content_html %}
               {{ lesson_content_html|safe }}
             {% elif active_lesson.text_content|trim|list|first == '<' %}
-              {{ active_lesson.text_content|safe }}
+              {{ active_lesson.text_content|sanitize|safe }}
             {% else %}
               {{ active_lesson.text_content|markdown|safe }}
             {% endif %}
@@ -219,7 +219,7 @@
                 {% if lesson_content_html %}
                   {{ lesson_content_html|safe }}
                 {% elif active_lesson.text_content|trim|list|first == '<' %}
-                  {{ active_lesson.text_content|safe }}
+                  {{ active_lesson.text_content|sanitize|safe }}
                 {% else %}
                   {{ active_lesson.text_content|markdown|safe }}
                 {% endif %}
@@ -294,9 +294,9 @@
                       <strong>Submission:</strong>
                       {% if student_sub.file_url %}
                         {% if student_sub.file_url.startswith('http') %}
-                          <a href="{{ student_sub.file_url }}" target="_blank" style="color: var(--primary); text-decoration: underline;"><i class="fas fa-external-link-alt"></i> View Link</a>
+                          <a href="{{ student_sub.file_url|asset_url }}" target="_blank" style="color: var(--primary); text-decoration: underline;"><i class="fas fa-external-link-alt"></i> View Link</a>
                         {% else %}
-                          <a href="{{ url_for('static', filename=student_sub.file_url) }}" target="_blank" style="color: var(--primary); text-decoration: underline;"><i class="fas fa-file-download"></i> Download File</a>
+                          <a href="{{ student_sub.file_url|asset_url }}" target="_blank" style="color: var(--primary); text-decoration: underline;"><i class="fas fa-file-download"></i> Download File</a>
                         {% endif %}
                       {% else %}
                         <span style="color: var(--text-muted);">No file submitted yet</span>
@@ -454,12 +454,12 @@
                   </div>
                   <div style="display: flex; gap: 0.5rem; align-items: center;">
                     {% if lc.meet_link %}
-                      <a href="{{ lc.meet_link }}" target="_blank" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                      <a href="{{ lc.meet_link|asset_url }}" target="_blank" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
                         <i class="fab fa-google"></i> Join Meet
                       </a>
                     {% endif %}
                     {% if lc.is_recorded and lc.recording_url %}
-                      <a href="{{ lc.recording_url }}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                      <a href="{{ lc.recording_url|asset_url }}" target="_blank" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
                         <i class="fas fa-video"></i> Recording
                       </a>
                     {% endif %}

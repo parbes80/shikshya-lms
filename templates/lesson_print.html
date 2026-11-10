@@ -27,7 +27,7 @@
   </div>
   {% if lesson.text_content and lesson.text_content not in ('None', 'null') %}
     {% if lesson.text_content|trim|list|first == '<' %}
-      {{ lesson.text_content|safe }}
+      {{ lesson.text_content|sanitize|safe }}
     {% else %}
       {{ lesson.text_content|markdown|safe }}
     {% endif %}

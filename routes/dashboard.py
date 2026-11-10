@@ -282,7 +282,7 @@ def add_category():
     return redirect(url_for('dashboard.admin'))
 
 
-@dashboard_bp.route('/dashboard/admin/approve-teacher/<int:user_id>')
+@dashboard_bp.route('/dashboard/admin/approve-teacher/<int:user_id>', methods=['POST'])
 @role_required('Admin')
 def approve_teacher(user_id):
     user = User.query.get_or_404(user_id)
@@ -292,7 +292,7 @@ def approve_teacher(user_id):
     return redirect(url_for('dashboard.admin'))
 
 
-@dashboard_bp.route('/dashboard/admin/approve-course/<int:course_id>')
+@dashboard_bp.route('/dashboard/admin/approve-course/<int:course_id>', methods=['POST'])
 @role_required('Admin')
 def approve_course(course_id):
     course = Course.query.get_or_404(course_id)
@@ -309,7 +309,7 @@ def approve_course(course_id):
     return redirect(url_for('dashboard.admin'))
 
 
-@dashboard_bp.route('/dashboard/admin/approve-payment/<int:payment_id>')
+@dashboard_bp.route('/dashboard/admin/approve-payment/<int:payment_id>', methods=['POST'])
 @role_required('Admin')
 def approve_payment(payment_id):
     payment = Payment.query.get_or_404(payment_id)

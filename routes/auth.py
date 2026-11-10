@@ -7,10 +7,11 @@ from werkzeug.utils import secure_filename
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from database import db
+from extensions import limiter
 from models.user import User, Role, UserProfile
 from models.interaction import PasswordResetRequest, PasswordResetToken
 from utils.mail import send_password_reset_email
-from utils.cloudinary_upload import upload_file
+from utils.uploads import IMAGE_EXTENSIONS, UploadValidationError, store_upload
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,10 @@ def register():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute', methods=['POST'],
+                error_message='Too many login attempts. Please wait a minute and try again.')
+@limiter.limit('60 per hour', methods=['POST'],
+                error_message='Too many login attempts. Please try again later.')
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))
@@ -139,7 +144,7 @@ def login():
     return render_template('login.html', action='login')
 
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['POST'])
 @login_required
 def logout():
     logout_user()
@@ -211,9 +216,18 @@ def profile():
 
         avatar_file = request.files.get('avatar_file')
         if avatar_file and avatar_file.filename:
-            url = upload_file(avatar_file, folder='shikshya/avatars', resource_type='image')
-            if url:
-                current_user.avatar_url = url
+            try:
+                current_user.avatar_url = store_upload(
+                    avatar_file,
+                    allowed_extensions=IMAGE_EXTENSIONS,
+                    folder='shikshya/avatars',
+                    local_subdir='avatars',
+                    resource_type='image',
+                    prefix='avatar',
+                )
+            except UploadValidationError as exc:
+                flash(str(exc), 'danger')
+                return redirect(url_for('auth.profile'))
 
         db.session.commit()
         flash('Profile updated successfully.', 'success')
@@ -223,6 +237,10 @@ def profile():
 
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+@limiter.limit('5 per minute', methods=['POST'],
+                error_message='Too many password reset requests. Please wait and try again.')
+@limiter.limit('20 per hour', methods=['POST'],
+                error_message='Too many password reset requests. Please try again later.')
 def forgot_password():
     if current_user.is_authenticated:
         return redirect(url_for('main.home'))
@@ -301,7 +319,7 @@ def admin_reset_password():
     return render_template('admin_reset_password.html', pending_requests=pending_requests)
 
 
-@auth_bp.route('/admin/approve-reset-request/<int:request_id>')
+@auth_bp.route('/admin/approve-reset-request/<int:request_id>', methods=['POST'])
 @login_required
 def approve_reset_request(request_id):
     if current_user.role.name != 'Admin':

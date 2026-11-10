@@ -317,9 +317,9 @@
                     Submitted file:
                     {% if sub.file_url %}
                       {% if sub.file_url.startswith('http') %}
-                        <a href="{{ sub.file_url }}" target="_blank" style="color: var(--primary); font-weight: 600;"><i class="fas fa-external-link-alt"></i> View Link</a>
+                        <a href="{{ sub.file_url|asset_url }}" target="_blank" style="color: var(--primary); font-weight: 600;"><i class="fas fa-external-link-alt"></i> View Link</a>
                       {% else %}
-                        <a href="{{ url_for('static', filename=sub.file_url) }}" target="_blank" style="color: var(--primary); font-weight: 600;"><i class="fas fa-file-download"></i> Download File</a>
+                        <a href="{{ sub.file_url|asset_url }}" target="_blank" style="color: var(--primary); font-weight: 600;"><i class="fas fa-file-download"></i> Download File</a>
                       {% endif %}
                     {% endif %}
                   </div>

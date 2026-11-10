@@ -5,6 +5,7 @@ from flask_login import login_required, current_user
 from database import db
 from models.interaction import Notice
 from models.learning import LiveClass, Assignment, Quiz
+from utils.sanitize import safe_url
 
 notice_bp = Blueprint('notice', __name__)
 
@@ -62,7 +63,7 @@ def calendar_events_api():
             events.append({
                 'id': f'lc-{lc.id}', 'title': f'📺 {lc.title}',
                 'start': lc.start_time.strftime('%Y-%m-%d'),
-                'color': '#ea4335', 'url': lc.meet_link or '#',
+                'color': '#ea4335', 'url': safe_url(lc.meet_link) or '#',
                 'type': 'Live Class', 'time': lc.start_time.strftime('%I:%M %p')
             })
 

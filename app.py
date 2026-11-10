@@ -4,21 +4,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import click
-import markdown as md_lib
-from flask import Flask, render_template, url_for
+from flask import Flask, render_template, url_for, request, redirect, abort
 from flask_login import LoginManager
-from flask_wtf.csrf import CSRFProtect
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
+from werkzeug.middleware.proxy_fix import ProxyFix
 from database import db, migrate
 from config import Config
+from extensions import csrf, limiter
 from models.user import User, Role, UserProfile
 from models.interaction import Notification
 import models  # ensure all models are registered with SQLAlchemy
 from utils.cloudinary_upload import init_cloudinary
+from utils.sanitize import render_markdown, sanitize_html
 
-csrf = CSRFProtect()
-limiter = Limiter(key_func=get_remote_address)
 
 def create_app(config_overrides=None):
     app = Flask(__name__)
@@ -30,6 +27,14 @@ def create_app(config_overrides=None):
             app.config.update(config_overrides)
         else:
             app.config.from_object(config_overrides)
+
+    # Only honour X-Forwarded-* when the deployment terminates TLS/HTTP at a
+    # trusted reverse proxy. Enabling it on a directly exposed server would let
+    # clients spoof their IP address and the request scheme.
+    if app.config.get('TRUST_PROXY_HEADERS'):
+        app.wsgi_app = ProxyFix(
+            app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1
+        )
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -65,10 +70,44 @@ def create_app(config_overrides=None):
         return escaped.replace('\n', '<br>\n')
 
     @app.template_filter('markdown')
-    def render_markdown(text):
-        if not text:
-            return ''
-        return md_lib.markdown(text, extensions=['fenced_code', 'tables', 'nl2br'])
+    def render_markdown_filter(text):
+        # Markdown output is sanitized before it reaches the ``safe`` filter.
+        return render_markdown(text)
+
+    @app.template_filter('sanitize')
+    def sanitize_filter(text):
+        return sanitize_html(text)
+
+    @app.before_request
+    def enforce_https():
+        if not app.config.get('FORCE_HTTPS'):
+            return None
+        if request.is_secure:
+            return None
+        if request.method in ('GET', 'HEAD'):
+            return redirect(request.url.replace('http://', 'https://', 1), code=301)
+        # Never replay a POST body over an insecure connection.
+        abort(400, 'HTTPS is required.')
+
+    @app.after_request
+    def set_security_headers(response):
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+        response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+        response.headers.setdefault(
+            'Permissions-Policy', 'geolocation=(), microphone=(), camera=()'
+        )
+        if app.config.get('ENABLE_CSP_REPORT_ONLY'):
+            response.headers.setdefault(
+                'Content-Security-Policy-Report-Only',
+                app.config.get('CONTENT_SECURITY_POLICY_REPORT_ONLY', ''),
+            )
+        if request.is_secure:
+            response.headers.setdefault(
+                'Strict-Transport-Security',
+                'max-age=31536000; includeSubDomains',
+            )
+        return response
 
     from routes.auth import auth_bp
     from routes.main import main_bp

@@ -1,11 +1,9 @@
-import os
-import uuid
-from datetime import datetime
-from werkzeug.utils import secure_filename
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
 from flask_login import login_required, current_user
 from database import db
 from models.interaction import Lab
+from utils.sanitize import safe_url, sanitize_rich_content
+from utils.uploads import UploadValidationError, store_upload
 
 lab_bp = Blueprint('lab', __name__)
 
@@ -39,19 +37,25 @@ def create():
         pdf_url = ''
         file = request.files.get('pdf_file')
         if file and file.filename:
-            filename = secure_filename(file.filename)
-            ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'pdf'
-            unique_name = f'lab_{uuid.uuid4().hex[:8]}.{ext}'
-            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'labs', unique_name)
-            file.save(upload_path)
-            pdf_url = f'uploads/labs/{unique_name}'
+            try:
+                pdf_url = store_upload(
+                    file,
+                    allowed_extensions={'pdf'},
+                    folder='shikshya/labs',
+                    local_subdir='labs',
+                    resource_type='auto',
+                    prefix='lab',
+                )
+            except UploadValidationError as exc:
+                flash(str(exc), 'danger')
+                return redirect(url_for('lab.create'))
 
         lab = Lab(
             title=title,
             description=request.form.get('description', '').strip(),
-            content=request.form.get('content', ''),
-            pdf_url=pdf_url or request.form.get('pdf_link', '').strip(),
-            video_url=request.form.get('video_url', '').strip(),
+            content=sanitize_rich_content(request.form.get('content', '')),
+            pdf_url=pdf_url or safe_url(request.form.get('pdf_link', '')),
+            video_url=safe_url(request.form.get('video_url', '')),
             is_published=request.form.get('is_published') == 'on',
             created_by=current_user.id
         )
@@ -73,20 +77,27 @@ def edit(lab_id):
     if request.method == 'POST':
         lab.title = request.form.get('title', '').strip()
         lab.description = request.form.get('description', '').strip()
-        lab.content = request.form.get('content', '')
-        lab.video_url = request.form.get('video_url', '').strip()
+        lab.content = sanitize_rich_content(request.form.get('content', ''))
+        lab.video_url = safe_url(request.form.get('video_url', ''))
         lab.is_published = request.form.get('is_published') == 'on'
 
         file = request.files.get('pdf_file')
         if file and file.filename:
-            filename = secure_filename(file.filename)
-            ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'pdf'
-            unique_name = f'lab_{uuid.uuid4().hex[:8]}.{ext}'
-            upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'labs', unique_name)
-            file.save(upload_path)
-            lab.pdf_url = f'uploads/labs/{unique_name}'
+            try:
+                lab.pdf_url = store_upload(
+                    file,
+                    allowed_extensions={'pdf'},
+                    folder='shikshya/labs',
+                    local_subdir='labs',
+                    resource_type='auto',
+                    prefix='lab',
+                )
+            except UploadValidationError as exc:
+                db.session.rollback()
+                flash(str(exc), 'danger')
+                return redirect(url_for('lab.edit', lab_id=lab_id))
         else:
-            lab.pdf_url = request.form.get('pdf_link', '').strip()
+            lab.pdf_url = safe_url(request.form.get('pdf_link', ''))
 
         db.session.commit()
         flash('Lab updated.', 'success')

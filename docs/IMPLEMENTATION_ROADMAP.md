@@ -319,9 +319,11 @@ Execute `docs/UX_UI_IMPROVEMENT_PLAN.md` in this order:
 
 ### Sprint 1 (security-critical)
 P0-01, P0-02, P0-03, P0-06, P0-08, P0-10 + regression tests + deploy to staging.
+**Status:** implemented and verified locally (`docs/SECURITY_REMEDIATION.md`, 98 tests at the time).
 
 ### Sprint 2 (security-hardening)
 P0-04, P0-05, P0-07, P0-09, P0-11, P0-12 + header/upload/CSRF tests + staging verification + Phase 0 gate.
+**Status:** implemented and verified locally (`docs/SECURITY_REMEDIATION.md`, 120 tests). Staging deployment and the Phase 0 gate review remain.
 
 Only after the Phase 0 gate: start P1-01 (authorization layer) and P1-05 (migrations) in parallel with the first UX shell work.
 

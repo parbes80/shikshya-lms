@@ -153,7 +153,7 @@ def test_logout_clears_session(client, auth, make_user):
     user = make_user()
     auth.login(user)
 
-    response = client.get('/logout')
+    response = client.post('/logout')
 
     assert response.status_code == 302
     protected = client.get('/profile')
@@ -338,7 +338,7 @@ def test_approved_reset_never_returns_reset_token(
     db.session.commit()
     auth.login(admin)
 
-    response = client.get(
+    response = client.post(
         f'/admin/approve-reset-request/{reset_request.id}',
         follow_redirects=True,
     )
@@ -455,7 +455,7 @@ def test_admin_can_approve_password_reset_request(client, auth, make_user):
     db.session.commit()
     auth.login(admin)
 
-    response = client.get(
+    response = client.post(
         f'/admin/approve-reset-request/{reset_request.id}'
     )
 

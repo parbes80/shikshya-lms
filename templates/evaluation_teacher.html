@@ -16,14 +16,20 @@
     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
       {% if not evaluation.results_published %}
         {% if students_data|selectattr('submission')|list|length > 0 %}
-        <a href="{{ url_for('eval.publish', eval_id=evaluation.id) }}" class="btn btn-success" onclick="return confirm('Publish results?')">
-          <i class="fas fa-globe"></i> Publish Results
-        </a>
+        <form action="{{ url_for('eval.publish', eval_id=evaluation.id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('Publish results?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-success">
+            <i class="fas fa-globe"></i> Publish Results
+          </button>
+        </form>
         {% endif %}
       {% else %}
-        <a href="{{ url_for('eval.unpublish', eval_id=evaluation.id) }}" class="btn btn-warning" onclick="return confirm('Hide results?')">
-          <i class="fas fa-eye-slash"></i> Unpublish
-        </a>
+        <form action="{{ url_for('eval.unpublish', eval_id=evaluation.id) }}" method="POST" style="display:inline; margin:0;" onsubmit="return confirm('Hide results?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-warning">
+            <i class="fas fa-eye-slash"></i> Unpublish
+          </button>
+        </form>
       {% endif %}
       <a href="{{ url_for('eval.edit', eval_id=evaluation.id) }}" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</a>
       <form method="POST" action="{{ url_for('eval.delete', eval_id=evaluation.id) }}" style="display:inline;" onsubmit="return confirm('Delete this evaluation and all submissions?')">
@@ -86,7 +92,7 @@
         <a href="{{ evaluation.question_pdf_url|asset_url }}" target="_blank">{{ evaluation.question_pdf_url.split('/')[-1] }}</a>
     </div>
     {% if evaluation.meet_link %}
-    <a href="{{ evaluation.meet_link }}" target="_blank" class="btn btn-sm btn-danger" style="background:#ea4335;border-color:#ea4335;"><i class="fab fa-google"></i> Meet Link</a>
+    <a href="{{ evaluation.meet_link|asset_url }}" target="_blank" class="btn btn-sm btn-danger" style="background:#ea4335;border-color:#ea4335;"><i class="fab fa-google"></i> Meet Link</a>
     {% endif %}
   </div>
   {% endif %}

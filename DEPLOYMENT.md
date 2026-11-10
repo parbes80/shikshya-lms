@@ -39,6 +39,9 @@ cat > .env << 'EOF'
 SECRET_KEY=$(openssl rand -hex 32)
 DB_PASSWORD=choose-a-strong-password
 SITE_URL=https://shikshya.example.com
+FLASK_ENV=production
+TRUST_PROXY_HEADERS=true
+FORCE_HTTPS=true
 
 # Optional: SMTP for password reset emails
 MAIL_SERVER=smtp.gmail.com
@@ -49,7 +52,7 @@ MAIL_PASSWORD=your-app-password
 MAIL_DEFAULT_SENDER=Shikshya <you@gmail.com>
 
 # Optional: Redis for rate limiting (remove if not using)
-# RATELIMIT_STORAGE_URL=redis://redis:6379/0
+# RATELIMIT_STORAGE_URI=redis://redis:6379/0
 EOF
 ```
 
@@ -175,6 +178,8 @@ SECRET_KEY=$(openssl rand -hex 32)
 DATABASE_URL=postgresql://shikshya:your_strong_password@localhost:5432/shikshya
 SESSION_COOKIE_SECURE=True
 FLASK_ENV=production
+TRUST_PROXY_HEADERS=true
+FORCE_HTTPS=true
 SITE_URL=https://shikshya.example.com
 
 # SMTP

@@ -4,6 +4,12 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 
+_IS_PRODUCTION = os.environ.get('FLASK_ENV', 'development').lower() == 'production'
+
+
+def _env_bool(name, default=False):
+    return os.environ.get(name, str(default)).lower() == 'true'
+
 
 def normalize_database_url(url):
     """Normalize Postgres URLs supplied by hosting providers.
@@ -53,18 +59,49 @@ class Config:
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
-    SESSION_COOKIE_MAX_AGE = 86400 * 30
+    SESSION_COOKIE_SECURE = _env_bool('SESSION_COOKIE_SECURE', _IS_PRODUCTION)
+    SESSION_COOKIE_MAX_AGE = 60 * 60 * 12
+
+    # Reject a session whose identity fingerprint changes (Flask-Login).
+    SESSION_PROTECTION = 'strong'
 
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_SAMESITE = 'Lax'
-    REMEMBER_COOKIE_DURATION = 86400 * 30
+    REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
+    REMEMBER_COOKIE_DURATION = timedelta(days=7)
 
-    PERMANENT_SESSION_LIFETIME = timedelta(days=30)
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=12)
+
+    # Trust X-Forwarded-* only when the app is actually behind a reverse proxy.
+    TRUST_PROXY_HEADERS = _env_bool('TRUST_PROXY_HEADERS', _IS_PRODUCTION)
+    FORCE_HTTPS = _env_bool('FORCE_HTTPS', _IS_PRODUCTION)
+    ENABLE_CSP_REPORT_ONLY = True
+    CONTENT_SECURITY_POLICY_REPORT_ONLY = (
+        "default-src 'self'; "
+        "base-uri 'self'; "
+        "form-action 'self'; "
+        "frame-ancestors 'self'; "
+        "object-src 'none'; "
+        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+        "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com "
+        "https://fonts.googleapis.com; "
+        "font-src 'self' data: https://cdnjs.cloudflare.com "
+        "https://fonts.gstatic.com; "
+        "img-src 'self' data: blob: https:; "
+        "media-src 'self' blob: https:; "
+        "connect-src 'self';"
+    )
+
 
     RATELIMIT_ENABLED = True
     RATELIMIT_DEFAULT = "200 per day;50 per hour;10 per minute"
-    RATELIMIT_STORAGE_URL = os.environ.get('RATELIMIT_STORAGE_URL', 'memory://')
+    # Flask-Limiter 3.x reads RATELIMIT_STORAGE_URI. Accept the older
+    # RATELIMIT_STORAGE_URL name too so existing deployments keep working.
+    RATELIMIT_STORAGE_URI = os.environ.get(
+        'RATELIMIT_STORAGE_URI',
+        os.environ.get('RATELIMIT_STORAGE_URL', 'memory://'),
+    )
+    RATELIMIT_STORAGE_URL = RATELIMIT_STORAGE_URI
 
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
@@ -82,7 +119,10 @@ class Config:
 
     @staticmethod
     def init_app(app):
-        upload_dirs = ['videos', 'assignments', 'avatars', 'certificates', 'thumbnails', 'labs', 'evaluations']
+        upload_dirs = [
+            'videos', 'assignments', 'avatars', 'certificates', 'thumbnails',
+            'labs', 'evaluations', 'documents', 'lab_manuals',
+        ]
         for d in upload_dirs:
             path = os.path.join(app.config['UPLOAD_FOLDER'], d)
             try:

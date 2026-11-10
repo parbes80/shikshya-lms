@@ -1,14 +1,17 @@
-import os
-import uuid
 from datetime import datetime
-from werkzeug.utils import secure_filename
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
 from flask_login import login_required, current_user
 from database import db
 from models.course import Course
 from models.learning import Enrollment
 from models.evaluation import Evaluation, EvaluationSubmission, EVALUATION_TYPES
-from utils.cloudinary_upload import upload_file
+from utils.sanitize import safe_url
+from utils.uploads import (
+    SUBMISSION_EXTENSIONS,
+    UploadValidationError,
+    save_local_upload,
+    store_upload,
+)
 
 eval_bp = Blueprint('eval', __name__)
 
@@ -79,16 +82,26 @@ def create(course_id):
         if selected_type == 'test_paper':
             pdf = request.files.get('question_pdf')
             if pdf and pdf.filename:
-                url = upload_file(pdf, folder='shikshya/evaluations')
-                question_pdf_url = url or ''
+                try:
+                    question_pdf_url = store_upload(
+                        pdf,
+                        allowed_extensions={'pdf'},
+                        folder='shikshya/evaluations',
+                        local_subdir='evaluations',
+                        resource_type='auto',
+                        prefix='evaluation',
+                    )
+                except UploadValidationError as exc:
+                    flash(str(exc), 'danger')
+                    return redirect(url_for('eval.create', course_id=course_id, type=selected_type))
 
         evaluation = Evaluation(
             course_id=course_id,
             title=title,
             eval_type=selected_type,
             description=request.form.get('description', '').strip(),
-            question_pdf_url=question_pdf_url or request.form.get('question_pdf_link', '').strip(),
-            meet_link=request.form.get('meet_link', '').strip(),
+            question_pdf_url=question_pdf_url or safe_url(request.form.get('question_pdf_link', '')),
+            meet_link=safe_url(request.form.get('meet_link', '')),
             max_score=float(request.form.get('max_score') or 100),
             scheduled_at=scheduled,
             duration_minutes=int(request.form.get('duration_minutes') or 0) or None,
@@ -132,16 +145,26 @@ def edit(eval_id):
         evaluation.max_score = float(request.form.get('max_score', 100))
         evaluation.scheduled_at = scheduled
         evaluation.duration_minutes = int(request.form.get('duration_minutes') or 0) or None
-        evaluation.meet_link = request.form.get('meet_link', '').strip()
+        evaluation.meet_link = safe_url(request.form.get('meet_link', ''))
 
         if evaluation.eval_type == 'test_paper':
             pdf = request.files.get('question_pdf')
             if pdf and pdf.filename:
-                url = upload_file(pdf, folder='shikshya/evaluations')
-                if url:
-                    evaluation.question_pdf_url = url
+                try:
+                    evaluation.question_pdf_url = store_upload(
+                        pdf,
+                        allowed_extensions={'pdf'},
+                        folder='shikshya/evaluations',
+                        local_subdir='evaluations',
+                        resource_type='auto',
+                        prefix='evaluation',
+                    )
+                except UploadValidationError as exc:
+                    db.session.rollback()
+                    flash(str(exc), 'danger')
+                    return redirect(url_for('eval.edit', eval_id=eval_id))
             else:
-                link = request.form.get('question_pdf_link', '').strip()
+                link = safe_url(request.form.get('question_pdf_link', ''))
                 if link:
                     evaluation.question_pdf_url = link
 
@@ -228,13 +251,21 @@ def submit(eval_id):
         file_url = ''
         file = request.files.get('file')
         if file and file.filename:
-            url = upload_file(file, folder='shikshya/submissions')
-            file_url = url or ''
+            try:
+                file_url = save_local_upload(
+                    file,
+                    allowed_extensions=SUBMISSION_EXTENSIONS,
+                    local_subdir='evaluations',
+                    prefix=f'eval_{eval_id}_{current_user.id}',
+                )
+            except UploadValidationError as exc:
+                flash(str(exc), 'danger')
+                return redirect(url_for('eval.submit', eval_id=eval_id))
 
         submission = EvaluationSubmission(
             evaluation_id=eval_id,
             student_id=current_user.id,
-            file_url=file_url or request.form.get('link', '').strip(),
+            file_url=file_url or safe_url(request.form.get('link', '')),
             notes=notes
         )
         db.session.add(submission)
@@ -275,7 +306,7 @@ def grade(eval_id):
     return redirect(url_for('eval.detail', eval_id=eval_id))
 
 
-@eval_bp.route('/evaluations/<int:eval_id>/publish')
+@eval_bp.route('/evaluations/<int:eval_id>/publish', methods=['POST'])
 @login_required
 def publish(eval_id):
     evaluation = Evaluation.query.get_or_404(eval_id)
@@ -288,7 +319,7 @@ def publish(eval_id):
     return redirect(url_for('eval.detail', eval_id=eval_id))
 
 
-@eval_bp.route('/evaluations/<int:eval_id>/unpublish')
+@eval_bp.route('/evaluations/<int:eval_id>/unpublish', methods=['POST'])
 @login_required
 def unpublish(eval_id):
     evaluation = Evaluation.query.get_or_404(eval_id)

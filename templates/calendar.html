@@ -78,8 +78,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (cell) {
           var container = cell.querySelector('.cal-events');
           var el = document.createElement('a');
-          el.href = ev.url || '#';
-          el.target = ev.url && ev.url.startsWith('http') ? '_blank' : '_self';
+          var safeHref = (typeof ev.url === 'string' && /^(https?:\/\/|\/)/i.test(ev.url)) ? ev.url : '#';
+          el.href = safeHref;
+          el.target = safeHref.startsWith('http') ? '_blank' : '_self';
           el.style.cssText = 'display: block; padding: 1px 4px; border-radius: 3px; font-size: 0.65rem; color: white; background: ' + ev.color + '; text-decoration: none; margin-bottom: 1px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;';
           el.textContent = ev.title;
           el.title = ev.title + (ev.time ? ' (' + ev.time + ')' : '');

@@ -1,18 +1,63 @@
 import os
+import posixpath
 import uuid
 import io
-import requests
 import qrcode
 from datetime import datetime
-from werkzeug.utils import secure_filename
-from flask import Blueprint, jsonify, request, abort, render_template, redirect, url_for, flash, send_file, current_app
+from urllib.parse import urlparse
+from flask import (Blueprint, jsonify, request, abort, render_template, redirect,
+                   url_for, flash, send_file, send_from_directory, current_app)
 from flask_login import login_required, current_user
 from database import db
 from models.learning import Enrollment, LessonProgress, Quiz, QuizAttempt, Assignment, Submission, Question, Choice
 from models.course import Course, Review, Lesson
 from models.interaction import Notification, DiscussionTopic, DiscussionReply, Certificate
+from utils.sanitize import safe_url
+from utils.uploads import (
+    SUBMISSION_EXTENSIONS,
+    UploadValidationError,
+    save_local_upload,
+)
 
 api_bp = Blueprint('api', __name__)
+
+
+def _can_access_lesson(lesson):
+    """Return True when the current user may read a lesson's materials."""
+    course = lesson.module.course
+    if current_user.role.name == 'Admin':
+        return True
+    if course.teacher_id == current_user.id:
+        return True
+    return Enrollment.query.filter_by(
+        student_id=current_user.id, course_id=course.id
+    ).first() is not None
+
+
+def _local_document_path(document_url):
+    """Map a stored local document URL to a path inside UPLOAD_FOLDER.
+
+    Returns ``None`` for absolute paths, traversal attempts and anything that
+    is not a plain relative upload path.
+    """
+    path = (document_url or '').replace('\\', '/').strip()
+    if path.startswith('/static/'):
+        path = path[len('/static/'):]
+    elif path.startswith('static/'):
+        path = path[len('static/'):]
+    elif path.startswith('/'):
+        return None
+
+    if path.startswith('uploads/'):
+        path = path[len('uploads/'):]
+
+    normalized = posixpath.normpath(path)
+    if normalized in ('.', '') or normalized == '..' or normalized.startswith('../'):
+        return None
+    if posixpath.isabs(normalized) or ':' in normalized.split('/')[0]:
+        return None
+    return normalized
+
 
 
 def _coerce_int(value):
@@ -485,22 +530,22 @@ def submit_assignment(assignment_id):
     if not enrollment:
         return jsonify({'error': 'You are not enrolled in this course.'}), 403
 
-    file_url = request.form.get('file_url', '').strip()
+    file_url = safe_url(request.form.get('file_url', ''))
     uploaded_file = request.files.get('submission_file')
 
     if not file_url and (not uploaded_file or not uploaded_file.filename):
         return jsonify({'error': 'Please upload a file or provide a solution URL.'}), 400
 
     if uploaded_file and uploaded_file.filename:
-        filename = secure_filename(uploaded_file.filename)
-        ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'bin'
-        allowed = {'pdf', 'jpg', 'jpeg', 'png', 'gif', 'zip', 'doc', 'docx', 'txt', 'py', 'js', 'html', 'css'}
-        if ext not in allowed:
-            return jsonify({'error': f'File type .{ext} is not allowed. Allowed: {", ".join(sorted(allowed))}'}), 400
-        unique_name = f'sub_{assignment_id}_{current_user.id}_{uuid.uuid4().hex[:8]}.{ext}'
-        upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'assignments', unique_name)
-        uploaded_file.save(upload_path)
-        file_url = f'uploads/assignments/{unique_name}'
+        try:
+            file_url = save_local_upload(
+                uploaded_file,
+                allowed_extensions=SUBMISSION_EXTENSIONS,
+                local_subdir='assignments',
+                prefix=f'sub_{assignment_id}_{current_user.id}',
+            )
+        except UploadValidationError as exc:
+            return jsonify({'error': str(exc)}), 400
 
     submission = Submission.query.filter_by(assignment_id=assignment_id, student_id=current_user.id).first()
 
@@ -542,35 +587,53 @@ def submit_assignment(assignment_id):
 @login_required
 def download_lesson_doc(lesson_id):
     lesson = Lesson.query.get_or_404(lesson_id)
-    doc_url = lesson.document_url
-    if not doc_url or doc_url.strip().lower() in ('none', 'null', ''):
+    if not _can_access_lesson(lesson):
+        abort(403)
+
+    doc_url = (lesson.document_url or '').strip()
+    if not doc_url or doc_url.lower() in ('none', 'null'):
         abort(404)
 
-    if doc_url.startswith(('http://', 'https://', '//')):
+    if doc_url.startswith('//'):
+        doc_url = 'https:' + doc_url
+
+    parsed = urlparse(doc_url)
+    if parsed.scheme in ('http', 'https'):
+        allowed_hosts = {'res.cloudinary.com'}
+        site_host = urlparse(current_app.config.get('SITE_URL', '')).hostname
+        if site_host:
+            allowed_hosts.add(site_host.lower())
+
+        if (parsed.hostname or '').lower() not in allowed_hosts:
+            # Never fetch arbitrary URLs from the server (SSRF). Only hosted
+            # lesson assets on Cloudinary or this site may be linked.
+            abort(400)
+
         from utils.cloudinary_upload import get_signed_download_url
-        signed = get_signed_download_url(doc_url)
-        if signed and signed != doc_url:
-            return redirect(signed)
-        # fallback: proxy through Flask
-        proxy_url = doc_url
-    else:
-        proxy_url = url_for('static', filename=doc_url, _external=True)
+        return redirect(get_signed_download_url(doc_url) or doc_url)
+
+    if parsed.scheme:
+        abort(400)
+
+    relative_path = _local_document_path(doc_url)
+    if not relative_path:
+        abort(404)
+
+    extension = os.path.splitext(relative_path)[1] or '.pdf'
+    safe_title = ''.join(
+        ch if ch.isalnum() or ch in ('-', '_') else '_'
+        for ch in lesson.title
+    ).strip('_') or 'lesson_notes'
 
     try:
-        resp = requests.get(proxy_url, stream=True, timeout=30, headers={'User-Agent': 'Shikshya-LMS/1.0'})
-        if resp.status_code != 200:
-            abort(502)
-        content = resp.content
-        filename = f"{lesson.title.replace(' ', '_')}_notes.pdf"
-        return send_file(
-            io.BytesIO(content),
-            mimetype=resp.headers.get('Content-Type', 'application/pdf'),
+        return send_from_directory(
+            current_app.config['UPLOAD_FOLDER'],
+            relative_path,
             as_attachment=True,
-            download_name=filename
+            download_name=f'{safe_title}{extension}',
         )
-    except Exception as e:
-        current_app.logger.error(f'Download proxy failed: {e}')
-        abort(502)
+    except FileNotFoundError:
+        abort(404)
 
 
 @api_bp.route('/api/certificates/<unique_code>/qrcode')

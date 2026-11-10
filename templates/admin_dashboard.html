@@ -130,7 +130,10 @@
                     <td style="padding: 0.75rem;"><strong>{{ teach.username }}</strong></td>
                     <td style="padding: 0.75rem;">{{ teach.email }}</td>
                     <td style="padding: 0.75rem;">
-                      <a href="{{ url_for('dashboard.approve_teacher', user_id=teach.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve Teacher</a>
+                      <form action="{{ url_for('dashboard.approve_teacher', user_id=teach.id) }}" method="POST" style="display: inline; margin: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve Teacher</button>
+                      </form>
                     </td>
                   </tr>
                 {% endfor %}
@@ -162,7 +165,10 @@
                     <td style="padding: 0.75rem;">{{ c.teacher.username }}</td>
                     <td style="padding: 0.75rem;">{% if c.price == 0 %}Free{% else %}Rs. {{ "{:,.0f}".format(c.price) }}{% endif %}</td>
                     <td style="padding: 0.75rem; display: flex; gap: 0.25rem; flex-wrap: wrap;">
-                      <a href="{{ url_for('dashboard.approve_course', course_id=c.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve</a>
+                      <form action="{{ url_for('dashboard.approve_course', course_id=c.id) }}" method="POST" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve</button>
+                      </form>
                       <form action="{{ url_for('course.delete_course', course_id=c.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete course &quot;{{ c.title|escape }}&quot;?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i></button>
@@ -254,7 +260,10 @@
                       {% if p.user_transaction_id %}<br><small style="color: var(--text-muted);">System: {{ p.transaction_id }}</small>{% endif %}
                     </td>
                     <td style="padding: 0.75rem;">
-                      <a href="{{ url_for('dashboard.approve_payment', payment_id=p.id) }}" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Verify & Enroll</a>
+                      <form action="{{ url_for('dashboard.approve_payment', payment_id=p.id) }}" method="POST" style="display: inline; margin: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Verify &amp; Enroll</button>
+                      </form>
                     </td>
                   </tr>
                 {% endfor %}

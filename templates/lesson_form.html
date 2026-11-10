@@ -52,7 +52,7 @@
         <label class="form-label">Upload Document (PDF, DOC, DOCX, PPT) — optional</label>
         <input type="file" name="document_file" class="form-control" accept=".pdf,.doc,.docx,.ppt,.pptx">
         {% if lesson and lesson.document_url %}
-        <small style="color: var(--text-muted);">Current file: <a href="{{ lesson.document_url }}" target="_blank">{{ lesson.document_url.split('/')[-1][:40] }}</a> | <a href="{{ lesson.document_url }}" download style="color: var(--primary);">Download</a></small>
+        <small style="color: var(--text-muted);">Current file: <a href="{{ lesson.document_url|asset_url }}" target="_blank">{{ lesson.document_url.split('/')[-1][:40] }}</a> | <a href="{{ lesson.document_url|asset_url }}" download style="color: var(--primary);">Download</a></small>
         {% endif %}
       </div>
 

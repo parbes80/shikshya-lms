@@ -103,7 +103,7 @@
         <h3 style="margin: 0 0 0.25rem;"><i class="fab fa-google" style="color: #ea4335;"></i> Proctoring</h3>
         <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Keep your <strong>video camera</strong> and <strong>microphone</strong> ON during the entire exam.</p>
       </div>
-      <a href="{{ evaluation.meet_link }}" target="_blank" class="btn btn-danger" style="background: #ea4335; border-color: #ea4335;"><i class="fab fa-google"></i> Join Meet</a>
+      <a href="{{ evaluation.meet_link|asset_url }}" target="_blank" class="btn btn-danger" style="background: #ea4335; border-color: #ea4335;"><i class="fab fa-google"></i> Join Meet</a>
     </div>
   </div>
   {% endif %}

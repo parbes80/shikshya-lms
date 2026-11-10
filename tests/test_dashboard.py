@@ -56,7 +56,7 @@ def test_admin_can_approve_teacher(client, auth, make_user):
     teacher = make_user(role='Teacher', approved=False)
     auth.login(admin)
 
-    response = client.get(f'/dashboard/admin/approve-teacher/{teacher.id}')
+    response = client.post(f'/dashboard/admin/approve-teacher/{teacher.id}')
 
     assert response.status_code == 302
     assert db.session.get(User, teacher.id).is_approved is True
@@ -69,7 +69,7 @@ def test_admin_can_publish_course_and_notifies_teacher(
     data = make_course(published=False)
     auth.login(admin)
 
-    response = client.get(
+    response = client.post(
         f'/dashboard/admin/approve-course/{data.course.id}'
     )
 
@@ -99,7 +99,7 @@ def test_admin_approves_course_payment_and_enrolls_student(
     db.session.commit()
     auth.login(admin)
 
-    response = client.get(f'/dashboard/admin/approve-payment/{payment.id}')
+    response = client.post(f'/dashboard/admin/approve-payment/{payment.id}')
 
     assert response.status_code == 302
     assert db.session.get(Payment, payment.id).status == 'completed'

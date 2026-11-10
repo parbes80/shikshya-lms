@@ -1,6 +1,7 @@
 import os
 import re
 import logging
+import tempfile
 import cloudinary
 import cloudinary.uploader
 import cloudinary.utils
@@ -24,13 +25,24 @@ def is_configured():
 
 
 def _save_to_temp(file_input):
-    """Save a file-like object to a temp file and return the path."""
-    temp_dir = '/tmp'
-    if not os.path.exists(temp_dir):
-        temp_dir = os.environ.get('TEMP', os.environ.get('TMPDIR', '.'))
-    filename = getattr(file_input, 'filename', None) or 'upload'
-    temp_path = os.path.join(temp_dir, f'cloud_{os.urandom(4).hex()}_{filename}')
-    file_input.save(temp_path)
+    """Save a file-like object to a generated temp file and return the path.
+
+    The client-supplied filename is never used on disk: it could contain path
+    separators or a browser-rendered extension.
+    """
+    handle, temp_path = tempfile.mkstemp(prefix='shikshya_upload_')
+    os.close(handle)
+    try:
+        stream = getattr(file_input, 'stream', file_input)
+        if hasattr(stream, 'seek'):
+            stream.seek(0)
+        file_input.save(temp_path)
+    except Exception:
+        try:
+            os.remove(temp_path)
+        except OSError:
+            pass
+        raise
     return temp_path
 
 

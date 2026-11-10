@@ -136,7 +136,7 @@ def auth(client):
     class Auth:
         def login(self, user, password='secret123'):
             # Make sure a previously logged-in user is signed out first.
-            client.get('/logout')
+            client.post('/logout')
             response = client.post(
                 '/login',
                 data={'email': user.email, 'password': password},
@@ -145,7 +145,7 @@ def auth(client):
             return response
 
         def logout(self):
-            return client.get('/logout')
+            return client.post('/logout')
 
     return Auth()
 

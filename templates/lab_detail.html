@@ -27,20 +27,20 @@
 
     {% if lab.video_url %}
       <div style="aspect-ratio: 16/9; background: #1e293b; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 1.5rem;">
-        <iframe src="{{ lab.video_url }}" style="width: 100%; height: 100%; border: none;" allowfullscreen></iframe>
+        <iframe src="{{ lab.video_url|asset_url }}" style="width: 100%; height: 100%; border: none;" allowfullscreen></iframe>
       </div>
     {% endif %}
 
     {% if lab.pdf_url %}
       <div style="margin-bottom: 1.5rem;">
-        <a href="{{ url_for('static', filename=lab.pdf_url) if not lab.pdf_url.startswith('http') else lab.pdf_url }}" target="_blank" class="btn btn-primary">
+        <a href="{{ lab.pdf_url|asset_url }}" target="_blank" class="btn btn-primary">
           <i class="fas fa-file-pdf"></i> Download PDF / Documentation
         </a>
       </div>
     {% endif %}
 
     {% if lab.content %}
-      <div class="lesson-notes-content">{{ lab.content|safe }}</div>
+      <div class="lesson-notes-content">{{ lab.content|sanitize|safe }}</div>
     {% endif %}
   </div>
 </div>

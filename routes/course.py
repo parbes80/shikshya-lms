@@ -9,8 +9,14 @@ from database import db
 from models.course import Course, Category, Module, Lesson, Review
 from models.learning import Enrollment, LessonProgress, Quiz, Question, Choice, Assignment, LiveClass
 from models.interaction import Payment, DiscussionTopic, Attendance, Coupon, Notification, LabManual
-from utils.cloudinary_upload import upload_file
 from utils.mail import send_notification_email
+from utils.sanitize import safe_url, sanitize_html, sanitize_rich_content
+from utils.uploads import (
+    DOCUMENT_EXTENSIONS,
+    IMAGE_EXTENSIONS,
+    UploadValidationError,
+    store_upload,
+)
 
 course_bp = Blueprint('course', __name__)
 
@@ -42,6 +48,11 @@ def process_lesson_headings(text_content):
     """
     if not text_content:
         return text_content, []
+
+    # Legacy rows may contain unsanitized HTML. Sanitize before adding heading
+    # anchors so both stored and rendered content are safe.
+    if text_content.lstrip().startswith('<'):
+        text_content = sanitize_html(text_content)
 
     headings = []
     seen = {}
@@ -120,9 +131,19 @@ def edit_course(course_id):
 
         file = request.files.get('thumbnail_file')
         if file and file.filename:
-            url = upload_file(file, folder='shikshya/courses', resource_type='image')
-            if url:
-                course.thumbnail_url = url
+            try:
+                course.thumbnail_url = store_upload(
+                    file,
+                    allowed_extensions=IMAGE_EXTENSIONS,
+                    folder='shikshya/courses',
+                    local_subdir='thumbnails',
+                    resource_type='image',
+                    prefix='course',
+                )
+            except UploadValidationError as exc:
+                db.session.rollback()
+                flash(str(exc), 'danger')
+                return redirect(url_for('course.edit_course', course_id=course_id))
 
         db.session.commit()
         flash(f'Course "{course.title}" updated.', 'success')
@@ -316,7 +337,8 @@ def player(slug):
     lesson_headings = []
     lesson_content_html = None
     if active_lesson and active_lesson.text_content:
-        lesson_content_html, lesson_headings = process_lesson_headings(active_lesson.text_content)
+        if active_lesson.text_content.lstrip().startswith('<'):
+            lesson_content_html, lesson_headings = process_lesson_headings(active_lesson.text_content)
 
     from sqlalchemy import or_
 
@@ -390,8 +412,18 @@ def create():
         thumbnail = 'course_default.jpg'
         file = request.files.get('thumbnail_file')
         if file and file.filename:
-            url = upload_file(file, folder='shikshya/courses', resource_type='image')
-            thumbnail = url if url else 'course_default.jpg'
+            try:
+                thumbnail = store_upload(
+                    file,
+                    allowed_extensions=IMAGE_EXTENSIONS,
+                    folder='shikshya/courses',
+                    local_subdir='thumbnails',
+                    resource_type='image',
+                    prefix='course',
+                )
+            except UploadValidationError as exc:
+                flash(str(exc), 'danger')
+                return redirect(url_for('course.create'))
 
         course = Course(
             title=title,
@@ -461,23 +493,31 @@ def add_lesson(module_id):
         return redirect(url_for('dashboard.teacher'))
 
     content_type = request.form.get('content_type')
-    video_url = request.form.get('video_url', '')
-    document_url = request.form.get('document_url', '')
+    video_url = safe_url(request.form.get('video_url', ''))
+    document_url = safe_url(request.form.get('document_url', ''))
     # sanitize — Jinja can render None as "None" string
     if document_url and document_url.strip().lower() in ('none', 'null', ''):
         document_url = ''
     if video_url and video_url.strip().lower() in ('none', 'null', ''):
         video_url = ''
     duration = int(request.form.get('duration', 10))
-    text_content = request.form.get('text_content', '')
+    text_content = sanitize_rich_content(request.form.get('text_content', ''))
     publish_at_raw = request.form.get('publish_at', '')
 
     file = request.files.get('document_file')
     if file and file.filename:
-        from utils.cloudinary_upload import upload_file
-        result = upload_file(file, folder='lesson_documents')
-        if result:
-            document_url = result
+        try:
+            document_url = store_upload(
+                file,
+                allowed_extensions=DOCUMENT_EXTENSIONS,
+                folder='lesson_documents',
+                local_subdir='documents',
+                resource_type='auto',
+                prefix='lesson',
+            )
+        except UploadValidationError as exc:
+            flash(str(exc), 'danger')
+            return redirect(url_for('course.add_lesson', module_id=module.id))
 
     order = len(module.lessons) + 1
 
@@ -521,15 +561,15 @@ def edit_lesson(lesson_id):
 
     lesson.title = title
     lesson.content_type = request.form.get('content_type')
-    lesson.video_url = request.form.get('video_url', '')
-    lesson.document_url = request.form.get('document_url', '')
+    lesson.video_url = safe_url(request.form.get('video_url', ''))
+    lesson.document_url = safe_url(request.form.get('document_url', ''))
     # sanitize — Jinja can render None as "None" string
     if lesson.document_url and lesson.document_url.strip().lower() in ('none', 'null', ''):
         lesson.document_url = ''
     if lesson.video_url and lesson.video_url.strip().lower() in ('none', 'null', ''):
         lesson.video_url = ''
     lesson.duration_minutes = int(request.form.get('duration', 10))
-    lesson.text_content = request.form.get('text_content', '')
+    lesson.text_content = sanitize_rich_content(request.form.get('text_content', ''))
     publish_at_raw = request.form.get('publish_at', '')
     if publish_at_raw:
         try:
@@ -541,10 +581,19 @@ def edit_lesson(lesson_id):
 
     file = request.files.get('document_file')
     if file and file.filename:
-        from utils.cloudinary_upload import upload_file
-        result = upload_file(file, folder='lesson_documents')
-        if result:
-            lesson.document_url = result
+        try:
+            lesson.document_url = store_upload(
+                file,
+                allowed_extensions=DOCUMENT_EXTENSIONS,
+                folder='lesson_documents',
+                local_subdir='documents',
+                resource_type='auto',
+                prefix='lesson',
+            )
+        except UploadValidationError as exc:
+            db.session.rollback()
+            flash(str(exc), 'danger')
+            return redirect(url_for('course.edit_lesson', lesson_id=lesson_id))
 
     db.session.commit()
 
@@ -888,7 +937,7 @@ def create_live_class(course_id):
 
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
-        meet_link = request.form.get('meet_link', '').strip()
+        meet_link = safe_url(request.form.get('meet_link', ''))
         date_str = request.form.get('date')
         time_str = request.form.get('time')
         duration = int(request.form.get('duration_minutes', 60))
@@ -1032,16 +1081,34 @@ def create_lab_manual(course_id):
         images = request.files.getlist('images')
         for img in images:
             if img and img.filename:
-                result = upload_file(img, folder='lab_manuals')
-                if result:
-                    image_urls.append(result)
+                try:
+                    image_urls.append(store_upload(
+                        img,
+                        allowed_extensions=IMAGE_EXTENSIONS,
+                        folder='lab_manuals',
+                        local_subdir='lab_manuals',
+                        resource_type='image',
+                        prefix='lab',
+                    ))
+                except UploadValidationError as exc:
+                    flash(str(exc), 'danger')
+                    return redirect(url_for('course.create_lab_manual', course_id=course.id))
 
         pdf_url = ''
         pdf_file = request.files.get('pdf_file')
         if pdf_file and pdf_file.filename:
-            result = upload_file(pdf_file, folder='lab_manuals')
-            if result:
-                pdf_url = result
+            try:
+                pdf_url = store_upload(
+                    pdf_file,
+                    allowed_extensions={'pdf'},
+                    folder='lab_manuals',
+                    local_subdir='lab_manuals',
+                    resource_type='auto',
+                    prefix='lab',
+                )
+            except UploadValidationError as exc:
+                flash(str(exc), 'danger')
+                return redirect(url_for('course.create_lab_manual', course_id=course.id))
 
         import json
         order = len(LabManual.query.filter_by(course_id=course.id).all()) + 1
@@ -1112,9 +1179,19 @@ def edit_lab_manual(manual_id):
         new_images = []
         for img in images:
             if img and img.filename:
-                result = upload_file(img, folder='lab_manuals')
-                if result:
-                    new_images.append(result)
+                try:
+                    new_images.append(store_upload(
+                        img,
+                        allowed_extensions=IMAGE_EXTENSIONS,
+                        folder='lab_manuals',
+                        local_subdir='lab_manuals',
+                        resource_type='image',
+                        prefix='lab',
+                    ))
+                except UploadValidationError as exc:
+                    db.session.rollback()
+                    flash(str(exc), 'danger')
+                    return redirect(url_for('course.edit_lab_manual', manual_id=manual_id))
 
         manual.image_urls = json.dumps(remaining_images + new_images)
 
@@ -1123,9 +1200,19 @@ def edit_lab_manual(manual_id):
         else:
             pdf_file = request.files.get('pdf_file')
             if pdf_file and pdf_file.filename:
-                result = upload_file(pdf_file, folder='lab_manuals')
-                if result:
-                    manual.pdf_url = result
+                try:
+                    manual.pdf_url = store_upload(
+                        pdf_file,
+                        allowed_extensions={'pdf'},
+                        folder='lab_manuals',
+                        local_subdir='lab_manuals',
+                        resource_type='auto',
+                        prefix='lab',
+                    )
+                except UploadValidationError as exc:
+                    db.session.rollback()
+                    flash(str(exc), 'danger')
+                    return redirect(url_for('course.edit_lab_manual', manual_id=manual_id))
 
         db.session.commit()
         flash('Lab manual updated!', 'success')

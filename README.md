@@ -148,11 +148,19 @@ Shikshya/
 
 ## Security
 
-- CSRF protection on all forms (Flask-WTF)
-- Rate limiting on all routes (Flask-Limiter)
+- CSRF protection on all state-changing forms (Flask-WTF)
+- POST-only approvals, publishing, password-reset approval and logout
+- Rate limiting on all routes, with stricter login and forgot-password limits
 - Password hashing with Werkzeug scrypt
-- HTTP-only, SameSite cookies
-- Input validation and sanitization
+- HTTP-only, SameSite cookies; secure cookies and HSTS in production
+- 12-hour sessions and 7-day remember-me tokens
+- `SESSION_PROTECTION='strong'` session fingerprinting
+- Server-side authorization on quizzes, evaluations, discussions, documents
+  and uploads
+- HTML sanitization for lesson/lab rich text and Markdown (`bleach`)
+- Upload extension allowlists and generated filenames
+- No server-side fetching of user-supplied document URLs (SSRF protection)
+- Security headers, including a report-only Content Security Policy
 - Parameterized queries via SQLAlchemy ORM
 - No hardcoded secrets in production code
 
@@ -162,17 +170,19 @@ Shikshya/
 |----------|----------|---------|-------------|
 | `SECRET_KEY` | Yes | — | Flask session signing key (use `openssl rand -hex 32`) |
 | `DATABASE_URL` | No | SQLite | Database connection string (PostgreSQL in prod) |
-| `SESSION_COOKIE_SECURE` | No | False | Set `True` when using HTTPS |
+| `SESSION_COOKIE_SECURE` | No | production: True | Send cookies only over HTTPS |
 | `FLASK_ENV` | No | development | Set `production` for deployment |
+| `TRUST_PROXY_HEADERS` | No | production: True | Trust `X-Forwarded-*` from a reverse proxy |
+| `FORCE_HTTPS` | No | production: True | Redirect HTTP to HTTPS and reject insecure POSTs |
 | `SEED_DEMO_DATA` | No | False | Create demo users/courses on seed/boot. Development only; keep `False` in production |
-| `SITE_URL` | No | http://localhost:5000 | Public site URL (used in emails) |
+| `SITE_URL` | No | http://localhost:5000 | Public site URL (used in emails and trusted document links) |
 | `MAIL_SERVER` | No | smtp.gmail.com | SMTP server hostname |
 | `MAIL_PORT` | No | 587 | SMTP port |
 | `MAIL_USE_TLS` | No | true | Enable TLS for SMTP |
 | `MAIL_USERNAME` | No | — | SMTP login username (full email) |
 | `MAIL_PASSWORD` | No | — | SMTP App Password |
 | `MAIL_DEFAULT_SENDER` | No | — | Sender address in emails |
-| `RATELIMIT_STORAGE_URL` | No | memory:// | Redis URL for production rate limiting |
+| `RATELIMIT_STORAGE_URI` | No | memory:// | Redis URI for production rate limiting (`RATELIMIT_STORAGE_URL` is also accepted) |
 
 ## Database Migrations
 
