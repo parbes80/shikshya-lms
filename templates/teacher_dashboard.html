@@ -2,213 +2,454 @@
 {% block title %}Teacher Dashboard{% endblock %}
 
 {% block content %}
-<div class="teacher-dashboard">
-  
+<div class="teacher-dashboard dashboard-container">
+
+  <!-- Header + quick actions -->
   <div class="dashboard-header">
     <div class="welcome-text">
-      <h1>Instructor Dashboard</h1>
-      <p style="color: var(--text-muted);">Manage your curriculum, check enrollments, and grade assignments.</p>
+      <h1>Teacher dashboard</h1>
+      <p class="text-muted">Manage your courses, review submissions and keep learners on track.</p>
     </div>
-    
-    <a href="{{ url_for('course.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Create New Course</a>
+    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+      <a href="{{ url_for('course.create') }}" class="ds-btn ds-btn--primary"><i class="fas fa-plus"></i> Create course</a>
+      <a href="{{ url_for('notice.create') }}" class="ds-btn ds-btn--outline"><i class="fas fa-bullhorn"></i> Publish announcement</a>
+      <a href="#submissions-to-grade" class="ds-btn ds-btn--outline"><i class="fas fa-check-double"></i> Review submissions</a>
+      <a href="#my-courses" class="ds-btn ds-btn--ghost"><i class="fas fa-book"></i> Manage curriculum</a>
+    </div>
   </div>
 
-  <!-- Analytics stats cards -->
-  <div class="stats-grid">
+  <!-- Snapshot -->
+  <div class="stats-grid mb-6">
     <div class="stat-card">
-      <div class="stat-icon"><i class="fas fa-users"></i></div>
+      <div class="stat-icon"><i class="fas fa-book"></i></div>
+      <div>
+        <div class="stat-number">{{ courses|length }}</div>
+        <div class="stat-label">Assigned courses</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fas fa-circle-check"></i></div>
+      <div>
+        <div class="stat-number">{{ published_courses_count }}</div>
+        <div class="stat-label">Published courses</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"><i class="fas fa-users"></i></div>
       <div>
         <div class="stat-number">{{ total_students }}</div>
-        <div class="stat-label">Total Enrolled Students</div>
+        <div class="stat-label">Enrolled students</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon green"><i class="fas fa-star"></i></div>
+      <div class="stat-icon"><i class="fas fa-clock"></i></div>
       <div>
-        <div class="stat-number">{{ avg_rating }} / 5</div>
-        <div class="stat-label">Average Ratings</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon orange"><i class="fas fa-comments"></i></div>
-      <div>
-        <div class="stat-number">{{ total_reviews }}</div>
-        <div class="stat-label">Reviews Received</div>
+        <div class="stat-number">{{ pending_submissions_count }}</div>
+        <div class="stat-label">Submissions to grade</div>
       </div>
     </div>
   </div>
 
-  <!-- Main section grid split -->
-  <div class="content-grid">
-    
-    <!-- Left Section: Course Management Curriculum builder -->
-    <div>
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-book" style="color: var(--primary);"></i> My Active Programs</h2>
-      
-      {% if courses %}
-        {% for course in courses %}
-          <div class="card course-card">
-            <div class="course-card-header">
-              <div>
-                <div class="course-title-group">
-                  <h3>{{ course.title }}</h3>
-                  {% if course.is_published %}
-                    <span class="course-badge published"><i class="fas fa-check-circle"></i> Published</span>
-                  {% else %}
-                    <span class="course-badge pending"><i class="fas fa-clock"></i> Pending Approval</span>
-                  {% endif %}
-                  <a href="{{ url_for('course.edit_course', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;"><i class="fas fa-edit"></i> Edit</a>
-                  <a href="{{ url_for('dashboard.teacher_analytics', course_id=course.id) }}" class="btn btn-outline" style="padding: 0.35rem 0.7rem; font-size: 0.8rem; color: #8b5cf6; border-color: #8b5cf6;"><i class="fas fa-chart-bar"></i> Analytics</a>
-                </div>
-                <p class="course-meta">Category: {{ course.category.name }} | Level: {{ course.difficulty_level }} | Price: {% if course.price == 0.0 %}Free{% else %}Rs. {{ "{:,.0f}".format(course.price) }}{% endif %}</p>
-              </div>
-              {% if course.is_published %}
-                <span class="course-badge published" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">Published</span>
-              {% else %}
-                <span class="course-badge pending" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">Pending</span>
-              {% endif %}
-            </div>
-
-            <!-- Modules tree list -->
-            <div style="margin-bottom: 1.5rem;">
-              <h4 style="font-size: 1rem; margin-bottom: 0.75rem;">Syllabus Chapters</h4>
-              {% if course.modules %}
-                <div class="module-list">
-                  {% for mod in course.modules %}
-                    <div class="module-item">
-                      <div class="module-header">
-                        <span class="module-title">{{ mod.title }}</span>
-                        <a href="{{ url_for('course.add_lesson', module_id=mod.id) }}" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; text-decoration: none;"><i class="fas fa-plus"></i> Add Lesson</a>
-                      </div>
-                      
-                      {% if mod.lessons %}
-                        <ul class="lesson-list">
-                          {% for les in mod.lessons %}
-                             <li class="lesson-item">
-                               <span class="lesson-meta">
-                                 <i class="fas fa-video" style="width: 1rem; text-align: center;"></i>
-                                 {{ les.title }} ({{ les.duration_minutes }} mins)
-                                 <span style="color: var(--text-muted); font-size: 0.75rem;">Order: {{ les.sort_order }}</span>
-                               </span>
-                               <span class="lesson-actions">
-                                 <a href="{{ url_for('course.edit_lesson', lesson_id=les.id) }}" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;"><i class="fas fa-edit"></i></a>
-                                 <form action="{{ url_for('course.delete_lesson', lesson_id=les.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this lesson?');">
-                                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                   <button type="submit" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem; color: #ef4444; border-color: #ef4444;"><i class="fas fa-trash"></i></button>
-                                 </form>
-                               </span>
-                             </li>
-                           {% endfor %}
-                        </ul>
-                      {% else %}
-                        <small style="color: var(--text-muted); padding-left: 1.5rem; display: block;">No lessons in this module yet.</small>
-                      {% endif %}
-                    </div>
-                  {% endfor %}
-                </div>
-              {% else %}
-                <p style="color: var(--text-muted); font-size: 0.9rem;">No modules added yet.</p>
-              {% endif %}
-            </div>
-
-            <!-- Create new module builder form -->
-            <form action="{{ url_for('course.add_module', course_id=course.id) }}" method="POST" style="display: flex; gap: 0.5rem;">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input type="text" name="module_title" class="form-control" placeholder="New Module Title..." required style="padding: 0.5rem 1rem; font-size: 0.85rem;">
-              <button type="submit" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;"><i class="fas fa-plus"></i> Add Module</button>
-            </form>
-
-            <!-- Quiz & Assignment management -->
-            <div class="course-action-bar">
-              <a href="{{ url_for('course.create_quiz', course_id=course.id) }}" class="btn btn-outline"><i class="fas fa-question-circle"></i> Add Quiz</a>
-              <a href="{{ url_for('course.create_assignment', course_id=course.id) }}" class="btn btn-outline"><i class="fas fa-tasks"></i> Add Assignment</a>
-              <a href="{{ url_for('course.create_live_class', course_id=course.id) }}" class="btn btn-outline" style="color: #ea4335; border-color: #ea4335;"><i class="fab fa-google"></i> Live Class</a>
-              <a href="{{ url_for('course.lab_manuals', course_id=course.id) }}" class="btn btn-outline" style="color: #f59e0b; border-color: #f59e0b;"><i class="fas fa-flask"></i> Lab Manuals</a>
-              <a href="{{ url_for('course.attendance', course_id=course.id) }}" class="btn btn-outline" style="color: #10b981; border-color: #10b981;"><i class="fas fa-clipboard-check"></i> Attendance</a>
-              <a href="{{ url_for('eval.index', course_id=course.id) }}" class="btn btn-outline" style="color: #8b5cf6; border-color: #8b5cf6;"><i class="fas fa-clipboard-check"></i> Evaluations</a>
-            </div>
-
-            <!-- Existing quizzes -->
-            {% if course.quizzes %}
-            <div style="margin-top: 1rem;">
-              <div class="teacher-section-header">Quizzes</div>
-              <ul class="content-list">
-                {% set course_quizzes = course.quizzes|selectattr('lesson_id', 'none')|list %}
-                {% for q in course_quizzes %}
-                <li class="content-item">
-                  <span><i class="fas fa-pencil-alt" style="color: var(--accent);"></i> {{ q.title }} ({{ q.questions|length }} questions, {{ q.time_limit_minutes }}min)</span>
-                  <span class="lesson-actions">
-                    <a href="{{ url_for('course.edit_quiz', course_id=course.id, quiz_id=q.id) }}" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;"><i class="fas fa-edit"></i></a>
-                    <form action="{{ url_for('course.delete_quiz', course_id=course.id, quiz_id=q.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this quiz?');">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                      <button type="submit" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem; color: #ef4444; border-color: #ef4444;"><i class="fas fa-trash"></i></button>
-                    </form>
-                  </span>
-                </li>
-                {% endfor %}
-                {% for mod in course.modules %}
-                  {% for les in mod.lessons %}
-                    {% set lesson_quizzes = course.quizzes|selectattr('lesson_id', 'equalto', les.id)|list %}
-                    {% if lesson_quizzes %}
-                      {% for q in lesson_quizzes %}
-                      <li class="content-item" style="padding-left: 1.5rem; border-left: 2px solid var(--primary);">
-                        <span><i class="fas fa-pencil-alt" style="color: var(--accent);"></i> <small style="color: var(--text-muted);">{{ mod.title }} &raquo; {{ les.title }}:</small> {{ q.title }} ({{ q.questions|length }} questions, {{ q.time_limit_minutes }}min)</span>
-                        <span class="lesson-actions">
-                          <a href="{{ url_for('course.edit_quiz', course_id=course.id, quiz_id=q.id) }}" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;"><i class="fas fa-edit"></i></a>
-                          <form action="{{ url_for('course.delete_quiz', course_id=course.id, quiz_id=q.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this quiz?');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-outline" style="padding: 0.15rem 0.4rem; font-size: 0.7rem; color: #ef4444; border-color: #ef4444;"><i class="fas fa-trash"></i></button>
-                          </form>
-                        </span>
-                      </li>
-                      {% endfor %}
-                    {% endif %}
-                  {% endfor %}
-                {% endfor %}
-              </ul>
-            </div>
-            {% endif %}
-
-            <!-- Existing assignments -->
-            {% if course.assignments %}
-            <div style="margin-top: 0.75rem;">
-              <div class="teacher-section-header">Assignments</div>
-              <ul class="content-list">
-                {% for a in course.assignments %}
-                <li class="content-item">
-                  <span><i class="fas fa-file-alt" style="color: var(--secondary);"></i> {{ a.title }} (Max {{ a.max_marks }} pts)</span>
-                </li>
-                {% endfor %}
-              </ul>
-            </div>
-            {% endif %}
+  <!-- Upcoming work -->
+  <section class="ds-section">
+    <div class="ds-grid-2">
+      <div>
+        <div class="ds-section-head">
+          <div>
+            <span class="ds-eyebrow">Assessments</span>
+            <h2 class="ds-section-title" style="font-size: 1.25rem;">Upcoming evaluations</h2>
           </div>
-        {% endfor %}
-      {% else %}
-        <div class="card" style="text-align: center; padding: 3rem;">
-          <i class="fas fa-book-reader" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
-          <h3>No courses created yet!</h3>
-          <p style="color: var(--text-muted); margin-top: 0.5rem;">Create a course, add lessons, quizzes, and publish to start teaching.</p>
-          <a href="{{ url_for('course.create') }}" class="btn btn-primary" style="margin-top: 1.5rem;"><i class="fas fa-plus"></i> Create Course</a>
         </div>
-      {% endif %}
+        {% if upcoming_evaluations %}
+          <div style="display: grid; gap: 0.75rem;">
+            {% for evaluation in upcoming_evaluations %}
+              <div class="ds-card" style="padding: 1rem 1.15rem;">
+                <div class="flex-between flex-wrap gap-2">
+                  <div>
+                    <strong>{{ evaluation.title }}</strong>
+                    <p class="ds-card-text" style="margin-top: 0.2rem;">{{ evaluation.course.title }} · {{ evaluation.eval_type|replace('_', ' ')|title }}</p>
+                  </div>
+                  <span class="ds-badge">
+                    {% if evaluation.scheduled_at %}
+                      {{ evaluation.scheduled_at.strftime('%b %d, %Y') }}
+                    {% else %}
+                      Not scheduled
+                    {% endif %}
+                  </span>
+                </div>
+                <a href="{{ url_for('eval.detail', eval_id=evaluation.id) }}" class="ds-btn ds-btn--ghost ds-btn--sm" style="margin-top: 0.5rem; padding-left: 0;">Open evaluation <i class="fas fa-arrow-right"></i></a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="ds-empty">
+            <i class="fas fa-clipboard-list"></i>
+            <h3>No upcoming evaluations</h3>
+            <p>Create an evaluation from a course page to schedule quizzes, tests or presentations.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="ds-section-head">
+          <div>
+            <span class="ds-eyebrow">Live sessions</span>
+            <h2 class="ds-section-title" style="font-size: 1.25rem;">Upcoming live classes</h2>
+          </div>
+        </div>
+        {% if upcoming_live_classes %}
+          <div style="display: grid; gap: 0.75rem;">
+            {% for live in upcoming_live_classes %}
+              <div class="ds-card" style="padding: 1rem 1.15rem;">
+                <div class="flex-between flex-wrap gap-2">
+                  <div>
+                    <strong>{{ live.title }}</strong>
+                    <p class="ds-card-text" style="margin-top: 0.2rem;">{{ live.course.title }} · {{ live.duration_minutes }} minutes</p>
+                  </div>
+                  <span class="ds-badge ds-badge--success"><i class="fas fa-video"></i> {{ live.start_time.strftime('%b %d, %H:%M') }}</span>
+                </div>
+                {% if live.meet_link %}
+                  <a href="{{ live.meet_link|safe_url }}" target="_blank" rel="noopener noreferrer" class="ds-btn ds-btn--ghost ds-btn--sm" style="margin-top: 0.5rem; padding-left: 0;">Join meeting <i class="fas fa-external-link-alt"></i></a>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="ds-empty">
+            <i class="fas fa-video"></i>
+            <h3>No live classes scheduled</h3>
+            <p>Schedule a live class from any of your courses to see it here.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Performance -->
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">Progress</span>
+        <h2 class="ds-section-title">Course completion statistics</h2>
+        <p class="ds-section-subtitle">Enrollment, completion and average progress from your courses.</p>
+      </div>
+      <span class="ds-badge">{{ total_assignments }} assignments · {{ total_quizzes }} quizzes</span>
+    </div>
+    {% if course_stats %}
+      <div class="ds-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Course</th>
+              <th>Status</th>
+              <th>Enrolled</th>
+              <th>Completed</th>
+              <th>Average progress</th>
+              <th>Analytics</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in course_stats %}
+              <tr>
+                <td><strong>{{ item.course.title }}</strong><br><small class="text-muted">{{ item.course.category.name }}</small></td>
+                <td>
+                  {% if item.course.is_published %}
+                    <span class="ds-badge ds-badge--success">Published</span>
+                  {% else %}
+                    <span class="ds-badge ds-badge--warning">Pending</span>
+                  {% endif %}
+                </td>
+                <td>{{ item.enrolled }}</td>
+                <td>{{ item.completed }}</td>
+                <td>
+                  <div class="progress-bar-wrapper" style="min-width: 90px;">
+                    <div class="progress-bar-fill" style="width: {{ item.average_progress }}%;"></div>
+                  </div>
+                  <small class="text-muted">{{ item.average_progress }}%</small>
+                </td>
+                <td><a href="{{ url_for('dashboard.teacher_analytics', course_id=item.course.id) }}" class="ds-btn ds-btn--outline ds-btn--sm">View</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="ds-empty">
+        <i class="fas fa-chart-line"></i>
+        <h3>No course data yet</h3>
+        <p>Create your first course to start seeing enrollment and progress statistics.</p>
+        <a href="{{ url_for('course.create') }}" class="ds-btn ds-btn--primary ds-btn--sm" style="margin-top: 0.75rem;">Create course</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Attendance + recent activity -->
+  <section class="ds-section">
+    <div class="ds-grid-2">
+      <div>
+        <div class="ds-section-head">
+          <div>
+            <span class="ds-eyebrow">Attendance</span>
+            <h2 class="ds-section-title" style="font-size: 1.25rem;">Attendance overview</h2>
+          </div>
+        </div>
+        {% if attendance_stats %}
+          <div class="ds-card" style="padding: 0;">
+            <div class="ds-table-wrap" style="border: none;">
+              <table style="min-width: 420px;">
+                <thead>
+                  <tr>
+                    <th>Course</th>
+                    <th>Sessions</th>
+                    <th>Present</th>
+                    <th>Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in attendance_stats %}
+                    <tr>
+                      <td>{{ item.course.title }}</td>
+                      <td>{{ item.records }}</td>
+                      <td>{{ item.present }}</td>
+                      <td>
+                        {% if item.rate is not none %}
+                          <span class="ds-badge {% if item.rate >= 75 %}ds-badge--success{% else %}ds-badge--warning{% endif %}">{{ item.rate }}%</span>
+                        {% else %}
+                          <span class="text-muted text-sm">No records</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% else %}
+          <div class="ds-empty">
+            <i class="fas fa-clipboard-check"></i>
+            <h3>No attendance records</h3>
+            <p>Record attendance from a course page to see summaries here.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="ds-section-head">
+          <div>
+            <span class="ds-eyebrow">Activity</span>
+            <h2 class="ds-section-title" style="font-size: 1.25rem;">Recent student submissions</h2>
+          </div>
+        </div>
+        {% if recent_activity %}
+          <div class="ds-card" style="padding: 0;">
+            <div class="ds-table-wrap" style="border: none;">
+              <table style="min-width: 460px;">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Assignment</th>
+                    <th>Submitted</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for sub in recent_activity %}
+                    <tr>
+                      <td>{{ sub.student.full_name or sub.student.username }}</td>
+                      <td>{{ sub.assignment.title }}</td>
+                      <td>{{ sub.submitted_at.strftime('%b %d, %Y') }}</td>
+                      <td>
+                        {% if sub.is_graded %}
+                          <span class="ds-badge ds-badge--success">Graded</span>
+                        {% else %}
+                          <span class="ds-badge ds-badge--warning">Pending</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% else %}
+          <div class="ds-empty">
+            <i class="fas fa-inbox"></i>
+            <h3>No submissions yet</h3>
+            <p>Student submissions will appear here as they are handed in.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Curriculum management (preserved) -->
+  <section class="ds-section" id="my-courses">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">Authoring</span>
+        <h2 class="ds-section-title">My active programmes</h2>
+        <p class="ds-section-subtitle">Build modules, lessons, quizzes and assignments for each course.</p>
+      </div>
     </div>
 
-  </div><!-- end content-grid -->
+    {% if courses %}
+      {% for course in courses %}
+        <div class="card course-card" style="margin-bottom: 1.5rem;">
+          <div class="course-card-header">
+            <div>
+              <div class="course-title-group">
+                <h3>{{ course.title }}</h3>
+                {% if course.is_published %}
+                  <span class="course-badge published"><i class="fas fa-check-circle"></i> Published</span>
+                {% else %}
+                  <span class="course-badge pending"><i class="fas fa-clock"></i> Pending approval</span>
+                {% endif %}
+                <a href="{{ url_for('course.edit_course', course_id=course.id) }}" class="ds-btn ds-btn--outline ds-btn--sm"><i class="fas fa-edit"></i> Edit</a>
+                <a href="{{ url_for('dashboard.teacher_analytics', course_id=course.id) }}" class="ds-btn ds-btn--outline ds-btn--sm"><i class="fas fa-chart-bar"></i> Analytics</a>
+              </div>
+              <p class="course-meta">Category: {{ course.category.name }} | Level: {{ course.difficulty_level }} | Price: {% if course.price == 0.0 %}Free{% else %}Rs. {{ "{:,.0f}".format(course.price) }}{% endif %}</p>
+            </div>
+          </div>
 
-  <!-- Collapsible Dashboard Panels -->
+          <!-- Per-course quick actions -->
+          <div class="course-action-bar">
+            <a href="{{ url_for('course.create_assignment', course_id=course.id) }}" class="ds-btn ds-btn--outline ds-btn--sm"><i class="fas fa-tasks"></i> Create assignment</a>
+            <a href="{{ url_for('course.create_quiz', course_id=course.id) }}" class="ds-btn ds-btn--outline ds-btn--sm"><i class="fas fa-question-circle"></i> Create quiz</a>
+            <a href="{{ url_for('eval.index', course_id=course.id) }}" class="ds-btn ds-btn--outline ds-btn--sm"><i class="fas fa-clipboard-check"></i> Examinations</a>
+            <a href="{{ url_for('course.create_live_class', course_id=course.id) }}" class="ds-btn ds-btn--outline ds-btn--sm"><i class="fas fa-video"></i> Live class</a>
+            <a href="{{ url_for('course.lab_manuals', course_id=course.id) }}" class="ds-btn ds-btn--outline ds-btn--sm"><i class="fas fa-flask"></i> Lab manuals</a>
+            <a href="{{ url_for('course.attendance', course_id=course.id) }}" class="ds-btn ds-btn--outline ds-btn--sm"><i class="fas fa-clipboard-check"></i> Attendance</a>
+          </div>
+
+          <!-- Modules tree list -->
+          <div style="margin-bottom: 1.5rem;">
+            <h4 style="font-size: 1rem; margin-bottom: 0.75rem;">Syllabus chapters</h4>
+            {% if course.modules %}
+              <div class="module-list">
+                {% for mod in course.modules %}
+                  <div class="module-item">
+                    <div class="module-header">
+                      <span class="module-title">{{ mod.title }}</span>
+                      <a href="{{ url_for('course.add_lesson', module_id=mod.id) }}" class="ds-btn ds-btn--outline ds-btn--sm"><i class="fas fa-plus"></i> Add lesson</a>
+                    </div>
+
+                    {% if mod.lessons %}
+                      <ul class="lesson-list">
+                        {% for les in mod.lessons %}
+                          <li class="lesson-item">
+                            <span class="lesson-meta">
+                              <i class="fas fa-video" style="width: 1rem; text-align: center;"></i>
+                              {{ les.title }} ({{ les.duration_minutes }} mins)
+                              <span class="text-muted text-xs">Order: {{ les.sort_order }}</span>
+                            </span>
+                            <span class="lesson-actions">
+                              <a href="{{ url_for('course.edit_lesson', lesson_id=les.id) }}" class="ds-btn ds-btn--outline ds-btn--sm" aria-label="Edit lesson"><i class="fas fa-edit"></i></a>
+                              <form action="{{ url_for('course.delete_lesson', lesson_id=les.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this lesson?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="ds-btn ds-btn--outline ds-btn--sm" style="color: var(--ds-error); border-color: var(--ds-error);" aria-label="Delete lesson"><i class="fas fa-trash"></i></button>
+                              </form>
+                            </span>
+                          </li>
+                        {% endfor %}
+                      </ul>
+                    {% else %}
+                      <small class="text-muted" style="padding-left: 1.5rem; display: block;">No lessons in this module yet.</small>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-muted text-sm">No modules added yet.</p>
+            {% endif %}
+          </div>
+
+          <!-- Create new module -->
+          <form action="{{ url_for('course.add_module', course_id=course.id) }}" method="POST" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" name="module_title" class="form-control" placeholder="New module title..." required style="padding: 0.5rem 1rem; font-size: 0.85rem; flex: 1; min-width: 200px;">
+            <button type="submit" class="ds-btn ds-btn--secondary"><i class="fas fa-plus"></i> Add module</button>
+          </form>
+
+          <!-- Existing quizzes -->
+          {% if course.quizzes %}
+          <div style="margin-top: 1rem;">
+            <div class="teacher-section-header">Quizzes</div>
+            <ul class="content-list">
+              {% set course_quizzes = course.quizzes|selectattr('lesson_id', 'none')|list %}
+              {% for q in course_quizzes %}
+              <li class="content-item">
+                <span><i class="fas fa-pencil-alt" style="color: var(--accent);"></i> {{ q.title }} ({{ q.questions|length }} questions, {{ q.time_limit_minutes }}min)</span>
+                <span class="lesson-actions">
+                  <a href="{{ url_for('course.edit_quiz', course_id=course.id, quiz_id=q.id) }}" class="ds-btn ds-btn--outline ds-btn--sm" aria-label="Edit quiz"><i class="fas fa-edit"></i></a>
+                  <form action="{{ url_for('course.delete_quiz', course_id=course.id, quiz_id=q.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this quiz?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="ds-btn ds-btn--outline ds-btn--sm" style="color: var(--ds-error); border-color: var(--ds-error);" aria-label="Delete quiz"><i class="fas fa-trash"></i></button>
+                  </form>
+                </span>
+              </li>
+              {% endfor %}
+              {% for mod in course.modules %}
+                {% for les in mod.lessons %}
+                  {% set lesson_quizzes = course.quizzes|selectattr('lesson_id', 'equalto', les.id)|list %}
+                  {% if lesson_quizzes %}
+                    {% for q in lesson_quizzes %}
+                    <li class="content-item" style="padding-left: 1.5rem; border-left: 2px solid var(--primary);">
+                      <span><i class="fas fa-pencil-alt" style="color: var(--accent);"></i> <small class="text-muted">{{ mod.title }} &raquo; {{ les.title }}:</small> {{ q.title }} ({{ q.questions|length }} questions, {{ q.time_limit_minutes }}min)</span>
+                      <span class="lesson-actions">
+                        <a href="{{ url_for('course.edit_quiz', course_id=course.id, quiz_id=q.id) }}" class="ds-btn ds-btn--outline ds-btn--sm" aria-label="Edit quiz"><i class="fas fa-edit"></i></a>
+                        <form action="{{ url_for('course.delete_quiz', course_id=course.id, quiz_id=q.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this quiz?');">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button type="submit" class="ds-btn ds-btn--outline ds-btn--sm" style="color: var(--ds-error); border-color: var(--ds-error);" aria-label="Delete quiz"><i class="fas fa-trash"></i></button>
+                        </form>
+                      </span>
+                    </li>
+                    {% endfor %}
+                  {% endif %}
+                {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          <!-- Existing assignments -->
+          {% if course.assignments %}
+          <div style="margin-top: 0.75rem;">
+            <div class="teacher-section-header">Assignments</div>
+            <ul class="content-list">
+              {% for a in course.assignments %}
+              <li class="content-item">
+                <span><i class="fas fa-file-alt" style="color: var(--secondary);"></i> {{ a.title }} (Max {{ a.max_marks }} pts)</span>
+                <span class="text-muted text-xs">{{ a.submissions|length }} submission{% if a.submissions|length != 1 %}s{% endif %}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="ds-empty">
+        <i class="fas fa-book-reader"></i>
+        <h3>No courses created yet</h3>
+        <p>Create a course, add lessons, quizzes and assignments, then publish it for students.</p>
+        <a href="{{ url_for('course.create') }}" class="ds-btn ds-btn--primary ds-btn--sm" style="margin-top: 0.75rem;"><i class="fas fa-plus"></i> Create course</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Collapsible detail panels -->
   <div class="dashboard-panels">
 
     <div class="dpanel">
       <div class="dpanel-header" onclick="this.parentElement.classList.toggle('dpanel-open')">
-        <span><i class="fas fa-users" style="color: var(--primary);"></i> Enrolled Students</span>
+        <span><i class="fas fa-users" style="color: var(--primary);"></i> Enrolled students</span>
         <i class="fas fa-chevron-down dpanel-chevron"></i>
       </div>
       <div class="dpanel-body">
         {% if enrollments_by_course %}
           {% for cid, enrols in enrollments_by_course.items() %}
             {% set course = courses|selectattr('id', 'equalto', cid)|first %}
-            <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">{{ course.title if course else 'Course #' ~ cid }} <small style="color: var(--text-muted);">({{ enrols|length }} students)</small></h4>
+            <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">{{ course.title if course else 'Course #' ~ cid }} <small class="text-muted">({{ enrols|length }} students)</small></h4>
             {% if enrols %}
               <div style="overflow-x: auto; margin-bottom: 0.5rem;">
                 <table class="paginated-table" data-per-page="5" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
@@ -232,18 +473,18 @@
                 <div class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; padding: 0.5rem 0; font-size: 0.8rem;"></div>
               </div>
             {% else %}
-              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">No students enrolled yet.</p>
+              <p class="text-muted text-sm" style="margin-bottom: 1rem;">No students enrolled yet.</p>
             {% endif %}
           {% endfor %}
         {% else %}
-          <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 1.5rem;">No enrollments in your courses yet.</p>
+          <p class="text-muted text-sm text-center" style="padding: 1.5rem;">No enrollments in your courses yet.</p>
         {% endif %}
       </div>
     </div>
 
     <div class="dpanel">
       <div class="dpanel-header" onclick="this.parentElement.classList.toggle('dpanel-open')">
-        <span><i class="fas fa-chart-bar" style="color: var(--accent);"></i> Quiz Attempts</span>
+        <span><i class="fas fa-chart-bar" style="color: var(--accent);"></i> Quiz attempts</span>
         <i class="fas fa-chevron-down dpanel-chevron"></i>
       </div>
       <div class="dpanel-body">
@@ -251,8 +492,8 @@
           {% set q_attempts = qdata.attempts %}
           {% set q_title = qdata.title %}
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h4 style="font-size: 1rem; margin-bottom: 0.5rem;">{{ q_title }} <small style="color: var(--text-muted);">({{ q_attempts|length }} attempts)</small></h4>
-            <a href="{{ url_for('api.quiz_report', quiz_id=qid) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-file-pdf"></i> PDF Report</a>
+            <h4 style="font-size: 1rem; margin-bottom: 0.5rem;">{{ q_title }} <small class="text-muted">({{ q_attempts|length }} attempts)</small></h4>
+            <a href="{{ url_for('api.quiz_report', quiz_id=qid) }}" class="ds-btn ds-btn--outline ds-btn--sm"><i class="fas fa-file-pdf"></i> PDF report</a>
           </div>
           <div class="card" style="margin-bottom: 1.5rem;">
             {% if q_attempts %}
@@ -273,9 +514,9 @@
                         <td style="padding: 0.5rem;">{{ att.score }}%</td>
                         <td style="padding: 0.5rem;">
                           {% if att.is_passed %}
-                            <span style="color: var(--secondary); font-weight: bold;"><i class="fas fa-check-circle"></i> Passed</span>
+                            <span class="ds-badge ds-badge--success"><i class="fas fa-check-circle"></i> Passed</span>
                           {% else %}
-                            <span style="color: #ef4444; font-weight: bold;"><i class="fas fa-times-circle"></i> Failed</span>
+                            <span class="ds-badge ds-badge--error"><i class="fas fa-times-circle"></i> Failed</span>
                           {% endif %}
                         </td>
                         <td style="padding: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">{{ att.completed_at.strftime('%b %d, %Y') }}</td>
@@ -286,21 +527,21 @@
                 <div class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; padding: 0.5rem 0; font-size: 0.8rem;"></div>
               </div>
             {% else %}
-              <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 1.5rem;">No attempts yet.</p>
+              <p class="text-muted text-sm text-center" style="padding: 1.5rem;">No attempts yet.</p>
             {% endif %}
           </div>
         {% endfor %}
         {% if not quiz_attempts_by_quiz %}
           <div class="card" style="margin-bottom: 2rem;">
-            <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 1.5rem;">No quiz attempts yet.</p>
+            <p class="text-muted text-sm text-center" style="padding: 1.5rem;">No quiz attempts yet.</p>
           </div>
         {% endif %}
       </div>
     </div>
 
-    <div class="dpanel">
+    <div class="dpanel" id="submissions-to-grade">
       <div class="dpanel-header" onclick="this.parentElement.classList.toggle('dpanel-open')">
-        <span><i class="fas fa-check-double" style="color: var(--secondary);"></i> Submissions to Grade</span>
+        <span><i class="fas fa-check-double" style="color: var(--secondary);"></i> Submissions to grade ({{ pending_submissions_count }})</span>
         <i class="fas fa-chevron-down dpanel-chevron"></i>
       </div>
       <div class="dpanel-body">
@@ -311,35 +552,39 @@
                 <li style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
                   <div style="margin-bottom: 0.5rem;">
                     <strong>{{ sub.assignment.title }}</strong><br>
-                    <small style="color: var(--text-muted);">Submitted by: <strong>{{ sub.student.username }}</strong></small>
+                    <small class="text-muted">Submitted by: <strong>{{ sub.student.username }}</strong> · {{ sub.assignment.course.title }}</small>
                   </div>
                   <div style="font-size: 0.8rem; margin-bottom: 0.75rem;">
                     Submitted file:
                     {% if sub.file_url %}
-                      {% if sub.file_url.startswith('http') %}
-                        <a href="{{ sub.file_url|asset_url }}" target="_blank" style="color: var(--primary); font-weight: 600;"><i class="fas fa-external-link-alt"></i> View Link</a>
-                      {% else %}
-                        <a href="{{ sub.file_url|asset_url }}" target="_blank" style="color: var(--primary); font-weight: 600;"><i class="fas fa-file-download"></i> Download File</a>
-                      {% endif %}
+                      <a href="{{ sub.file_url|asset_url }}" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 600;">
+                        <i class="fas fa-file-download"></i> View submission
+                      </a>
+                    {% else %}
+                      <span class="text-muted">No file attached.</span>
                     {% endif %}
                   </div>
                   <form action="{{ url_for('api.grade_submission', submission_id=sub.id) }}" method="POST" style="background: var(--bg-app); padding: 1rem; border-radius: var(--radius-md);">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="form-group" style="margin-bottom: 0.75rem;">
-                      <label class="form-label" style="font-size: 0.8rem;" for="grade-marks-{{sub.id}}">Marks Obtained (Max: {{ sub.assignment.max_marks }})</label>
+                      <label class="form-label" style="font-size: 0.8rem;" for="grade-marks-{{sub.id}}">Marks obtained (max: {{ sub.assignment.max_marks }})</label>
                       <input type="number" name="marks" id="grade-marks-{{sub.id}}" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" min="0" max="{{ sub.assignment.max_marks }}" required>
                     </div>
                     <div class="form-group" style="margin-bottom: 0.75rem;">
-                      <label class="form-label" style="font-size: 0.8rem;" for="grade-feedback-{{sub.id}}">Feedback Comments</label>
+                      <label class="form-label" style="font-size: 0.8rem;" for="grade-feedback-{{sub.id}}">Feedback comments</label>
                       <textarea name="feedback" id="grade-feedback-{{sub.id}}" rows="2" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" placeholder="Excellent work or corrections..."></textarea>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; width: 100%; justify-content: center;">Submit Grade & Feedback</button>
+                    <button type="submit" class="ds-btn ds-btn--primary ds-btn--sm" style="width: 100%; justify-content: center;">Submit grade &amp; feedback</button>
                   </form>
                 </li>
               {% endfor %}
             </ul>
           {% else %}
-            <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 1.5rem;">All caught up! No submissions require review.</p>
+            <div class="ds-empty" style="border: none; background: transparent;">
+              <i class="fas fa-circle-check"></i>
+              <h3>All caught up</h3>
+              <p>No submissions require review right now.</p>
+            </div>
           {% endif %}
         </div>
       </div>
@@ -348,9 +593,6 @@
   </div>
 
 </div>
-
-
-
 {% endblock %}
 
 {% block extra_js %}

@@ -32,7 +32,9 @@ def role_required(*role_names):
 @dashboard_bp.route('/dashboard/student')
 @login_required
 def student():
+    now = datetime.utcnow()
     enrollments = Enrollment.query.filter_by(student_id=current_user.id).all()
+    course_ids = [enr.course_id for enr in enrollments]
     certificates = Certificate.query.filter_by(student_id=current_user.id).all()
     quiz_attempts = QuizAttempt.query.filter_by(student_id=current_user.id).all()
     submissions = Submission.query.filter_by(student_id=current_user.id).all()
@@ -48,6 +50,92 @@ def student():
     if len(quiz_attempts) >= 3:
         badges.append({'name': 'Quiz Whiz', 'description': 'Attempted 3 or more quizzes', 'icon': 'fa-trophy', 'color': '#8b5cf6'})
 
+    # Continue learning: prefer the course with the most recent lesson activity.
+    continue_enrollment = None
+    recent_progress = None
+    if enrollments:
+        recent_progress = (
+            LessonProgress.query
+            .join(Enrollment, LessonProgress.enrollment_id == Enrollment.id)
+            .filter(Enrollment.student_id == current_user.id)
+            .order_by(LessonProgress.updated_at.desc())
+            .first()
+        )
+        continue_enrollment = (
+            recent_progress.enrollment if recent_progress else enrollments[0]
+        )
+
+    next_lesson = None
+    if continue_enrollment:
+        completed_lesson_ids = {
+            progress.lesson_id
+            for progress in LessonProgress.query.filter_by(
+                enrollment_id=continue_enrollment.id, is_completed=True
+            ).all()
+        }
+        for module in continue_enrollment.course.modules:
+            for lesson in module.lessons:
+                if lesson.id not in completed_lesson_ids:
+                    next_lesson = lesson
+                    break
+            if next_lesson:
+                break
+
+    # Upcoming work in the student's courses.
+    upcoming_assignments = []
+    if course_ids:
+        submitted_assignment_ids = {sub.assignment_id for sub in submissions}
+        assignment_query = Assignment.query.filter(
+            Assignment.course_id.in_(course_ids),
+            Assignment.due_date >= now,
+        )
+        if submitted_assignment_ids:
+            assignment_query = assignment_query.filter(
+                ~Assignment.id.in_(submitted_assignment_ids)
+            )
+        upcoming_assignments = assignment_query.order_by(
+            Assignment.due_date.asc()
+        ).limit(5).all()
+
+    upcoming_evaluations = []
+    if course_ids:
+        eval_submitted_ids = {
+            sub.evaluation_id
+            for sub in EvaluationSubmission.query.filter_by(
+                student_id=current_user.id
+            ).all()
+        }
+        evaluation_query = Evaluation.query.filter(
+            Evaluation.course_id.in_(course_ids),
+            db.or_(
+                Evaluation.scheduled_at.is_(None),
+                Evaluation.scheduled_at >= now,
+            ),
+        )
+        if eval_submitted_ids:
+            evaluation_query = evaluation_query.filter(
+                ~Evaluation.id.in_(eval_submitted_ids)
+            )
+        upcoming_evaluations = evaluation_query.order_by(
+            Evaluation.scheduled_at.is_(None), Evaluation.scheduled_at.asc()
+        ).limit(5).all()
+
+    announcements = Notice.query.filter(
+        db.or_(Notice.target_role == 'all', Notice.target_role == 'student')
+    ).order_by(
+        Notice.is_pinned.desc(), Notice.created_at.desc()
+    ).limit(4).all()
+
+    enrolled_ids = set(course_ids)
+    recommended_query = Course.query.filter(Course.is_published.is_(True))
+    if enrolled_ids:
+        recommended_query = recommended_query.filter(
+            ~Course.id.in_(enrolled_ids)
+        )
+    recommended_courses = recommended_query.order_by(
+        Course.created_at.desc()
+    ).limit(3).all()
+
     return render_template(
         'student_dashboard.html',
         enrollments=enrollments,
@@ -55,7 +143,16 @@ def student():
         quiz_attempts=quiz_attempts,
         submissions=submissions,
         pending_payments=pending_payments,
-        badges=badges
+        badges=badges,
+        continue_enrollment=continue_enrollment,
+        next_lesson=next_lesson,
+        upcoming_assignments=upcoming_assignments,
+        upcoming_evaluations=upcoming_evaluations,
+        announcements=announcements,
+        recommended_courses=recommended_courses,
+        pending_submissions_count=sum(
+            1 for sub in submissions if not sub.is_graded
+        ),
     )
 
 
@@ -134,6 +231,73 @@ def teacher():
 
     categories = Category.query.all()
 
+    now = datetime.utcnow()
+    upcoming_evaluations = []
+    upcoming_live_classes = []
+    recent_submissions = []
+    recent_activity = []
+    attendance_stats = []
+    course_stats = []
+
+    if course_ids:
+        upcoming_evaluations = Evaluation.query.filter(
+            Evaluation.course_id.in_(course_ids),
+            db.or_(
+                Evaluation.scheduled_at.is_(None),
+                Evaluation.scheduled_at >= now,
+            ),
+        ).order_by(
+            Evaluation.scheduled_at.is_(None), Evaluation.scheduled_at.asc()
+        ).limit(5).all()
+
+        upcoming_live_classes = LiveClass.query.filter(
+            LiveClass.course_id.in_(course_ids),
+            LiveClass.start_time >= now,
+        ).order_by(LiveClass.start_time.asc()).limit(5).all()
+
+        recent_submissions = Submission.query.join(Assignment).filter(
+            Assignment.course_id.in_(course_ids),
+            Submission.is_graded.is_(False),
+        ).order_by(Submission.submitted_at.desc()).limit(5).all()
+
+        recent_activity = Submission.query.join(Assignment).filter(
+            Assignment.course_id.in_(course_ids),
+        ).order_by(Submission.submitted_at.desc()).limit(6).all()
+
+        for course in my_courses:
+            records = Attendance.query.filter_by(course_id=course.id).all()
+            present = sum(1 for record in records if record.is_present)
+            attendance_stats.append({
+                'course': course,
+                'records': len(records),
+                'present': present,
+                'rate': round(present / len(records) * 100) if records else None,
+            })
+
+    total_assignments = sum(len(course.assignments) for course in my_courses)
+    total_quizzes = sum(len(course.quizzes) for course in my_courses)
+
+    for course in my_courses:
+        course_enrollments = enrollments_by_course.get(course.id, [])
+        enrolled_count = len(course_enrollments)
+        completed_count = sum(
+            1 for enrollment in course_enrollments if enrollment.is_completed
+        )
+        average_progress = (
+            round(
+                sum(enrollment.progress_percent for enrollment in course_enrollments)
+                / enrolled_count,
+                1,
+            )
+            if enrolled_count else 0
+        )
+        course_stats.append({
+            'course': course,
+            'enrolled': enrolled_count,
+            'completed': completed_count,
+            'average_progress': average_progress,
+        })
+
     return render_template(
         'teacher_dashboard.html',
         courses=my_courses,
@@ -141,9 +305,21 @@ def teacher():
         total_reviews=total_reviews,
         avg_rating=avg_rating,
         pending_submissions=pending_submissions,
+        pending_submissions_count=len(pending_submissions),
         enrollments_by_course=enrollments_by_course,
         quiz_attempts_by_quiz=quiz_attempts_by_quiz,
-        categories=categories
+        categories=categories,
+        published_courses_count=sum(
+            1 for course in my_courses if course.is_published
+        ),
+        upcoming_evaluations=upcoming_evaluations,
+        upcoming_live_classes=upcoming_live_classes,
+        recent_submissions=recent_submissions,
+        recent_activity=recent_activity,
+        attendance_stats=attendance_stats,
+        total_assignments=total_assignments,
+        total_quizzes=total_quizzes,
+        course_stats=course_stats,
     )
 
 
@@ -152,8 +328,22 @@ def teacher():
 def admin():
     page = request.args.get('page', 1, type=int)
     per_page = 10
+    search_query = request.args.get('q', '', type=str).strip()
 
-    users_pagination = User.query.order_by(User.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    users_query = User.query
+    if search_query:
+        like = f'%{search_query}%'
+        users_query = users_query.filter(
+            db.or_(
+                User.username.ilike(like),
+                User.email.ilike(like),
+                User.full_name.ilike(like),
+            )
+        )
+
+    users_pagination = users_query.order_by(
+        User.created_at.desc()
+    ).paginate(page=page, per_page=per_page, error_out=False)
     users = users_pagination.items
     courses = Course.query.all()
     categories = Category.query.all()
@@ -166,6 +356,22 @@ def admin():
     unpublished_courses = Course.query.filter_by(is_published=False).all()
     pending_payments = Payment.query.filter_by(status='pending').all()
 
+    role_counts = dict(
+        db.session.query(Role.name, db.func.count(User.id))
+        .join(User, User.role_id == Role.id)
+        .group_by(Role.name)
+        .all()
+    )
+    total_enrollments = Enrollment.query.count()
+    total_certificates = Certificate.query.count()
+    published_courses = Course.query.filter_by(is_published=True).count()
+    recent_notices = Notice.query.order_by(Notice.created_at.desc()).limit(5).all()
+    active_since = (datetime.utcnow() - timedelta(days=7)).date()
+    active_users = User.query.filter(
+        User.last_activity_date.isnot(None),
+        User.last_activity_date >= active_since,
+    ).count()
+
     stats = {
         'total_users': User.query.count(),
         'total_courses': len(courses),
@@ -173,7 +379,16 @@ def admin():
         'total_sales': total_sales,
         'unapproved_teachers': unapproved_teachers,
         'unpublished_courses': unpublished_courses,
-        'pending_payments': pending_payments
+        'pending_payments': pending_payments,
+        'students': role_counts.get('Student', 0),
+        'teachers': role_counts.get('Teacher', 0),
+        'admins': role_counts.get('Admin', 0),
+        'total_enrollments': total_enrollments,
+        'total_certificates': total_certificates,
+        'published_courses': published_courses,
+        'pending_teacher_count': len(unapproved_teachers),
+        'pending_payment_count': len(pending_payments),
+        'active_users': active_users,
     }
 
     return render_template(
@@ -184,7 +399,9 @@ def admin():
         categories=categories,
         stats=stats,
         unpublished_courses=unpublished_courses,
-        pending_payments=pending_payments
+        pending_payments=pending_payments,
+        recent_notices=recent_notices,
+        search_query=search_query,
     )
 
 

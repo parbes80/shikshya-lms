@@ -1,7 +1,7 @@
 from database import db
 from models.course import Category, Course
 from models.interaction import Notification, Payment
-from models.learning import Enrollment, LessonProgress
+from models.learning import Enrollment, LessonProgress, Submission
 from models.user import User
 
 
@@ -215,3 +215,86 @@ def test_student_can_view_gradebook(
 
     assert response.status_code == 200
     assert data.course.title.encode() in response.data
+
+
+def test_student_dashboard_shows_continue_learning_and_upcoming_work(
+    client, auth, make_user, make_course, enroll
+):
+    student = make_user()
+    data = make_course(lessons=2, assignment=True)
+    enroll(student, data.course, completed=[data.lessons[0]])
+    auth.login(student)
+
+    response = client.get('/dashboard/student')
+    body = response.data
+
+    assert response.status_code == 200
+    assert b'Continue learning' in body
+    assert data.course.title.encode() in body
+    # The next unfinished lesson is surfaced.
+    assert data.lessons[1].title.encode() in body
+    # The upcoming assignment appears in the deadlines section.
+    assert b'Upcoming assignments' in body
+    assert data.assignment.title.encode() in body
+
+
+def test_student_dashboard_has_empty_states_without_enrolments(
+    client, auth, make_user
+):
+    student = make_user()
+    auth.login(student)
+
+    response = client.get('/dashboard/student')
+    body = response.data
+
+    assert response.status_code == 200
+    assert b'No course in progress yet' in body
+    assert b'No courses enrolled yet' in body
+    assert b'Nothing due' in body
+
+
+def test_teacher_dashboard_shows_pending_submissions_and_course_stats(
+    client, auth, make_user, make_course, enroll
+):
+    teacher = make_user(role='Teacher')
+    student = make_user()
+    data = make_course(teacher=teacher, lessons=2, assignment=True)
+    enroll(student, data.course, completed=[data.lessons[0]])
+    db.session.add(Submission(
+        assignment_id=data.assignment.id,
+        student_id=student.id,
+        file_url='uploads/submissions/test.pdf',
+    ))
+    db.session.commit()
+    auth.login(teacher)
+
+    response = client.get('/dashboard/teacher')
+    body = response.data
+
+    assert response.status_code == 200
+    assert b'Submissions to grade (1)' in body
+    assert b'Course completion statistics' in body
+    assert data.course.title.encode() in body
+    assert b'Pending' in body
+
+
+def test_admin_dashboard_shows_role_counts_and_search(
+    client, auth, make_user
+):
+    admin = make_user(role='Admin')
+    make_user(role='Teacher', approved=False, full_name='Pending Instructor')
+    make_user(role='Student', full_name='Searchable Learner')
+    auth.login(admin)
+
+    response = client.get('/dashboard/admin')
+    body = response.data
+
+    assert response.status_code == 200
+    assert b'Students' in body
+    assert b'Teachers' in body
+    assert b'Platform health' in body
+
+    search = client.get('/dashboard/admin?q=Searchable')
+    assert search.status_code == 200
+    assert b'Searchable Learner' in search.data
+    assert b'Pending Instructor' not in search.data

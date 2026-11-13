@@ -1,6 +1,6 @@
 # Shikshya LMS — UI/UX Modernization Log
 
-**Phase:** 2 (design system) and first Phase 3 slice (public homepage)
+**Phase:** 2 (design system), first Phase 3 slice (public homepage) and Phase 4 (dashboards)
 **Date:** 2026-11-13
 **Companion documents:** `docs/TECHNICAL_ASSESSMENT.md`, `docs/IMPLEMENTATION_ROADMAP.md`, `docs/UX_UI_IMPROVEMENT_PLAN.md`
 
@@ -95,3 +95,106 @@ New regressions:
 - Add loading skeletons and empty states to data-heavy dashboard widgets.
 - Enforce CSP after inline scripts/styles are moved to static files.
 - Continue the course/assignment/examination depth work in Phase 5.
+
+---
+
+## 6. Phase 4 — dashboard refresh
+
+**Status:** implemented in the working tree (see commit that follows this log).
+
+### 6.1 Route data
+
+`routes/dashboard.py` now supplies real, role-scoped context without changing
+existing behaviour:
+
+- **Student** — `continue_enrollment`, `next_lesson`, `upcoming_assignments`,
+  `upcoming_evaluations`, `announcements`, `recommended_courses` and
+  `pending_submissions_count`. Upcoming work is limited to the student's own
+  enrolled courses and excludes items already submitted.
+- **Teacher** — `pending_submissions_count`, `published_courses_count`,
+  `upcoming_evaluations`, `upcoming_live_classes`, `recent_submissions`,
+  `recent_activity`, `attendance_stats`, `total_assignments`, `total_quizzes`
+  and `course_stats`. Everything is filtered to courses owned by the teacher.
+- **Admin** — role counts, total enrollments, total certificates, published
+  course count, active users in the last 7 days, pending counts, recent notices
+  and a server-side `q` search over name, username and email. Pagination keeps
+  the search term.
+
+All values come from the database. No mock or invented dashboard data was
+added.
+
+### 6.2 Student dashboard
+
+`templates/student_dashboard.html` now has:
+
+- A four-card snapshot (enrolled, completed, awaiting feedback, certificates).
+- A **Continue learning** card that resumes the most recently updated lesson
+  and links directly to the next unfinished lesson.
+- **Upcoming assignments** and **upcoming evaluations** with meaningful empty
+  states.
+- Recent announcements, enrolled courses with progress, pending payments,
+  submission history with feedback, badges, attendance, certificates, quiz
+  results and recommended courses.
+- Empty states for every section when the student has no data.
+
+### 6.3 Teacher dashboard
+
+`templates/teacher_dashboard.html` now has:
+
+- A four-card snapshot (assigned, published, enrolled, submissions to grade).
+- Quick actions for creating a course, publishing an announcement, reviewing
+  submissions and jumping to curriculum management.
+- **Upcoming evaluations** and **upcoming live classes** with safe external
+  meeting links via `safe_url`.
+- **Course completion statistics** table with enrollment, completion and
+  average progress per course.
+- **Attendance overview** and **recent student submissions**.
+- The existing curriculum builder, quiz list, assignment list, enrolled-student
+  table, quiz-attempt table and grading form are preserved.
+
+### 6.4 Admin dashboard
+
+`templates/admin_dashboard.html` now has:
+
+- Eight snapshot metrics: total users, students, teachers, published/total
+  courses, enrollments, active users (7 days), certificates and recorded
+  revenue.
+- A **Platform health** card with pending approvals/payments and role counts.
+- Recent announcements and recent registrations.
+- A **Management** grid that links only to existing screens. Institution
+  management, role/permission editing, system settings, security monitoring
+  and cross-platform analytics are explicitly labelled as planned and are not
+  linked.
+- A server-side user search with pagination, a client-side course filter, and
+  the preserved user, teacher-approval, course-approval, payment, membership,
+  lab and category management sections.
+
+### 6.5 Verification
+
+```text
+python -m compileall -q app.py config.py extensions.py routes utils tests
+python -m pytest -q
+126 passed
+```
+
+New regressions in `tests/test_dashboard.py`:
+
+- Student dashboard exposes continue-learning and upcoming assignment data.
+- Student dashboard renders meaningful empty states without enrolments.
+- Teacher dashboard shows the pending-submission count and course statistics.
+- Admin dashboard renders role counts, platform health and filters users by
+  the `q` search term.
+
+### 6.6 Database changes
+
+None. No schema changes or migrations are required.
+
+### 6.7 Remaining work after Phase 4
+
+- Phase 3 leftovers: searchable catalogue, richer course detail page and player
+  navigation.
+- Phase 5: assignment/examination depth, late-submission policy, question banks
+  and reporting.
+- Phase 6: notifications, analytics, discussions and certificates.
+- Phase 7: central authorization, audit logging, versioned migrations and CSP
+  enforcement.

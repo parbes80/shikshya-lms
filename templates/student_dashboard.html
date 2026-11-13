@@ -3,54 +3,240 @@
 
 {% block content %}
 <div class="dashboard-container">
-  
-  <!-- Welcome and Gamification Block -->
+
+  <!-- Welcome -->
   <div class="dashboard-header">
     <div class="welcome-box">
       <div class="welcome-text">
         <h1>Namaste, {{ current_user.username }}!</h1>
-        <p class="text-muted">Ready to conquer your coding and styling goals today?</p>
+        <p class="text-muted">Here is what is happening with your learning today.</p>
       </div>
     </div>
-    
-    <!-- Streak Flame Card -->
+
     <div class="streak-badge-container">
       <div class="streak-icon">🔥</div>
       <div>
-        <h4 style="font-weight: 800; font-size: 1.25rem;">{{ current_user.streak_count }} Days Streak!</h4>
-        <p style="font-size: 0.8rem; opacity: 0.9;">Keep up the daily activity to grow your streak!</p>
+        <h4 style="font-weight: 800; font-size: 1.15rem;">{{ current_user.streak_count }} day streak</h4>
+        <p style="font-size: 0.78rem; opacity: 0.9;">Keep learning to grow it.</p>
       </div>
     </div>
-    <a href="{{ url_for('dashboard.student_gradebook') }}" class="btn btn-outline" style="flex-shrink: 0; padding: 0.5rem 1rem;">
+    <a href="{{ url_for('dashboard.student_gradebook') }}" class="ds-btn ds-btn--outline ds-btn--sm">
       <i class="fas fa-chart-bar"></i> Gradebook
     </a>
   </div>
 
-  <!-- Two-column dashboard split -->
+  <!-- Snapshot -->
+  <div class="stats-grid mb-6">
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-book-open"></i></div>
+      <div>
+        <div class="stat-number">{{ enrollments|length }}</div>
+        <div class="stat-label">Enrolled courses</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fas fa-circle-check"></i></div>
+      <div>
+        <div class="stat-number">{{ enrollments|selectattr('is_completed')|list|length }}</div>
+        <div class="stat-label">Completed</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
+      <div>
+        <div class="stat-number">{{ pending_submissions_count }}</div>
+        <div class="stat-label">Awaiting feedback</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-certificate"></i></div>
+      <div>
+        <div class="stat-number">{{ certificates|length }}</div>
+        <div class="stat-label">Certificates</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Continue learning -->
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">Pick up where you left off</span>
+        <h2 class="ds-section-title">Continue learning</h2>
+      </div>
+    </div>
+
+    {% if continue_enrollment %}
+      <div class="ds-card" style="display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); align-items: center;">
+        <div>
+          <span class="ds-badge">{{ continue_enrollment.course.category.name }}</span>
+          <h3 class="ds-card-title" style="margin-top: 0.6rem;">{{ continue_enrollment.course.title }}</h3>
+          <p class="ds-card-text">
+            {% if next_lesson %}
+              Next up: <strong>{{ next_lesson.title }}</strong>
+            {% else %}
+              You have completed every available lesson in this course.
+            {% endif %}
+          </p>
+          <div class="progress-container" style="margin-top: 0.9rem;">
+            <div class="progress-header">
+              <span>Course progress</span>
+              <span>{{ continue_enrollment.progress_percent }}%</span>
+            </div>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar-fill" style="width: {{ continue_enrollment.progress_percent }}%;"></div>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-start;">
+          {% if next_lesson %}
+            <a href="{{ url_for('course.player', slug=continue_enrollment.course.slug, lesson_id=next_lesson.id) }}" class="ds-btn ds-btn--primary">
+              <i class="fas fa-play"></i> Continue lesson
+            </a>
+          {% endif %}
+          <a href="{{ url_for('course.details', slug=continue_enrollment.course.slug) }}" class="ds-btn ds-btn--outline">View course</a>
+        </div>
+      </div>
+    {% else %}
+      <div class="ds-empty">
+        <i class="fas fa-book-reader"></i>
+        <h3>No course in progress yet</h3>
+        <p>Browse the catalogue and enrol in a course to start tracking your progress here.</p>
+        <a href="{{ url_for('course.index') }}" class="ds-btn ds-btn--primary ds-btn--sm" style="margin-top: 0.75rem;">Browse courses</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Upcoming work -->
+  <section class="ds-section">
+    <div class="ds-grid-2">
+      <div>
+        <div class="ds-section-head">
+          <div>
+            <span class="ds-eyebrow">Deadlines</span>
+            <h2 class="ds-section-title" style="font-size: 1.25rem;">Upcoming assignments</h2>
+          </div>
+        </div>
+        {% if upcoming_assignments %}
+          <div style="display: grid; gap: 0.75rem;">
+            {% for assignment in upcoming_assignments %}
+              <div class="ds-card" style="padding: 1rem 1.15rem;">
+                <div class="flex-between flex-wrap gap-2">
+                  <div>
+                    <strong>{{ assignment.title }}</strong>
+                    <p class="ds-card-text" style="margin-top: 0.2rem;">{{ assignment.course.title }}</p>
+                  </div>
+                  <span class="ds-badge ds-badge--warning"><i class="fas fa-clock"></i> {{ assignment.due_date.strftime('%b %d, %Y') }}</span>
+                </div>
+                <a href="{{ url_for('course.player', slug=assignment.course.slug) }}" class="ds-btn ds-btn--ghost ds-btn--sm" style="margin-top: 0.5rem; padding-left: 0;">Open course <i class="fas fa-arrow-right"></i></a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="ds-empty">
+            <i class="fas fa-clipboard-check"></i>
+            <h3>Nothing due</h3>
+            <p>You have no upcoming assignments in your enrolled courses.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="ds-section-head">
+          <div>
+            <span class="ds-eyebrow">Assessments</span>
+            <h2 class="ds-section-title" style="font-size: 1.25rem;">Upcoming evaluations</h2>
+          </div>
+        </div>
+        {% if upcoming_evaluations %}
+          <div style="display: grid; gap: 0.75rem;">
+            {% for evaluation in upcoming_evaluations %}
+              <div class="ds-card" style="padding: 1rem 1.15rem;">
+                <div class="flex-between flex-wrap gap-2">
+                  <div>
+                    <strong>{{ evaluation.title }}</strong>
+                    <p class="ds-card-text" style="margin-top: 0.2rem;">{{ evaluation.course.title }} · {{ evaluation.eval_type|replace('_', ' ')|title }}</p>
+                  </div>
+                  <span class="ds-badge">
+                    {% if evaluation.scheduled_at %}
+                      {{ evaluation.scheduled_at.strftime('%b %d, %Y') }}
+                    {% else %}
+                      Not scheduled
+                    {% endif %}
+                  </span>
+                </div>
+                <a href="{{ url_for('eval.detail', eval_id=evaluation.id) }}" class="ds-btn ds-btn--ghost ds-btn--sm" style="margin-top: 0.5rem; padding-left: 0;">View details <i class="fas fa-arrow-right"></i></a>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="ds-empty">
+            <i class="fas fa-clipboard-list"></i>
+            <h3>No upcoming evaluations</h3>
+            <p>New quizzes and assessments will appear here when they are scheduled.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Announcements -->
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">From the platform</span>
+        <h2 class="ds-section-title">Recent announcements</h2>
+      </div>
+      <a href="{{ url_for('notice.list_notices') }}" class="ds-btn ds-btn--ghost ds-btn--sm">All notices <i class="fas fa-arrow-right"></i></a>
+    </div>
+    {% if announcements %}
+      <div class="ds-grid">
+        {% for notice in announcements %}
+          <div class="ds-card">
+            <div class="flex-between flex-wrap gap-2" style="margin-bottom: 0.4rem;">
+              <span class="ds-badge {% if notice.is_pinned %}ds-badge--warning{% endif %}">
+                {% if notice.is_pinned %}<i class="fas fa-thumbtack"></i> Pinned{% else %}Notice{% endif %}
+              </span>
+              <small class="text-muted">{{ notice.created_at.strftime('%b %d, %Y') }}</small>
+            </div>
+            <h3 class="ds-card-title">{{ notice.title }}</h3>
+            <p class="ds-card-text">{{ notice.content[:150] }}{% if notice.content|length > 150 %}...{% endif %}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="ds-empty">
+        <i class="fas fa-bullhorn"></i>
+        <h3>No announcements yet</h3>
+        <p>Platform and course announcements will appear here.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Main split -->
   <div class="content-grid">
-    
-    <!-- Left Column: Active Enrollments -->
+
+    <!-- Left column -->
     <div>
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-graduation-cap" style="color: var(--primary);"></i> Enrolled Courses</h2>
+      <h2 style="font-size: 1.4rem; margin-bottom: 1rem;"><i class="fas fa-graduation-cap" style="color: var(--primary);"></i> My courses</h2>
       <div class="list-container">
         {% if enrollments %}
           {% for enr in enrollments %}
             <div class="card" style="margin-bottom: 1rem; display: grid; grid-template-columns: 80px 1fr; gap: 1.5rem; align-items: center;">
               <div class="flex-center" style="aspect-ratio: 1; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--primary), var(--primary-light)); font-size: 2rem; color: white;">
-                <i class="fas fa-code"></i>
+                <i class="fas fa-book-open"></i>
               </div>
               <div>
                 <div class="flex-between" style="align-items: flex-start; margin-bottom: 0.5rem;">
                   <div>
-                    <h3 style="font-size: 1.15rem; font-weight: bold;"><a href="{{ url_for('course.details', slug=enr.course.slug) }}">{{ enr.course.title }}</a></h3>
+                    <h3 style="font-size: 1.1rem; font-weight: bold;"><a href="{{ url_for('course.details', slug=enr.course.slug) }}">{{ enr.course.title }}</a></h3>
                     <small class="text-muted">Instructor: {{ enr.course.teacher.username }}</small>
                   </div>
-                  <a href="{{ url_for('course.details', slug=enr.course.slug) }}" class="btn btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;"><i class="fas fa-eye"></i> View Course</a>
+                  <a href="{{ url_for('course.player', slug=enr.course.slug) }}" class="ds-btn ds-btn--outline ds-btn--sm"><i class="fas fa-play"></i> Open</a>
                 </div>
-                
                 <div class="progress-container">
                   <div class="progress-header">
-                    <span>Course Progress</span>
+                    <span>Course progress</span>
                     <span>{{ enr.progress_percent }}%</span>
                   </div>
                   <div class="progress-bar-wrapper">
@@ -61,18 +247,17 @@
             </div>
           {% endfor %}
         {% else %}
-          <div class="card text-center" style="padding: 3rem;">
-            <i class="fas fa-book-reader" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
-            <h3>No courses enrolled yet!</h3>
-            <p class="text-muted mt-2">Explore our curated programs and start studying now.</p>
-            <a href="{{ url_for('course.index') }}" class="btn btn-primary mt-6"><i class="fas fa-search"></i> Browse Catalog</a>
+          <div class="ds-empty">
+            <i class="fas fa-book-reader"></i>
+            <h3>No courses enrolled yet</h3>
+            <p>Explore the catalogue and start studying at your own pace.</p>
+            <a href="{{ url_for('course.index') }}" class="ds-btn ds-btn--primary ds-btn--sm" style="margin-top: 0.75rem;">Browse catalogue</a>
           </div>
         {% endif %}
       </div>
 
-      <!-- Pending Payments -->
       {% if pending_payments %}
-        <h2 style="font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem;"><i class="fas fa-clock" style="color: #d97706;"></i> Pending Authorizations</h2>
+        <h2 style="font-size: 1.4rem; margin-top: 2rem; margin-bottom: 1rem;"><i class="fas fa-clock" style="color: #d97706;"></i> Pending payments</h2>
         <div class="flex-col gap-3 mb-6">
           {% for pp in pending_payments %}
             <div class="flex-between flex-wrap gap-2" style="background: #fefce8; border: 1px solid #fde68a; padding: 1rem; border-radius: var(--radius-md);">
@@ -82,60 +267,59 @@
                   Rs. {{ "{:,.0f}".format(pp.amount) }} via {{ pp.payment_method }} · Submitted {{ pp.created_at.strftime('%b %d, %Y') }}
                 </p>
               </div>
-              <span class="badge" style="background: #fde68a; color: #92400e;">
-                <i class="fas fa-hourglass-half"></i> Pending
-              </span>
+              <span class="ds-badge ds-badge--warning"><i class="fas fa-hourglass-half"></i> Pending</span>
             </div>
           {% endfor %}
         </div>
       {% endif %}
 
-      <!-- Pending Assignments & Submissions -->
-      <h2 style="font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem;"><i class="fas fa-tasks" style="color: var(--secondary);"></i> Assignments Submissions</h2>
+      <h2 style="font-size: 1.4rem; margin-top: 2rem; margin-bottom: 1rem;"><i class="fas fa-tasks" style="color: var(--secondary);"></i> My submissions</h2>
       <div class="card">
         {% if submissions %}
-          <div class="table-wrapper">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+          <div class="ds-table-wrap">
+            <table>
               <thead>
-                <tr style="border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; color: var(--text-muted); font-weight: bold;">
-                  <th style="padding: 0.75rem;">Course / Assignment</th>
-                  <th style="padding: 0.75rem;">Submitted Date</th>
-                  <th style="padding: 0.75rem;">Status / Score</th>
-                  <th style="padding: 0.75rem;">Feedback</th>
+                <tr>
+                  <th>Course / Assignment</th>
+                  <th>Submitted</th>
+                  <th>Status / Score</th>
+                  <th>Feedback</th>
                 </tr>
               </thead>
               <tbody>
                 {% for sub in submissions %}
-                  <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 0.75rem;">
+                  <tr>
+                    <td>
                       <strong>{{ sub.assignment.title }}</strong><br>
                       <small class="text-muted">{{ sub.assignment.course.title }}</small>
                     </td>
-                    <td style="padding: 0.75rem;">{{ sub.submitted_at.strftime('%Y-%m-%d') }}</td>
-                    <td style="padding: 0.75rem;">
+                    <td>{{ sub.submitted_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
                       {% if sub.is_graded %}
-                        <span class="badge-success badge" style="border-radius: var(--radius-sm);">{{ sub.marks_obtained }} / {{ sub.assignment.max_marks }}</span>
+                        <span class="ds-badge ds-badge--success">{{ sub.marks_obtained }} / {{ sub.assignment.max_marks }}</span>
                       {% else %}
-                        <span class="badge-warning badge" style="border-radius: var(--radius-sm);">Pending Review</span>
+                        <span class="ds-badge ds-badge--warning">Pending review</span>
                       {% endif %}
                     </td>
-                    <td style="padding: 0.75rem;">{{ sub.feedback or 'No feedback yet.' }}</td>
+                    <td>{{ sub.feedback or 'No feedback yet.' }}</td>
                   </tr>
                 {% endfor %}
               </tbody>
             </table>
           </div>
         {% else %}
-          <p class="text-muted text-center" style="padding: 1.5rem;">No assignments submitted yet.</p>
+          <div class="ds-empty" style="border: none; background: transparent;">
+            <i class="fas fa-file-pen"></i>
+            <h3>No submissions yet</h3>
+            <p>Submitted assignments and teacher feedback will appear here.</p>
+          </div>
         {% endif %}
       </div>
     </div>
 
-    <!-- Right Column: Gamification Badges, Certificates, & Quizzes -->
+    <!-- Right column -->
     <div>
-      
-      <!-- Gamified badges drawer -->
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-trophy" style="color: var(--accent);"></i> Badges Earned</h2>
+      <h2 style="font-size: 1.4rem; margin-bottom: 1rem;"><i class="fas fa-trophy" style="color: var(--accent);"></i> Badges earned</h2>
       <div class="card mb-6">
         {% if badges %}
           <div class="badges-list">
@@ -149,12 +333,11 @@
             {% endfor %}
           </div>
         {% else %}
-          <p class="text-muted text-sm text-center">Gain badges by watching lessons and attempting quizzes!</p>
+          <p class="text-muted text-sm text-center">Earn badges by completing lessons and attempting quizzes.</p>
         {% endif %}
       </div>
 
-      <!-- Attendance Summary -->
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-clipboard-check" style="color: #10b981;"></i> My Attendance</h2>
+      <h2 style="font-size: 1.4rem; margin-bottom: 1rem;"><i class="fas fa-clipboard-check" style="color: #10b981;"></i> Attendance</h2>
       <div class="list-container mb-6">
         {% if enrollments %}
           {% for enr in enrollments %}
@@ -166,67 +349,117 @@
                 <small class="text-muted">
                   {% if att_records %}
                     {{ present|length }} / {{ att_records|length }} sessions present
-                    ({{ (present|length / att_records|length * 100)|round }}%)
                   {% else %}
                     No attendance records yet
                   {% endif %}
                 </small>
               </div>
-              <span class="badge" style="background: {% if att_records and present|length / att_records|length >= 0.75 %}rgba(16, 185, 129, 0.15); color: var(--secondary){% else %}rgba(245, 158, 11, 0.15); color: var(--accent){% endif %}; border-radius: var(--radius-sm);">
+              <span class="ds-badge {% if att_records and present|length / att_records|length >= 0.75 %}ds-badge--success{% else %}ds-badge--warning{% endif %}">
                 {% if att_records %}{{ (present|length / att_records|length * 100)|round }}%{% else %}--{% endif %}
               </span>
             </div>
           {% endfor %}
         {% else %}
-          <p class="text-muted text-center" style="padding: 1.5rem;">Enroll in a course to track attendance.</p>
+          <p class="text-muted text-center" style="padding: 1.5rem;">Enrol in a course to track attendance.</p>
         {% endif %}
       </div>
 
-      <!-- Certificates generated drawer -->
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-certificate" style="color: var(--primary);"></i> My Certificates</h2>
+      <h2 style="font-size: 1.4rem; margin-bottom: 1rem;"><i class="fas fa-certificate" style="color: var(--primary);"></i> Certificates</h2>
       <div class="list-container mb-6">
         {% if certificates %}
           {% for cert in certificates %}
             <div class="list-row">
               <div>
                 <h4 style="font-size: 0.95rem; font-weight: bold;"><a href="{{ url_for('api.view_certificate', unique_code=cert.unique_code) }}">{{ cert.course.title }}</a></h4>
-                <small class="text-muted">Issued Code: {{ cert.unique_code }}</small>
+                <small class="text-muted">Code: {{ cert.unique_code }}</small>
               </div>
-              <a href="{{ url_for('api.view_certificate', unique_code=cert.unique_code) }}" class="btn btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-eye"></i> View</a>
+              <a href="{{ url_for('api.view_certificate', unique_code=cert.unique_code) }}" class="ds-btn ds-btn--primary ds-btn--sm"><i class="fas fa-eye"></i> View</a>
             </div>
           {% endfor %}
         {% else %}
-          <div class="card text-center" style="padding: 1.5rem;">
-            <p class="text-muted text-sm">Complete 100% of course curriculum content to receive your official QR certified verification!</p>
+          <div class="ds-empty" style="padding: 1.5rem;">
+            <i class="fas fa-award"></i>
+            <h3>No certificates yet</h3>
+            <p>Complete a course to receive a verifiable certificate.</p>
           </div>
         {% endif %}
       </div>
 
-      <!-- Quiz Attempts Dashboard -->
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-edit" style="color: var(--primary);"></i> Exam Scoreboard</h2>
+      <h2 style="font-size: 1.4rem; margin-bottom: 1rem;"><i class="fas fa-edit" style="color: var(--primary);"></i> Quiz results</h2>
       <div class="card">
         {% if quiz_attempts %}
           <ul class="flex-col gap-3" style="list-style: none;">
             {% for att in quiz_attempts %}
-              <li class="flex-between" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+              <li class="flex-between" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; gap: 0.75rem;">
                 <div>
                   <strong>{{ att.quiz.title }}</strong><br>
                   <small class="text-muted">{{ att.completed_at.strftime('%Y-%m-%d %H:%M') }}</small>
                 </div>
-                <span class="badge" style="background: {% if att.is_passed %}rgba(16, 185, 129, 0.15); color: var(--secondary){% else %}rgba(239, 68, 68, 0.15); color: #ef4444{% endif %}; border-radius: var(--radius-sm); font-weight: bold;">
-                  {{ att.score }}% ({{ 'PASSED' if att.is_passed else 'FAILED' }})
+                <span class="ds-badge {% if att.is_passed %}ds-badge--success{% else %}ds-badge--error{% endif %}">
+                  {{ att.score }}% · {{ 'Passed' if att.is_passed else 'Failed' }}
                 </span>
               </li>
             {% endfor %}
           </ul>
         {% else %}
-          <p class="text-muted text-sm text-center">No quizzes attempted yet.</p>
+          <div class="ds-empty" style="border: none; background: transparent; padding: 1.25rem;">
+            <i class="fas fa-question-circle"></i>
+            <h3>No quiz attempts</h3>
+            <p>Quiz scores will appear here after your first attempt.</p>
+          </div>
         {% endif %}
       </div>
-
     </div>
-
   </div>
+
+  <!-- Recommended courses -->
+  <section class="ds-section" style="margin-top: 2.5rem; margin-bottom: 0;">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">Keep going</span>
+        <h2 class="ds-section-title">Recommended for you</h2>
+        <p class="ds-section-subtitle">Published courses you are not enrolled in yet.</p>
+      </div>
+      <a href="{{ url_for('course.index') }}" class="ds-btn ds-btn--ghost ds-btn--sm">Browse all <i class="fas fa-arrow-right"></i></a>
+    </div>
+    {% if recommended_courses %}
+      <div class="courses-grid">
+        {% for course in recommended_courses %}
+          <div class="card course-card">
+            <div class="course-thumbnail">
+              {% if course.thumbnail_url and course.thumbnail_url != 'course_default.jpg' %}
+                <img src="{{ course.thumbnail_url|asset_url }}" alt="{{ course.title }}" class="w-full h-full" style="object-fit: cover;">
+              {% else %}
+                <div class="w-full h-full flex-center" style="background: linear-gradient(135deg, var(--primary-dark), var(--primary-light)); font-size: 2.5rem; color: white;">
+                  <i class="fas fa-book-reader"></i>
+                </div>
+              {% endif %}
+            </div>
+            <div class="course-content">
+              <span class="course-category">{{ course.category.name }}</span>
+              <a href="{{ url_for('course.details', slug=course.slug) }}"><h3 class="course-title">{{ course.title }}</h3></a>
+              <p class="course-desc">{{ course.description[:100] }}{% if course.description|length > 100 %}...{% endif %}</p>
+              <div class="course-footer">
+                <div class="course-teacher">
+                  <div class="course-teacher-initial">{{ course.teacher.username[:1].upper() }}</div>
+                  <span>{{ course.teacher.username }}</span>
+                </div>
+                <div class="course-price {% if course.price == 0.0 %}free{% endif %}">
+                  {% if course.price == 0.0 %}Free{% else %}Rs. {{ "{:,.0f}".format(course.price) }}{% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="ds-empty">
+        <i class="fas fa-compass"></i>
+        <h3>No recommendations right now</h3>
+        <p>You are enrolled in every published course, or new courses have not been published yet.</p>
+      </div>
+    {% endif %}
+  </section>
 
 </div>
 {% endblock %}

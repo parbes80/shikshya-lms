@@ -2,137 +2,365 @@
 {% block title %}Admin Control Panel{% endblock %}
 
 {% block content %}
-<div class="admin-dashboard">
-  
+<div class="admin-dashboard dashboard-container">
+
+  <!-- Header + quick actions -->
   <div class="dashboard-header">
     <div class="welcome-text">
-      <h1>Administrator Control Center</h1>
-      <p style="color: var(--text-muted);">Monitor metrics, manage platform roles, and approve new teachers.</p>
+      <h1>Administrator control centre</h1>
+      <p class="text-muted">Monitor platform activity, manage users and approve content.</p>
+    </div>
+    <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+      <a href="{{ url_for('dashboard.admin_bulk_import_users') }}" class="ds-btn ds-btn--primary"><i class="fas fa-upload"></i> Bulk import users</a>
+      <a href="{{ url_for('notice.create') }}" class="ds-btn ds-btn--outline"><i class="fas fa-bullhorn"></i> Publish announcement</a>
+      <a href="{{ url_for('payment.manage_plans') }}" class="ds-btn ds-btn--outline"><i class="fas fa-crown"></i> Membership plans</a>
     </div>
   </div>
 
-  <!-- Main System Stats -->
-  <div class="stats-grid">
+  <!-- Snapshot -->
+  <div class="stats-grid mb-6">
     <div class="stat-card">
       <div class="stat-icon"><i class="fas fa-users-cog"></i></div>
       <div>
         <div class="stat-number">{{ stats.total_users }}</div>
-        <div class="stat-label">Total Users</div>
+        <div class="stat-label">Total users</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon green"><i class="fas fa-video"></i></div>
+      <div class="stat-icon green"><i class="fas fa-user-graduate"></i></div>
       <div>
-        <div class="stat-number">{{ stats.total_courses }}</div>
-        <div class="stat-label">Total Courses</div>
+        <div class="stat-number">{{ stats.students }}</div>
+        <div class="stat-label">Students</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon orange"><i class="fas fa-tags"></i></div>
+      <div class="stat-icon orange"><i class="fas fa-chalkboard-teacher"></i></div>
       <div>
-        <div class="stat-number">{{ stats.total_categories }}</div>
-        <div class="stat-label">Categories</div>
+        <div class="stat-number">{{ stats.teachers }}</div>
+        <div class="stat-label">Teachers</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+      <div class="stat-icon"><i class="fas fa-book"></i></div>
       <div>
-        <div class="stat-number">Rs. {{ stats.total_sales }}</div>
-        <div class="stat-label">System Revenue</div>
+        <div class="stat-number">{{ stats.published_courses }} / {{ stats.total_courses }}</div>
+        <div class="stat-label">Published courses</div>
       </div>
     </div>
   </div>
 
+  <div class="stats-grid mb-6">
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fas fa-user-check"></i></div>
+      <div>
+        <div class="stat-number">{{ stats.total_enrollments }}</div>
+        <div class="stat-label">Enrollments</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"><i class="fas fa-bolt"></i></div>
+      <div>
+        <div class="stat-number">{{ stats.active_users }}</div>
+        <div class="stat-label">Active last 7 days</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-certificate"></i></div>
+      <div>
+        <div class="stat-number">{{ stats.total_certificates }}</div>
+        <div class="stat-label">Certificates issued</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fas fa-money-bill-wave"></i></div>
+      <div>
+        <div class="stat-number">Rs. {{ "{:,.0f}".format(stats.total_sales) }}</div>
+        <div class="stat-label">Recorded revenue</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Platform health + recent notices -->
+  <section class="ds-section">
+    <div class="ds-grid-2">
+      <div>
+        <div class="ds-section-head">
+          <div>
+            <span class="ds-eyebrow">Operations</span>
+            <h2 class="ds-section-title" style="font-size: 1.25rem;">Platform health</h2>
+          </div>
+        </div>
+        <div class="ds-card">
+          <ul style="list-style: none; display: grid; gap: 0.75rem; margin: 0; padding: 0;">
+            <li class="flex-between">
+              <span><i class="fas fa-user-clock" style="color: var(--ds-warning);"></i> Pending teacher approvals</span>
+              <span class="ds-badge {% if stats.pending_teacher_count %}ds-badge--warning{% else %}ds-badge--success{% endif %}">{{ stats.pending_teacher_count }}</span>
+            </li>
+            <li class="flex-between">
+              <span><i class="fas fa-file-circle-exclamation" style="color: var(--ds-warning);"></i> Courses awaiting approval</span>
+              <span class="ds-badge {% if stats.unpublished_courses %}ds-badge--warning{% else %}ds-badge--success{% endif %}">{{ stats.unpublished_courses|length }}</span>
+            </li>
+            <li class="flex-between">
+              <span><i class="fas fa-credit-card" style="color: var(--ds-warning);"></i> Pending payments</span>
+              <span class="ds-badge {% if stats.pending_payment_count %}ds-badge--warning{% else %}ds-badge--success{% endif %}">{{ stats.pending_payment_count }}</span>
+            </li>
+            <li class="flex-between">
+              <span><i class="fas fa-shield-halved" style="color: var(--ds-success);"></i> Administrator accounts</span>
+              <span class="ds-badge">{{ stats.admins }}</span>
+            </li>
+            <li class="flex-between">
+              <span><i class="fas fa-tags" style="color: var(--ds-primary);"></i> Course categories</span>
+              <span class="ds-badge">{{ stats.total_categories }}</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div>
+        <div class="ds-section-head">
+          <div>
+            <span class="ds-eyebrow">Communication</span>
+            <h2 class="ds-section-title" style="font-size: 1.25rem;">Recent announcements</h2>
+          </div>
+          <a href="{{ url_for('notice.list_notices') }}" class="ds-btn ds-btn--ghost ds-btn--sm">All notices <i class="fas fa-arrow-right"></i></a>
+        </div>
+        {% if recent_notices %}
+          <div style="display: grid; gap: 0.75rem;">
+            {% for notice in recent_notices %}
+              <div class="ds-card" style="padding: 1rem 1.15rem;">
+                <div class="flex-between flex-wrap gap-2">
+                  <strong>{{ notice.title }}</strong>
+                  <small class="text-muted">{{ notice.created_at.strftime('%b %d, %Y') }}</small>
+                </div>
+                <p class="ds-card-text" style="margin-top: 0.25rem;">{{ notice.content[:120] }}{% if notice.content|length > 120 %}...{% endif %}</p>
+                <span class="ds-badge" style="margin-top: 0.5rem;">{{ notice.target_role|title }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="ds-empty">
+            <i class="fas fa-bullhorn"></i>
+            <h3>No announcements yet</h3>
+            <p>Publish a notice to reach students, teachers or everyone.</p>
+            <a href="{{ url_for('notice.create') }}" class="ds-btn ds-btn--primary ds-btn--sm" style="margin-top: 0.75rem;">Publish announcement</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Management modules -->
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">Administration</span>
+        <h2 class="ds-section-title">Management</h2>
+        <p class="ds-section-subtitle">Links below go to existing management screens. Planned modules are listed separately so nothing looks available when it is not.</p>
+      </div>
+    </div>
+    <div class="ds-grid">
+      <a href="#registered-users" class="ds-card ds-card--interactive">
+        <span class="ds-icon"><i class="fas fa-users"></i></span>
+        <h3 class="ds-card-title">User management</h3>
+        <p class="ds-card-text">Search, review and remove accounts, and approve teachers.</p>
+      </a>
+      <a href="{{ url_for('dashboard.admin_bulk_import_users') }}" class="ds-card ds-card--interactive">
+        <span class="ds-icon ds-icon--violet"><i class="fas fa-upload"></i></span>
+        <h3 class="ds-card-title">Bulk user import</h3>
+        <p class="ds-card-text">Create multiple student or teacher accounts from a CSV file.</p>
+      </a>
+      <a href="#all-courses" class="ds-card ds-card--interactive">
+        <span class="ds-icon ds-icon--success"><i class="fas fa-book"></i></span>
+        <h3 class="ds-card-title">Course management</h3>
+        <p class="ds-card-text">Approve unpublished courses and review the full catalogue.</p>
+      </a>
+      <a href="#categories" class="ds-card ds-card--interactive">
+        <span class="ds-icon"><i class="fas fa-tags"></i></span>
+        <h3 class="ds-card-title">Category management</h3>
+        <p class="ds-card-text">Review categories and add new subject areas.</p>
+      </a>
+      <a href="{{ url_for('payment.manage_plans') }}" class="ds-card ds-card--interactive">
+        <span class="ds-icon ds-icon--violet"><i class="fas fa-crown"></i></span>
+        <h3 class="ds-card-title">Membership &amp; coupons</h3>
+        <p class="ds-card-text">Manage plans, pricing and discount coupons.</p>
+      </a>
+      <a href="{{ url_for('notice.list_notices') }}" class="ds-card ds-card--interactive">
+        <span class="ds-icon ds-icon--success"><i class="fas fa-bullhorn"></i></span>
+        <h3 class="ds-card-title">Announcement management</h3>
+        <p class="ds-card-text">Create, edit and remove platform notices.</p>
+      </a>
+      <a href="{{ url_for('lab.index') }}" class="ds-card ds-card--interactive">
+        <span class="ds-icon"><i class="fas fa-flask"></i></span>
+        <h3 class="ds-card-title">Labs &amp; simulations</h3>
+        <p class="ds-card-text">Publish practical lab exercises and walkthroughs.</p>
+      </a>
+      <a href="#pending-payments" class="ds-card ds-card--interactive">
+        <span class="ds-icon ds-icon--violet"><i class="fas fa-credit-card"></i></span>
+        <h3 class="ds-card-title">Payment verification</h3>
+        <p class="ds-card-text">Verify pending manual payments and enrol learners.</p>
+      </a>
+    </div>
+
+    <div class="ds-alert ds-alert--warning" style="margin-top: 1.25rem;">
+      <i class="fas fa-circle-info"></i>
+      <div>
+        <strong>Planned modules.</strong>
+        Institution management, role and permission editing, system settings, security monitoring and cross-platform analytics are not implemented yet. They are tracked in the roadmap and are intentionally not linked here.
+      </div>
+    </div>
+  </section>
+
+  <!-- Recent registrations -->
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">Newest accounts</span>
+        <h2 class="ds-section-title">Recent registrations</h2>
+      </div>
+    </div>
+    {% if users %}
+      <div class="ds-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Role</th>
+              <th>Joined</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for usr in users[:5] %}
+              <tr>
+                <td><strong>{{ usr.full_name or usr.username }}</strong><br><small class="text-muted">@{{ usr.username }}</small></td>
+                <td><span class="ds-badge">{{ usr.role.name }}</span></td>
+                <td>{{ usr.created_at.strftime('%b %d, %Y') }}</td>
+                <td>
+                  {% if usr.role.name == 'Teacher' and not usr.is_approved %}
+                    <span class="ds-badge ds-badge--warning">Awaiting approval</span>
+                  {% else %}
+                    <span class="ds-badge ds-badge--success">Active</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="ds-empty">
+        <i class="fas fa-user-plus"></i>
+        <h3>No accounts found</h3>
+        <p>New registrations will appear here.</p>
+      </div>
+    {% endif %}
+  </section>
+
   <!-- Admin control split grid -->
   <div class="content-grid">
-    
+
     <!-- Left column: Users, teachers, and course approvals -->
     <div>
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-users" style="color: var(--primary);"></i> Registered Users
-        <a href="{{ url_for('dashboard.admin_bulk_import_users') }}" class="btn btn-outline" style="float: right; padding: 0.35rem 0.7rem; font-size: 0.8rem;"><i class="fas fa-upload"></i> Bulk Import</a>
-      </h2>
+      <h2 id="registered-users" style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-users" style="color: var(--primary);"></i> Registered users</h2>
       <div class="card" style="margin-bottom: 2rem;">
-        <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+        <form action="{{ url_for('dashboard.admin') }}" method="GET" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+          <label class="sr-only" for="admin-user-search">Search users</label>
+          <input id="admin-user-search" type="search" name="q" value="{{ search_query }}" class="form-control" placeholder="Search by name, username or email..." style="flex: 1; min-width: 220px; padding: 0.5rem 0.9rem; font-size: 0.85rem;">
+          <button type="submit" class="ds-btn ds-btn--primary ds-btn--sm"><i class="fas fa-search"></i> Search</button>
+          {% if search_query %}
+            <a href="{{ url_for('dashboard.admin') }}" class="ds-btn ds-btn--ghost ds-btn--sm">Clear</a>
+          {% endif %}
+        </form>
+
+        {% if users %}
+          <div class="ds-table-wrap">
+            <table>
               <thead>
-                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
-                  <th style="padding: 0.75rem;">User</th>
-                  <th style="padding: 0.75rem;">Role</th>
-                  <th style="padding: 0.75rem;">Streak</th>
-                  <th style="padding: 0.75rem;">Approved?</th>
-                  <th style="padding: 0.75rem;">Actions</th>
+                <tr>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Streak</th>
+                  <th>Approved?</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {% for usr in users %}
-                  <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 0.75rem;">
+                  <tr>
+                    <td>
                       <strong>{{ usr.full_name or usr.username }}</strong><br>
-                      <small style="color: var(--text-muted);">@{{ usr.username }} &middot; {{ usr.email }}</small>
+                      <small class="text-muted">@{{ usr.username }} &middot; {{ usr.email }}</small>
                     </td>
-                    <td style="padding: 0.75rem;"><span class="difficulty-badge beginner" style="position: static; font-size: 0.65rem; padding: 0.2rem 0.4rem;">{{ usr.role.name }}</span></td>
-                    <td style="padding: 0.75rem;">🔥 {{ usr.streak_count }} days</td>
-                    <td style="padding: 0.75rem;">
+                    <td><span class="ds-badge">{{ usr.role.name }}</span></td>
+                    <td>🔥 {{ usr.streak_count }} days</td>
+                    <td>
                       {% if usr.role.name == 'Teacher' %}
                         {% if usr.is_approved %}
-                          <span style="color: var(--secondary); font-weight: bold;"><i class="fas fa-check-circle"></i> Yes</span>
+                          <span class="ds-badge ds-badge--success"><i class="fas fa-check-circle"></i> Yes</span>
                         {% else %}
-                          <span style="color: var(--accent); font-weight: bold;"><i class="fas fa-exclamation-circle"></i> Waiting</span>
+                          <span class="ds-badge ds-badge--warning"><i class="fas fa-exclamation-circle"></i> Waiting</span>
                         {% endif %}
                       {% else %}
-                        <span style="color: var(--text-muted); font-size: 0.8rem;">Auto-Active</span>
+                        <span class="text-muted text-sm">Auto-active</span>
                       {% endif %}
                     </td>
-                    <td style="padding: 0.75rem;">
+                    <td>
                       {% if usr.role.name != 'Admin' %}
                       <form action="{{ url_for('dashboard.delete_user', user_id=usr.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete user &quot;{{ usr.username|escape }}&quot;? This cannot be undone.')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn" style="padding: 0.3rem 0.5rem; font-size: 0.7rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i> Delete</button>
+                        <button type="submit" class="ds-btn ds-btn--sm" style="background: var(--ds-error); color: #fff;"><i class="fas fa-trash"></i> Delete</button>
                       </form>
                       {% endif %}
                     </td>
                   </tr>
                 {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% if users_pagination.pages > 1 %}
-          <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-            {% if users_pagination.has_prev %}
-              <a href="{{ url_for('dashboard.admin', page=users_pagination.prev_num) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-chevron-left"></i></a>
-            {% endif %}
-            {% for p in range(1, users_pagination.pages + 1) %}
-              <a href="{{ url_for('dashboard.admin', page=p) }}" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: var(--radius-sm); text-decoration: none; {% if p == users_pagination.page %}background: var(--primary); color: white;{% else %}color: var(--text-main); border: 1px solid var(--border-color);{% endif %}">{{ p }}</a>
-            {% endfor %}
-            {% if users_pagination.has_next %}
-              <a href="{{ url_for('dashboard.admin', page=users_pagination.next_num) }}" class="btn btn-outline" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;"><i class="fas fa-chevron-right"></i></a>
-            {% endif %}
-            <small style="color: var(--text-muted); margin-left: 0.5rem;">{{ users_pagination.total }} total</small>
+              </tbody>
+            </table>
+          </div>
+          {% if users_pagination.pages > 1 %}
+            <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color); flex-wrap: wrap;">
+              {% if users_pagination.has_prev %}
+                <a href="{{ url_for('dashboard.admin', page=users_pagination.prev_num, q=search_query) }}" class="ds-btn ds-btn--outline ds-btn--sm" aria-label="Previous page"><i class="fas fa-chevron-left"></i></a>
+              {% endif %}
+              {% for p in range(1, users_pagination.pages + 1) %}
+                <a href="{{ url_for('dashboard.admin', page=p, q=search_query) }}" class="ds-btn ds-btn--sm {% if p == users_pagination.page %}ds-btn--primary{% else %}ds-btn--outline{% endif %}">{{ p }}</a>
+              {% endfor %}
+              {% if users_pagination.has_next %}
+                <a href="{{ url_for('dashboard.admin', page=users_pagination.next_num, q=search_query) }}" class="ds-btn ds-btn--outline ds-btn--sm" aria-label="Next page"><i class="fas fa-chevron-right"></i></a>
+              {% endif %}
+              <small class="text-muted">{{ users_pagination.total }} total</small>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="ds-empty" style="border: none; background: transparent;">
+            <i class="fas fa-user-slash"></i>
+            <h3>No matching users</h3>
+            <p>Try a different name, username or email address.</p>
           </div>
         {% endif %}
       </div>
 
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-user-clock" style="color: var(--accent);"></i> Pending Teacher Approvals</h2>
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-user-clock" style="color: var(--accent);"></i> Pending teacher approvals</h2>
       <div class="card" style="margin-bottom: 2rem;">
         {% if stats.unapproved_teachers %}
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+          <div class="ds-table-wrap">
+            <table>
               <thead>
-                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
-                  <th style="padding: 0.75rem;">Username</th>
-                  <th style="padding: 0.75rem;">Email Address</th>
-                  <th style="padding: 0.75rem;">Action</th>
+                <tr>
+                  <th>Username</th>
+                  <th>Email address</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {% for teach in stats.unapproved_teachers %}
-                  <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 0.75rem;"><strong>{{ teach.username }}</strong></td>
-                    <td style="padding: 0.75rem;">{{ teach.email }}</td>
-                    <td style="padding: 0.75rem;">
+                  <tr>
+                    <td><strong>{{ teach.username }}</strong></td>
+                    <td>{{ teach.email }}</td>
+                    <td>
                       <form action="{{ url_for('dashboard.approve_teacher', user_id=teach.id) }}" method="POST" style="display: inline; margin: 0;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve Teacher</button>
+                        <button type="submit" class="ds-btn ds-btn--secondary ds-btn--sm"><i class="fas fa-check"></i> Approve teacher</button>
                       </form>
                     </td>
                   </tr>
@@ -141,37 +369,41 @@
             </table>
           </div>
         {% else %}
-          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All instructors are verified and approved!</p>
+          <div class="ds-empty" style="border: none; background: transparent;">
+            <i class="fas fa-circle-check"></i>
+            <h3>All instructors approved</h3>
+            <p>No teacher accounts are waiting for review.</p>
+          </div>
         {% endif %}
       </div>
 
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-video" style="color: var(--primary);"></i> Pending Course Approvals</h2>
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-book" style="color: var(--primary);"></i> Pending course approvals</h2>
       <div class="card" style="margin-bottom: 2rem;">
         {% if unpublished_courses %}
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+          <div class="ds-table-wrap">
+            <table>
               <thead>
-                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
-                  <th style="padding: 0.75rem;">Course</th>
-                  <th style="padding: 0.75rem;">Teacher</th>
-                  <th style="padding: 0.75rem;">Price</th>
-                  <th style="padding: 0.75rem;">Actions</th>
+                <tr>
+                  <th>Course</th>
+                  <th>Teacher</th>
+                  <th>Price</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {% for c in unpublished_courses %}
-                  <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 0.75rem;"><strong>{{ c.title }}</strong></td>
-                    <td style="padding: 0.75rem;">{{ c.teacher.username }}</td>
-                    <td style="padding: 0.75rem;">{% if c.price == 0 %}Free{% else %}Rs. {{ "{:,.0f}".format(c.price) }}{% endif %}</td>
-                    <td style="padding: 0.75rem; display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                  <tr>
+                    <td><strong>{{ c.title }}</strong></td>
+                    <td>{{ c.teacher.username }}</td>
+                    <td>{% if c.price == 0 %}Free{% else %}Rs. {{ "{:,.0f}".format(c.price) }}{% endif %}</td>
+                    <td style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
                       <form action="{{ url_for('dashboard.approve_course', course_id=c.id) }}" method="POST" style="display:inline;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Approve</button>
+                        <button type="submit" class="ds-btn ds-btn--secondary ds-btn--sm"><i class="fas fa-check"></i> Approve</button>
                       </form>
                       <form action="{{ url_for('course.delete_course', course_id=c.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete course &quot;{{ c.title|escape }}&quot;?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i></button>
+                        <button type="submit" class="ds-btn ds-btn--sm" style="background: var(--ds-error); color: #fff;"><i class="fas fa-trash"></i></button>
                       </form>
                     </td>
                   </tr>
@@ -180,7 +412,11 @@
             </table>
           </div>
         {% else %}
-          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All courses are published and visible to students.</p>
+          <div class="ds-empty" style="border: none; background: transparent;">
+            <i class="fas fa-circle-check"></i>
+            <h3>No courses awaiting approval</h3>
+            <p>Every course is published and visible to students.</p>
+          </div>
         {% endif %}
       </div>
     </div>
@@ -188,63 +424,75 @@
     <!-- Right column: Courses, Payments, Membership, Labs, Categories -->
     <div>
 
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-video" style="color: var(--primary);"></i> All Courses</h2>
+      <h2 id="all-courses" style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-book-open" style="color: var(--primary);"></i> All courses</h2>
       <div class="card" style="margin-bottom: 2rem;">
-        <div style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-            <thead>
-              <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
-                <th style="padding: 0.75rem;">Course</th>
-                <th style="padding: 0.75rem;">Teacher</th>
-                <th style="padding: 0.75rem;">Status</th>
-                <th style="padding: 0.75rem;">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for c in courses %}
-                <tr style="border-bottom: 1px solid var(--border-color);">
-                  <td style="padding: 0.75rem;"><strong>{{ c.title }}</strong></td>
-                  <td style="padding: 0.75rem;">{{ c.teacher.username }}</td>
-                  <td style="padding: 0.75rem;">
-                    {% if c.is_published %}
-                      <span style="color: var(--secondary);"><i class="fas fa-check-circle"></i> Published</span>
-                    {% else %}
-                      <span style="color: var(--accent);"><i class="fas fa-clock"></i> Pending</span>
-                    {% endif %}
-                  </td>
-                  <td style="padding: 0.75rem;">
-                    <form action="{{ url_for('course.delete_course', course_id=c.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete course &quot;{{ c.title|escape }}&quot;? All data will be lost.')">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                      <button type="submit" class="btn" style="padding: 0.3rem 0.5rem; font-size: 0.7rem; background: #ef4444; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;"><i class="fas fa-trash"></i> Delete</button>
-                    </form>
-                  </td>
+        {% if courses %}
+          <label class="sr-only" for="admin-course-filter">Filter courses</label>
+          <input id="admin-course-filter" type="search" class="form-control" placeholder="Filter by course or teacher..." style="margin-bottom: 1rem; padding: 0.5rem 0.9rem; font-size: 0.85rem;">
+          <div class="ds-table-wrap">
+            <table id="admin-course-table">
+              <thead>
+                <tr>
+                  <th>Course</th>
+                  <th>Teacher</th>
+                  <th>Enrolled</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {% for c in courses %}
+                  <tr>
+                    <td><strong>{{ c.title }}</strong><br><small class="text-muted">{{ c.category.name }}</small></td>
+                    <td>{{ c.teacher.username }}</td>
+                    <td>{{ c.enrollments|length }}</td>
+                    <td>
+                      {% if c.is_published %}
+                        <span class="ds-badge ds-badge--success"><i class="fas fa-check-circle"></i> Published</span>
+                      {% else %}
+                        <span class="ds-badge ds-badge--warning"><i class="fas fa-clock"></i> Pending</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <form action="{{ url_for('course.delete_course', course_id=c.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete course &quot;{{ c.title|escape }}&quot;? All data will be lost.')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="ds-btn ds-btn--sm" style="background: var(--ds-error); color: #fff;"><i class="fas fa-trash"></i> Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="ds-empty" style="border: none; background: transparent;">
+            <i class="fas fa-book"></i>
+            <h3>No courses yet</h3>
+            <p>Courses created by teachers will appear here.</p>
+          </div>
+        {% endif %}
       </div>
 
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-credit-card" style="color: var(--secondary);"></i> Pending Payment Verifications</h2>
+      <h2 id="pending-payments" style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-credit-card" style="color: var(--secondary);"></i> Pending payment verifications</h2>
       <div class="card" style="margin-bottom: 2rem;">
         {% if pending_payments %}
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+          <div class="ds-table-wrap">
+            <table>
               <thead>
-                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-muted);">
-                  <th style="padding: 0.75rem;">Student</th>
-                  <th style="padding: 0.75rem;">Course</th>
-                  <th style="padding: 0.75rem;">Amount</th>
-                  <th style="padding: 0.75rem;">Method</th>
-                  <th style="padding: 0.75rem;">Txn ID</th>
-                  <th style="padding: 0.75rem;">Action</th>
+                <tr>
+                  <th>Student</th>
+                  <th>Course / plan</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Transaction</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {% for p in pending_payments %}
-                  <tr style="border-bottom: 1px solid var(--border-color);">
-                    <td style="padding: 0.75rem;">{{ p.student.username }}</td>
-                    <td style="padding: 0.75rem;">
+                  <tr>
+                    <td>{{ p.student.username }}</td>
+                    <td>
                       {% if p.course %}
                         {{ p.course.title }}
                       {% elif p.membership_plan %}
@@ -253,16 +501,16 @@
                         N/A
                       {% endif %}
                     </td>
-                    <td style="padding: 0.75rem;">Rs. {{ "{:,.0f}".format(p.amount) }}</td>
-                    <td style="padding: 0.75rem;">{{ p.payment_method }}</td>
-                    <td style="padding: 0.75rem;">
+                    <td>Rs. {{ "{:,.0f}".format(p.amount) }}</td>
+                    <td>{{ p.payment_method }}</td>
+                    <td>
                       <code style="font-size: 0.75rem;">{{ p.user_transaction_id or p.transaction_id }}</code>
-                      {% if p.user_transaction_id %}<br><small style="color: var(--text-muted);">System: {{ p.transaction_id }}</small>{% endif %}
+                      {% if p.user_transaction_id %}<br><small class="text-muted">System: {{ p.transaction_id }}</small>{% endif %}
                     </td>
-                    <td style="padding: 0.75rem;">
+                    <td>
                       <form action="{{ url_for('dashboard.approve_payment', payment_id=p.id) }}" method="POST" style="display: inline; margin: 0;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Verify &amp; Enroll</button>
+                        <button type="submit" class="ds-btn ds-btn--secondary ds-btn--sm"><i class="fas fa-check"></i> Verify &amp; enrol</button>
                       </form>
                     </td>
                   </tr>
@@ -271,50 +519,61 @@
             </table>
           </div>
         {% else %}
-          <p style="color: var(--text-muted); text-align: center; padding: 1.5rem; font-size: 0.9rem;">All payments have been verified.</p>
+          <div class="ds-empty" style="border: none; background: transparent;">
+            <i class="fas fa-circle-check"></i>
+            <h3>No payments awaiting verification</h3>
+            <p>Manual payment submissions will appear here.</p>
+          </div>
         {% endif %}
       </div>
 
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-crown" style="color: var(--accent);"></i> Membership & Billing</h2>
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-crown" style="color: var(--accent);"></i> Membership &amp; billing</h2>
       <div class="card" style="margin-bottom: 2rem;">
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <a href="{{ url_for('payment.manage_plans') }}" class="btn btn-outline" style="justify-content: center;"><i class="fas fa-crown"></i> Manage Membership Plans</a>
-          <a href="{{ url_for('payment.create_plan') }}" class="btn btn-outline" style="justify-content: center;"><i class="fas fa-plus"></i> Create New Plan</a>
-          <a href="{{ url_for('payment.manage_coupons') }}" class="btn btn-outline" style="justify-content: center;"><i class="fas fa-tags"></i> Manage Coupons</a>
-          <a href="{{ url_for('payment.create_coupon') }}" class="btn btn-outline" style="justify-content: center;"><i class="fas fa-plus"></i> Create Coupon</a>
+          <a href="{{ url_for('payment.manage_plans') }}" class="ds-btn ds-btn--outline" style="justify-content: center;"><i class="fas fa-crown"></i> Manage membership plans</a>
+          <a href="{{ url_for('payment.create_plan') }}" class="ds-btn ds-btn--outline" style="justify-content: center;"><i class="fas fa-plus"></i> Create new plan</a>
+          <a href="{{ url_for('payment.manage_coupons') }}" class="ds-btn ds-btn--outline" style="justify-content: center;"><i class="fas fa-tags"></i> Manage coupons</a>
+          <a href="{{ url_for('payment.create_coupon') }}" class="ds-btn ds-btn--outline" style="justify-content: center;"><i class="fas fa-plus"></i> Create coupon</a>
         </div>
       </div>
 
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-flask" style="color: var(--primary);"></i> Labs & Simulations</h2>
+      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-flask" style="color: var(--primary);"></i> Labs &amp; simulations</h2>
       <div class="card" style="margin-bottom: 2rem;">
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">Post practical lab exercises with documentation, PDFs, and video walkthroughs.</p>
-        <a href="{{ url_for('lab.create') }}" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-plus"></i> Create New Lab</a>
+        <p class="text-muted text-sm" style="margin-bottom: 1rem;">Post practical lab exercises with documentation, PDFs and video walkthroughs.</p>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <a href="{{ url_for('lab.create') }}" class="ds-btn ds-btn--primary" style="justify-content: center;"><i class="fas fa-plus"></i> Create new lab</a>
+          <a href="{{ url_for('lab.index') }}" class="ds-btn ds-btn--outline" style="justify-content: center;"><i class="fas fa-flask"></i> Browse labs</a>
+        </div>
       </div>
 
-      <h2 style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-tags" style="color: var(--secondary);"></i> Category Settings</h2>
+      <h2 id="categories" style="font-size: 1.5rem; margin-bottom: 1rem;"><i class="fas fa-tags" style="color: var(--secondary);"></i> Category settings</h2>
       <div class="card">
-        <h4 style="margin-bottom: 0.75rem;">Current Categories</h4>
-        <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
-          {% for cat in categories %}
-            <li style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; font-size: 0.9rem;">
-              <span><i class="fas {{ cat.icon_class }}" style="color: var(--primary); margin-right: 0.5rem;"></i> {{ cat.name }}</span>
-              <small style="color: var(--text-muted);">{{ cat.courses|length }} courses</small>
-            </li>
-          {% endfor %}
-        </ul>
+        <h4 style="margin-bottom: 0.75rem;">Current categories</h4>
+        {% if categories %}
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+            {% for cat in categories %}
+              <li class="flex-between" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.35rem; font-size: 0.9rem;">
+                <span><i class="fas {{ cat.icon_class }}" style="color: var(--primary); margin-right: 0.5rem;"></i> {{ cat.name }}</span>
+                <small class="text-muted">{{ cat.courses|length }} courses</small>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted text-sm" style="margin-bottom: 1.5rem;">No categories yet. Add the first one below.</p>
+        {% endif %}
 
         <form action="{{ url_for('dashboard.add_category') }}" method="POST" style="background: var(--bg-app); padding: 1rem; border-radius: var(--radius-md);">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem;">Add New Category</h4>
+          <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem;">Add new category</h4>
           <div class="form-group" style="margin-bottom: 0.75rem;">
-            <label class="form-label" style="font-size: 0.8rem;" for="cat-name-input">Category Name</label>
+            <label class="form-label" style="font-size: 0.8rem;" for="cat-name-input">Category name</label>
             <input type="text" name="name" id="cat-name-input" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" placeholder="e.g. Cyber Security" required>
           </div>
           <div class="form-group" style="margin-bottom: 0.75rem;">
-            <label class="form-label" style="font-size: 0.8rem;" for="cat-icon-input">FontAwesome Icon Class</label>
+            <label class="form-label" style="font-size: 0.8rem;" for="cat-icon-input">Font Awesome icon class</label>
             <input type="text" name="icon" id="cat-icon-input" class="form-control" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" placeholder="e.g. fa-shield-alt" value="fa-graduation-cap">
           </div>
-          <button type="submit" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; width: 100%; justify-content: center;">Create Category</button>
+          <button type="submit" class="ds-btn ds-btn--primary ds-btn--sm" style="width: 100%; justify-content: center;">Create category</button>
         </form>
       </div>
     </div>
@@ -322,4 +581,22 @@
   </div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var filter = document.getElementById('admin-course-filter');
+  var table = document.getElementById('admin-course-table');
+  if (!filter || !table) return;
+  var rows = Array.from(table.querySelectorAll('tbody tr'));
+
+  filter.addEventListener('input', function() {
+    var term = filter.value.trim().toLowerCase();
+    rows.forEach(function(row) {
+      row.style.display = row.textContent.toLowerCase().includes(term) ? '' : 'none';
+    });
+  });
+});
+</script>
 {% endblock %}
