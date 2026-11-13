@@ -19,7 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.appendChild(overlay);
 
   function toggleNav(open) {
+    if (!hamburger || !navLinks) return;
     hamburger.classList.toggle('active', open);
+    hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
     navLinks.classList.toggle('active', open);
     overlay.classList.toggle('active', open);
     document.body.style.overflow = open ? 'hidden' : '';
@@ -39,7 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   const themeToggle = document.getElementById('theme-toggle');
-  const activeTheme = localStorage.getItem('theme') || 'light';
+  const storedTheme = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia
+    && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const activeTheme = storedTheme || (prefersDark ? 'dark' : 'light');
 
   document.documentElement.setAttribute('data-theme', activeTheme);
   updateThemeIcon(activeTheme);

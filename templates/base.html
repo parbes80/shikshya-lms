@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}{% endblock %} - {{ site_name }}</title>
-  <meta name="description" content="Shikshya is a modern Learning Management System providing high-end programming and web design courses. Enroll today and level up your skills.">
-  <meta name="keywords" content="LMS, E-learning, Programming, Web Development, Shikshya, Canvas, Classroom, Moodle">
+  <meta name="description" content="Shikshya is a modern learning management platform for school and college students, teachers, training centres and independent educators. Create or join courses, submit assignments, take quizzes and earn verifiable certificates.">
+  <meta name="keywords" content="LMS, Learning Management System, Online Learning, Courses, School, College, Teachers, Shikshya, Nepal">
 
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,9 +13,12 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/course.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
+
+  <a href="#main-content" class="ds-skip-link">Skip to main content</a>
 
   <div class="flash-container">
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -35,11 +38,11 @@
       <i class="fas fa-graduation-cap"></i> Shikshya
     </a>
 
-    <button class="hamburger" id="hamburger-btn" aria-label="Toggle navigation">
+    <button class="hamburger" id="hamburger-btn" aria-label="Toggle navigation" aria-controls="nav-links" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
 
-    <ul class="nav-links" id="nav-links">
+    <ul class="nav-links" id="nav-links" aria-label="Main navigation">
       <li><a href="{{ url_for('main.home') }}">Home</a></li>
       <li><a href="{{ url_for('course.index') }}">Courses</a></li>
       <li><a href="{{ url_for('main.about') }}">About</a></li>
@@ -62,7 +65,7 @@
         <input type="text" name="q" class="form-control" placeholder="Search courses...">
       </form>
 
-      <button class="btn-icon" id="theme-toggle" title="Toggle Light/Dark Theme">
+      <button class="btn-icon" id="theme-toggle" title="Toggle Light/Dark Theme" aria-label="Toggle light and dark theme">
         <i class="fas fa-moon"></i>
       </button>
 
@@ -128,7 +131,7 @@
       </aside>
     {% endif %}
 
-    <main class="main-content {% if not current_user.is_authenticated or no_sidebar %}no-sidebar{% endif %}">
+    <main id="main-content" tabindex="-1" class="main-content {% if not current_user.is_authenticated or no_sidebar %}no-sidebar{% endif %}">
       {% if current_user.is_authenticated and not no_sidebar %}
         <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" style="display: none;">
           <i class="fas fa-bars"></i> Menu
@@ -157,7 +160,7 @@
       </div>
       <div class="ai-chat-messages" id="ai-chat-messages">
         <div class="chat-msg bot">
-          Hello, {{ current_user.username }}! I am your AI learning assistant. Ask me anything about programming, databases, mathematics, or how to get your certificate!
+          Hello, {{ current_user.username }}! I am your AI learning assistant. Ask me about your course topics, revision ideas, or how to get your certificate.
         </div>
       </div>
       <form class="ai-chat-input-area" id="ai-chat-form">
@@ -166,6 +169,57 @@
       </form>
     </div>
   {% endif %}
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <a href="{{ url_for('main.home') }}" class="logo" style="font-size: 1.15rem;">
+          <i class="fas fa-graduation-cap"></i> Shikshya
+        </a>
+        <p>A learning management platform for schools, colleges, training centres and independent educators.</p>
+      </div>
+      <div>
+        <h4>Learn</h4>
+        <ul>
+          <li><a href="{{ url_for('course.index') }}">Browse courses</a></li>
+          <li><a href="{{ url_for('lab.index') }}">Labs &amp; simulations</a></li>
+          <li><a href="{{ url_for('notice.calendar') }}">Calendar</a></li>
+          <li><a href="{{ url_for('notice.list_notices') }}">Notices</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Platform</h4>
+        <ul>
+          <li><a href="{{ url_for('main.about') }}">About Shikshya</a></li>
+          <li><a href="{{ url_for('main.contact') }}">Contact us</a></li>
+          <li><a href="{{ url_for('branch.branches_map') }}">Branches</a></li>
+          <li><a href="{{ url_for('main.contact') }}">Institution enquiries</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Account</h4>
+        <ul>
+          {% if current_user.is_authenticated %}
+            <li><a href="{{ url_for('auth.profile') }}">Your profile</a></li>
+            {% if current_user.role.name == 'Admin' %}
+              <li><a href="{{ url_for('dashboard.admin') }}">Admin dashboard</a></li>
+            {% elif current_user.role.name == 'Teacher' %}
+              <li><a href="{{ url_for('dashboard.teacher') }}">Teacher dashboard</a></li>
+            {% else %}
+              <li><a href="{{ url_for('dashboard.student') }}">Student dashboard</a></li>
+            {% endif %}
+          {% else %}
+            <li><a href="{{ url_for('auth.login') }}">Log in</a></li>
+            <li><a href="{{ url_for('auth.register') }}">Create an account</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__bottom">
+      <span>&copy; {{ 2026 }} Shikshya LMS. All rights reserved.</span>
+      <span>Built for learning everywhere.</span>
+    </div>
+  </footer>
 
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   {% if current_user.is_authenticated %}

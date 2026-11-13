@@ -1,126 +1,364 @@
 {% extends 'base.html' %}
-{% block title %}Shikshya - Learn Anything, Anywhere{% endblock %}
+{% block title %}Shikshya - Learn, Teach and Grow{% endblock %}
 
 {% block content %}
 <div class="home-container">
-  <!-- Hero Section -->
-  <section class="course-hero" style="border-radius: var(--radius-lg); margin-bottom: 3rem;">
+
+  <!-- Hero -->
+  <section class="course-hero ds-section" style="border-radius: var(--radius-lg);">
     <div class="course-hero-content">
       <div class="course-hero-details">
-        <h1 style="font-size: 3rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Learn Without Limits</h1>
-        <p style="font-size: 1.15rem; color: var(--text-muted); margin: 1.5rem 0; line-height: 1.6;">
-          Shikshya is Nepal's premium learning platform, crafted for aspiring engineers, developers, and designers. Gain access to expert-led video tutorials, dynamic examinations, assignments, and secure certificate credentials.
+        <span class="ds-eyebrow">Learning management, simplified</span>
+        <h1 style="font-size: clamp(2rem, 5vw, 3.1rem); line-height: 1.12; letter-spacing: -0.03em;">Learning that fits every classroom</h1>
+        <p style="font-size: 1.08rem; color: var(--text-muted); margin: 1.25rem 0 1.75rem; line-height: 1.7; max-width: 60ch;">
+          Shikshya brings courses, assignments, quizzes, attendance, discussions and verifiable certificates into one clear platform — for school and college students, teachers, training centres and independent educators.
         </p>
         <div class="flex gap-4 flex-wrap">
-          <a href="{{ url_for('course.index') }}" class="btn btn-primary"><i class="fas fa-search"></i> Browse Courses</a>
-          <a href="{{ url_for('auth.register') }}" class="btn btn-outline"><i class="fas fa-user-plus"></i> Join for Free</a>
+          <a href="{{ url_for('course.index') }}" class="ds-btn ds-btn--primary"><i class="fas fa-search"></i> Explore courses</a>
+          <a href="{{ url_for('auth.register') }}" class="ds-btn ds-btn--outline"><i class="fas fa-user-plus"></i> Create free account</a>
         </div>
+        <p class="text-sm text-muted" style="margin-top: 1rem;">
+          Already have an account? <a href="{{ url_for('auth.login') }}" style="color: var(--primary); font-weight: 600;">Log in</a>
+        </p>
       </div>
+
       <div class="course-hero-preview" style="background: transparent; border: none; box-shadow: none;">
-        <div class="card" style="padding: 2rem; position: relative;">
-          <div class="flex-center" style="width: 100%; aspect-ratio: 16/10; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--primary-light), var(--bg-app)); font-size: 3rem; color: var(--primary); margin-bottom: 1.5rem;">
-            <i class="fas fa-laptop-code"></i>
-          </div>
-          <div class="flex-between">
+        <div class="card" style="padding: 1.75rem;">
+          <span class="ds-badge ds-badge--success" style="margin-bottom: 0.9rem;"><i class="fas fa-circle-check"></i> Live platform</span>
+          <h3 class="ds-card-title" style="font-size: 1.2rem;">One place to teach and learn</h3>
+          <ul class="ds-check-list" style="margin-top: 0.9rem;">
+            <li><i class="fas fa-check"></i> Structured courses, modules and lessons</li>
+            <li><i class="fas fa-check"></i> Assignments, quizzes and evaluations</li>
+            <li><i class="fas fa-check"></i> Progress tracking and certificates</li>
+            <li><i class="fas fa-check"></i> Announcements, calendar and discussions</li>
+          </ul>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); text-align: center;">
             <div>
-              <h4 style="font-weight: 800;">Python CLI Calculator</h4>
-              <p class="text-sm text-muted">Assignment 1: Completed by 85%</p>
+              <strong style="display: block; font-size: 1.3rem; color: var(--text-main);">{{ stats.courses_count }}</strong>
+              <span class="text-xs text-muted">Courses</span>
             </div>
-            <span class="difficulty-badge intermediate" style="position: static;">🔥 Active</span>
+            <div>
+              <strong style="display: block; font-size: 1.3rem; color: var(--text-main);">{{ stats.students_count }}</strong>
+              <span class="text-xs text-muted">Learners</span>
+            </div>
+            <div>
+              <strong style="display: block; font-size: 1.3rem; color: var(--text-main);">{{ stats.teachers_count }}</strong>
+              <span class="text-xs text-muted">Teachers</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Categories Grid -->
-  <section class="mb-6">
-    <h2 class="section-title">Explore Top Categories</h2>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+  <!-- Who it is for -->
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">Built for every learner</span>
+        <h2 class="ds-section-title">Who Shikshya is for</h2>
+        <p class="ds-section-subtitle">The same platform supports individual learners, educators and organised institutions without forcing everyone into one workflow.</p>
+      </div>
+    </div>
+    <div class="ds-grid">
+      <div class="ds-card ds-card--interactive">
+        <span class="ds-icon"><i class="fas fa-school"></i></span>
+        <h3 class="ds-card-title">School students</h3>
+        <p class="ds-card-text">Follow class materials, submit homework and revise with quizzes and notes.</p>
+      </div>
+      <div class="ds-card ds-card--interactive">
+        <span class="ds-icon ds-icon--violet"><i class="fas fa-user-graduate"></i></span>
+        <h3 class="ds-card-title">College students</h3>
+        <p class="ds-card-text">Keep every subject, deadline and learning resource in one organised place.</p>
+      </div>
+      <div class="ds-card ds-card--interactive">
+        <span class="ds-icon ds-icon--success"><i class="fas fa-chalkboard-teacher"></i></span>
+        <h3 class="ds-card-title">Teachers &amp; tutors</h3>
+        <p class="ds-card-text">Publish lessons, set assignments, run evaluations and give structured feedback.</p>
+      </div>
+      <div class="ds-card ds-card--interactive">
+        <span class="ds-icon"><i class="fas fa-building-columns"></i></span>
+        <h3 class="ds-card-title">Schools &amp; colleges</h3>
+        <p class="ds-card-text">Give staff a consistent space for courses, notices, attendance and reports.</p>
+      </div>
+      <div class="ds-card ds-card--interactive">
+        <span class="ds-icon ds-icon--violet"><i class="fas fa-briefcase"></i></span>
+        <h3 class="ds-card-title">Training centres</h3>
+        <p class="ds-card-text">Run short programmes with clear modules, assessments and completion records.</p>
+      </div>
+      <div class="ds-card ds-card--interactive">
+        <span class="ds-icon ds-icon--success"><i class="fas fa-laptop"></i></span>
+        <h3 class="ds-card-title">Independent educators</h3>
+        <p class="ds-card-text">Share your expertise with learners and manage your own course catalogue.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">Explore</span>
+        <h2 class="ds-section-title">Top categories</h2>
+        <p class="ds-section-subtitle">Browse the subjects currently available on the platform.</p>
+      </div>
+    </div>
+    <div class="ds-grid">
       {% for cat in categories %}
-        <a href="{{ url_for('course.index', category=cat.slug) }}" class="card flex-col flex-center text-center" style="gap: 1rem; padding: 2rem;">
-          <div class="stat-icon" style="width: 60px; height: 60px; border-radius: 50%; font-size: 1.8rem;">
-            <i class="fas {{ cat.icon_class }}"></i>
-          </div>
+        <a href="{{ url_for('course.index', category=cat.slug) }}" class="ds-card ds-card--interactive flex-col flex-center text-center" style="gap: 0.9rem;">
+          <span class="ds-icon" style="margin-bottom: 0;"><i class="fas {{ cat.icon_class }}"></i></span>
           <div>
-            <h3 style="font-size: 1.2rem; margin-bottom: 0.25rem;">{{ cat.name }}</h3>
-            <p class="text-sm text-muted">{{ cat.courses|length }} courses available</p>
+            <h3 class="ds-card-title" style="margin-bottom: 0.2rem;">{{ cat.name }}</h3>
+            <p class="ds-card-text">{{ cat.courses|length }} course{% if cat.courses|length != 1 %}s{% endif %}</p>
           </div>
         </a>
+      {% else %}
+        <div class="ds-empty" style="grid-column: 1 / -1;">
+          <i class="fas fa-layer-group"></i>
+          <h3>Categories are being prepared</h3>
+          <p>Course categories will appear here as soon as an administrator adds them.</p>
+        </div>
       {% endfor %}
     </div>
   </section>
 
-  <!-- Featured Courses -->
-  <section class="mb-6">
-    <div class="flex-between mb-4">
-      <h2 class="section-title" style="margin-bottom: 0;">Popular Programs</h2>
-      <a href="{{ url_for('course.index') }}" style="color: var(--primary); font-weight: 600;">View All <i class="fas fa-arrow-right"></i></a>
+  <!-- Featured courses -->
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">Start learning</span>
+        <h2 class="ds-section-title">Popular courses</h2>
+        <p class="ds-section-subtitle">Published courses from instructors on Shikshya.</p>
+      </div>
+      <a href="{{ url_for('course.index') }}" class="ds-btn ds-btn--ghost ds-btn--sm">View all <i class="fas fa-arrow-right"></i></a>
     </div>
-    <div class="courses-grid">
-      {% for course in featured_courses %}
-        <div class="card course-card">
-          <div class="course-thumbnail">
-            <span class="difficulty-badge {{ course.difficulty_level.lower() }}">{{ course.difficulty_level }}</span>
-            {% if course.thumbnail_url and course.thumbnail_url != 'course_default.jpg' %}
-              <img src="{{ course.thumbnail_url|asset_url }}" alt="{{ course.title }}" class="w-full h-full" style="object-fit: cover;">
-            {% else %}
-            <div class="w-full h-full flex-center" style="background: linear-gradient(135deg, var(--primary-dark), var(--primary-light)); font-size: 3rem; color: white;">
-              <i class="fas fa-book-reader"></i>
+
+    {% if featured_courses %}
+      <div class="courses-grid">
+        {% for course in featured_courses %}
+          <div class="card course-card">
+            <div class="course-thumbnail">
+              {% if course.difficulty_level %}
+                <span class="difficulty-badge {{ course.difficulty_level.lower() }}">{{ course.difficulty_level }}</span>
+              {% endif %}
+              {% if course.thumbnail_url and course.thumbnail_url != 'course_default.jpg' %}
+                <img src="{{ course.thumbnail_url|asset_url }}" alt="{{ course.title }}" class="w-full h-full" style="object-fit: cover;">
+              {% else %}
+              <div class="w-full h-full flex-center" style="background: linear-gradient(135deg, var(--primary-dark), var(--primary-light)); font-size: 3rem; color: white;">
+                <i class="fas fa-book-reader"></i>
+              </div>
+              {% endif %}
             </div>
-            {% endif %}
-          </div>
-          <div class="course-content">
-            <span class="course-category">{{ course.category.name }}</span>
-            <a href="{{ url_for('course.details', slug=course.slug) }}">
-              <h3 class="course-title">{{ course.title }}</h3>
-            </a>
-            <p class="course-desc">{{ course.description[:110] }}...</p>
-            <div class="course-footer">
-                  <div class="course-teacher">
-                    <div class="course-teacher-initial">{{ course.teacher.username[:1].upper() }}</div>
-                    <span>{{ course.teacher.username }}</span>
-                  </div>
-              <div class="course-price {% if course.price == 0.0 %}free{% endif %}">
-                {% if course.price == 0.0 %}Free{% else %}Rs. {{ "{:,.0f}".format(course.price) }}{% endif %}
+            <div class="course-content">
+              <span class="course-category">{{ course.category.name }}</span>
+              <a href="{{ url_for('course.details', slug=course.slug) }}">
+                <h3 class="course-title">{{ course.title }}</h3>
+              </a>
+              <p class="course-desc">{{ course.description[:110] }}{% if course.description|length > 110 %}...{% endif %}</p>
+              <div class="course-footer">
+                <div class="course-teacher">
+                  <div class="course-teacher-initial">{{ course.teacher.username[:1].upper() }}</div>
+                  <span>{{ course.teacher.username }}</span>
+                </div>
+                <div class="course-price {% if course.price == 0.0 %}free{% endif %}">
+                  {% if course.price == 0.0 %}Free{% else %}Rs. {{ "{:,.0f}".format(course.price) }}{% endif %}
+                </div>
               </div>
             </div>
           </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="ds-empty">
+        <i class="fas fa-book-open"></i>
+        <h3>No published courses yet</h3>
+        <p>Courses will appear here once an instructor publishes them. If you teach, you can create the first one.</p>
+        <a href="{{ url_for('auth.register') }}" class="ds-btn ds-btn--primary ds-btn--sm" style="margin-top: 0.75rem;">Become an instructor</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Platform statistics (real database values) -->
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">Platform at a glance</span>
+        <h2 class="ds-section-title">Shikshya today</h2>
+        <p class="ds-section-subtitle">Live counts from the platform database.</p>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+        <div>
+          <div class="stat-number">{{ stats.students_count }}</div>
+          <div class="stat-label">Learners</div>
         </div>
-      {% endfor %}
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="fas fa-chalkboard-teacher"></i></div>
+        <div>
+          <div class="stat-number">{{ stats.teachers_count }}</div>
+          <div class="stat-label">Teachers</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange"><i class="fas fa-graduation-cap"></i></div>
+        <div>
+          <div class="stat-number">{{ stats.courses_count }}</div>
+          <div class="stat-label">Published courses</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-certificate"></i></div>
+        <div>
+          <div class="stat-number">{{ stats.certificates_count }}</div>
+          <div class="stat-label">Certificates issued</div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- Platform Stats -->
-  <section class="stats-grid mb-6">
-    <div class="stat-card">
-      <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+  <!-- How it works -->
+  <section class="ds-section">
+    <div class="ds-section-head">
       <div>
-        <div class="stat-number">{{ stats.students_count }}</div>
-        <div class="stat-label">Active Learners</div>
+        <span class="ds-eyebrow">How it works</span>
+        <h2 class="ds-section-title">From sign-up to certificate</h2>
+        <p class="ds-section-subtitle">A short, predictable path for learners and instructors.</p>
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon green"><i class="fas fa-chalkboard-teacher"></i></div>
-      <div>
-        <div class="stat-number">{{ stats.teachers_count }}</div>
-        <div class="stat-label">Expert Mentors</div>
+    <div class="ds-grid">
+      <div class="ds-card">
+        <span class="ds-badge">Step 1</span>
+        <h3 class="ds-card-title" style="margin-top: 0.8rem;">Create your account</h3>
+        <p class="ds-card-text">Register as a student or teacher. Teacher accounts are reviewed by an administrator before publishing.</p>
       </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon orange"><i class="fas fa-graduation-cap"></i></div>
-      <div>
-        <div class="stat-number">{{ stats.courses_count }}</div>
-        <div class="stat-label">Verified Programs</div>
+      <div class="ds-card">
+        <span class="ds-badge">Step 2</span>
+        <h3 class="ds-card-title" style="margin-top: 0.8rem;">Join or build a course</h3>
+        <p class="ds-card-text">Browse published courses, or create modules, lessons and downloadable resources of your own.</p>
       </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon"><i class="fas fa-certificate"></i></div>
-      <div>
-        <div class="stat-number">{{ stats.certificates_count }}</div>
-        <div class="stat-label">Certificates Issued</div>
+      <div class="ds-card">
+        <span class="ds-badge">Step 3</span>
+        <h3 class="ds-card-title" style="margin-top: 0.8rem;">Learn, submit and certify</h3>
+        <p class="ds-card-text">Complete lessons, submit assignments, take quizzes, track progress and earn a verifiable certificate.</p>
       </div>
     </div>
   </section>
+
+  <!-- Benefits -->
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">Why Shikshya</span>
+        <h2 class="ds-section-title">Everything a course needs</h2>
+        <p class="ds-section-subtitle">Existing platform capabilities, not promises.</p>
+      </div>
+    </div>
+    <div class="ds-grid">
+      <div class="ds-card">
+        <span class="ds-icon"><i class="fas fa-layer-group"></i></span>
+        <h3 class="ds-card-title">Structured courses</h3>
+        <p class="ds-card-text">Organise learning into modules and lessons with video, documents and written notes.</p>
+      </div>
+      <div class="ds-card">
+        <span class="ds-icon ds-icon--violet"><i class="fas fa-file-pen"></i></span>
+        <h3 class="ds-card-title">Assignments &amp; feedback</h3>
+        <p class="ds-card-text">Set deadlines, collect file or link submissions and return marks with written feedback.</p>
+      </div>
+      <div class="ds-card">
+        <span class="ds-icon ds-icon--success"><i class="fas fa-clipboard-check"></i></span>
+        <h3 class="ds-card-title">Quizzes &amp; evaluations</h3>
+        <p class="ds-card-text">Run timed quizzes and structured evaluations with objective and manual grading.</p>
+      </div>
+      <div class="ds-card">
+        <span class="ds-icon"><i class="fas fa-chart-line"></i></span>
+        <h3 class="ds-card-title">Progress tracking</h3>
+        <p class="ds-card-text">Learners see completion, quiz scores and assignment status in one dashboard.</p>
+      </div>
+      <div class="ds-card">
+        <span class="ds-icon ds-icon--violet"><i class="fas fa-award"></i></span>
+        <h3 class="ds-card-title">Verifiable certificates</h3>
+        <p class="ds-card-text">Eligible learners receive certificates with a unique code that can be checked publicly.</p>
+      </div>
+      <div class="ds-card">
+        <span class="ds-icon ds-icon--success"><i class="fas fa-comments"></i></span>
+        <h3 class="ds-card-title">Communication</h3>
+        <p class="ds-card-text">Keep announcements, notices, a shared calendar and course discussions together.</p>
+      </div>
+      <div class="ds-card">
+        <span class="ds-icon"><i class="fas fa-flask"></i></span>
+        <h3 class="ds-card-title">Labs &amp; simulations</h3>
+        <p class="ds-card-text">Publish practical lab guides and simulations alongside regular course material.</p>
+      </div>
+      <div class="ds-card">
+        <span class="ds-icon ds-icon--violet"><i class="fas fa-mobile-screen"></i></span>
+        <h3 class="ds-card-title">Works on any device</h3>
+        <p class="ds-card-text">Responsive layouts keep lessons, forms and dashboards usable on phones and tablets.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- For institutions -->
+  <section class="ds-section">
+    <div class="ds-card" style="padding: clamp(1.5rem, 4vw, 2.5rem); display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); align-items: center;">
+      <div>
+        <span class="ds-eyebrow">For institutions</span>
+        <h2 class="ds-section-title">Bring your school, college or training centre onto Shikshya</h2>
+        <p class="ds-section-subtitle">Shikshya already supports student, teacher and administrator roles, course catalogues, assessments, attendance and reporting. Institution-level data separation is on the roadmap; talk to us about your current setup.</p>
+      </div>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-start;">
+        <a href="{{ url_for('main.contact') }}" class="ds-btn ds-btn--primary"><i class="fas fa-envelope"></i> Contact us</a>
+        <a href="{{ url_for('main.about') }}" class="ds-btn ds-btn--outline">Learn about Shikshya</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="ds-section">
+    <div class="ds-section-head">
+      <div>
+        <span class="ds-eyebrow">Questions</span>
+        <h2 class="ds-section-title">Frequently asked questions</h2>
+        <p class="ds-section-subtitle">Short answers about accounts, courses and certificates.</p>
+      </div>
+    </div>
+    <div class="ds-faq">
+      <details>
+        <summary>Is Shikshya free to use?</summary>
+        <p>Creating an account is free. Some courses are free and others are paid; the price is shown on each course card and detail page.</p>
+      </details>
+      <details>
+        <summary>Who can create and publish courses?</summary>
+        <p>Teachers can create courses after an administrator approves the account. Administrators review and publish courses before they appear in the public catalogue.</p>
+      </details>
+      <details>
+        <summary>How are certificates issued and verified?</summary>
+        <p>Certificates are issued after a learner meets the course completion requirements. Each certificate has a unique code that can be checked on the public verification page.</p>
+      </details>
+      <details>
+        <summary>Does Shikshya work on mobile devices?</summary>
+        <p>Yes. The interface is responsive and works in modern mobile browsers on Android and iPhone, including lessons, forms and dashboards.</p>
+      </details>
+      <details>
+        <summary>Can a school or training centre use Shikshya?</summary>
+        <p>Yes. The platform supports student, teacher and administrator roles plus course, assessment, attendance and reporting features. Contact us to discuss your institution's requirements.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- Final call to action -->
+  <section class="ds-section" style="margin-bottom: 0;">
+    <div class="ds-card" style="text-align: center; padding: clamp(2rem, 5vw, 3.5rem); background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 10%, var(--bg-card)), var(--bg-card));">
+      <h2 class="ds-section-title">Start learning or start teaching today</h2>
+      <p class="ds-section-subtitle" style="margin: 0.6rem auto 1.5rem;">Create a free account and explore the courses already on the platform.</p>
+      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ url_for('auth.register') }}" class="ds-btn ds-btn--primary"><i class="fas fa-user-plus"></i> Create an account</a>
+        <a href="{{ url_for('course.index') }}" class="ds-btn ds-btn--outline"><i class="fas fa-search"></i> Browse courses</a>
+      </div>
+    </div>
+  </section>
+
 </div>
 {% endblock %}

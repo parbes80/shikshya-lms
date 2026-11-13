@@ -197,7 +197,10 @@ Route `/files/<kind>/<name>` validating ownership/enrollment and streaming from 
 
 ---
 
-## 5. Phase 3 — UI/UX modernization (4–6 weeks)
+## 5. Phase 3 - UI/UX modernization (4-6 weeks)
+
+**Status:** design-system foundation and public homepage refresh implemented
+(`docs/UI_MODERNIZATION_LOG.md`). Dashboard, catalog and player work remain.
 
 Execute `docs/UX_UI_IMPROVEMENT_PLAN.md` in this order:
 
