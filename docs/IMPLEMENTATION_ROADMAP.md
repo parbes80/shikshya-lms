@@ -251,11 +251,19 @@ multi-file uploads and exports remain.
 - Admin: enrollment, revenue, completion, engagement; exportable.
 - Use a lightweight chart library (Chart.js, free) or server-rendered SVG; no heavy dashboard framework.
 
+**Implemented in this increment:** per-question accuracy in
+`teacher_analytics` using `QuizAttemptAnswer` (answered/correct/rate), alongside
+the existing lesson completion, quiz pass-rate and CSV export views.
+
 ### 4E. Communication
 - Scheduled reminders (assignment due, exam opens, inactivity) via the job queue.
 - Email templates + preferences; digest option.
 - Teacher ↔ student messaging scoped to enrolled courses; moderation/reporting.
 - Parent portal only after `ParentStudentLink` + consent model exists.
+
+**Implemented in this increment:** a full notifications centre with All/Unread
+filters, pagination, per-user read scoping and mark-all-read. Scheduled
+reminders, email preferences and messaging remain.
 
 ### 4F. Certificates
 - Template model (HTML/CSS variants), institution branding, revocation, verification rate limiting, unpredictable codes (UUID4 or HMAC), audit issuance.

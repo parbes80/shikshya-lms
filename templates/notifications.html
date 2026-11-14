@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<div class="ds-section">
+
+  <div class="ds-section-head">
+    <div>
+      <span class="ds-eyebrow">Inbox</span>
+      <h1 class="ds-section-title">Notifications</h1>
+      <p class="ds-section-subtitle">
+        Updates about your courses, submissions, payments and account activity.
+        {% if unread_count %}<strong>{{ unread_count }} unread</strong>.{% endif %}
+      </p>
+    </div>
+    {% if unread_count %}
+      <form action="{{ url_for('notice.mark_all_notifications_read') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="ds-btn ds-btn--outline ds-btn--sm">
+          <i class="fas fa-check-double"></i> Mark all as read
+        </button>
+      </form>
+    {% endif %}
+  </div>
+
+  <div class="flex-center gap-2" style="margin-bottom: 1.25rem;">
+    <a href="{{ url_for('notice.notifications', status='all') }}"
+       class="ds-btn ds-btn--sm {% if status == 'all' %}ds-btn--primary{% else %}ds-btn--outline{% endif %}">
+      All
+    </a>
+    <a href="{{ url_for('notice.notifications', status='unread') }}"
+       class="ds-btn ds-btn--sm {% if status == 'unread' %}ds-btn--primary{% else %}ds-btn--outline{% endif %}">
+      Unread{% if unread_count %} ({{ unread_count }}){% endif %}
+    </a>
+  </div>
+
+  {% if notifications %}
+    <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
+      {% for n in notifications %}
+        {% set tone = {'success': 'success', 'warning': 'warning', 'danger': 'danger', 'error': 'danger'}.get(n.notif_type, 'info') %}
+        {% set icon = {'success': 'fa-circle-check', 'warning': 'fa-triangle-exclamation', 'danger': 'fa-circle-exclamation'}.get(tone, 'fa-circle-info') %}
+        <li class="ds-card" style="display: flex; gap: 1rem; align-items: flex-start; {% if not n.is_read %}border-left: 4px solid var(--ds-primary);{% endif %}">
+          <span class="ds-badge {% if tone != 'info' %}ds-badge--{{ tone }}{% endif %}" style="flex-shrink: 0; width: 2.25rem; height: 2.25rem; justify-content: center; padding: 0;">
+            <i class="fas {{ icon }}"></i>
+          </span>
+          <div style="flex: 1; min-width: 0;">
+            <div class="flex-between flex-wrap gap-2">
+              <strong>{{ n.title }}</strong>
+              <small class="text-muted">{{ n.created_at.strftime('%b %d, %Y · %I:%M %p') }}</small>
+            </div>
+            <p class="text-sm" style="margin: 0.35rem 0 0; color: var(--text-muted); white-space: pre-wrap;">{{ n.message }}</p>
+          </div>
+          {% if not n.is_read %}
+            <form action="{{ url_for('notice.mark_notification_read', notif_id=n.id) }}" method="POST" style="flex-shrink: 0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="ds-btn ds-btn--ghost ds-btn--sm" title="Mark as read" aria-label="Mark notification as read">
+                <i class="fas fa-check"></i>
+              </button>
+            </form>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+
+    {% if pagination.pages > 1 %}
+      <nav aria-label="Notification pagination" style="display: flex; justify-content: center; align-items: center; gap: 0.4rem; margin-top: 2rem; flex-wrap: wrap;">
+        {% if pagination.has_prev %}
+          <a href="{{ url_for('notice.notifications', status=status, page=pagination.prev_num) }}" class="ds-btn ds-btn--outline ds-btn--sm" aria-label="Previous page"><i class="fas fa-chevron-left"></i></a>
+        {% endif %}
+        {% for page_number in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+          {% if page_number %}
+            <a href="{{ url_for('notice.notifications', status=status, page=page_number) }}" class="ds-btn ds-btn--sm {% if page_number == pagination.page %}ds-btn--primary{% else %}ds-btn--outline{% endif %}">{{ page_number }}</a>
+          {% else %}
+            <span class="text-muted" style="padding: 0 0.25rem;">…</span>
+          {% endif %}
+        {% endfor %}
+        {% if pagination.has_next %}
+          <a href="{{ url_for('notice.notifications', status=status, page=pagination.next_num) }}" class="ds-btn ds-btn--outline ds-btn--sm" aria-label="Next page"><i class="fas fa-chevron-right"></i></a>
+        {% endif %}
+      </nav>
+    {% endif %}
+  {% else %}
+    <div class="ds-empty">
+      <i class="fas fa-bell-slash"></i>
+      <h3>{% if status == 'unread' %}No unread notifications{% else %}No notifications yet{% endif %}</h3>
+      <p>{% if status == 'unread' %}You are all caught up.{% else %}Course updates, submissions and account activity will appear here.{% endif %}</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

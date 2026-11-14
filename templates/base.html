@@ -79,6 +79,9 @@
             <h4 style="margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Unread Notifications</h4>
             <div id="notif-list">
             </div>
+            <a href="{{ url_for('notice.notifications') }}" style="display: block; text-align: center; margin-top: 0.75rem; padding-top: 0.6rem; border-top: 1px solid var(--border-color); font-size: 0.8rem; font-weight: 600; color: var(--primary);">
+              View all notifications
+            </a>
           </div>
         </div>
 
@@ -121,6 +124,7 @@
             <li class="sidebar-item"><a href="{{ url_for('auth.admin_reset_password') }}"><i class="fas fa-key"></i> Reset Password</a></li>
             <li class="sidebar-item"><a href="{{ url_for('auth.profile') }}"><i class="fas fa-user-circle"></i> Profile Setting</a></li>
           {% endif %}
+          <li class="sidebar-item"><a href="{{ url_for('notice.notifications') }}"><i class="fas fa-bell"></i> Notifications</a></li>
           <li class="sidebar-item" style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
             <form action="{{ url_for('auth.logout') }}" method="POST" style="margin: 0;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

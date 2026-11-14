@@ -3,7 +3,7 @@ from datetime import datetime, date, timedelta
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify
 from flask_login import login_required, current_user
 from database import db
-from models.interaction import Notice
+from models.interaction import Notice, Notification
 from models.learning import LiveClass, Assignment, Quiz
 from utils.sanitize import safe_url
 
@@ -153,3 +153,54 @@ def delete(notice_id):
     db.session.commit()
     flash('Notice deleted.', 'success')
     return redirect(url_for('notice.list_notices'))
+
+
+@notice_bp.route('/notifications')
+@login_required
+def notifications():
+    status = request.args.get('status', 'all')
+    if status not in ('all', 'unread'):
+        status = 'all'
+
+    query = Notification.query.filter_by(user_id=current_user.id)
+    if status == 'unread':
+        query = query.filter_by(is_read=False)
+
+    page = request.args.get('page', 1, type=int)
+    pagination = query.order_by(
+        Notification.created_at.desc()
+    ).paginate(page=page, per_page=20, error_out=False)
+
+    unread_count = Notification.query.filter_by(
+        user_id=current_user.id, is_read=False
+    ).count()
+
+    return render_template(
+        'notifications.html',
+        notifications=pagination.items,
+        pagination=pagination,
+        status=status,
+        unread_count=unread_count,
+    )
+
+
+@notice_bp.route('/notifications/<int:notif_id>/read', methods=['POST'])
+@login_required
+def mark_notification_read(notif_id):
+    notification = Notification.query.filter_by(
+        id=notif_id, user_id=current_user.id
+    ).first_or_404()
+    notification.is_read = True
+    db.session.commit()
+    return redirect(request.referrer or url_for('notice.notifications'))
+
+
+@notice_bp.route('/notifications/read-all', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    Notification.query.filter_by(
+        user_id=current_user.id, is_read=False
+    ).update({'is_read': True}, synchronize_session=False)
+    db.session.commit()
+    flash('All notifications marked as read.', 'success')
+    return redirect(url_for('notice.notifications'))

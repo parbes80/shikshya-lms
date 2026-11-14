@@ -330,3 +330,48 @@ New regressions:
 - `quiz_attempt_answers` table (created via `db.create_all()`)
 
 All additive and safe for existing rows.
+
+---
+
+## 9. Notifications centre + question analytics (2026-11-14)
+
+### 9.1 Notifications centre
+
+- New `/notifications` page (`routes/notice.py::notifications`) listing the
+  signed-in user's notifications with All/Unread filters and pagination.
+- `POST /notifications/<id>/read` marks one notification read and is scoped to
+  the current user (other users' notifications return `404`).
+- `POST /notifications/read-all` marks only the current user's unread
+  notifications.
+- The header dropdown now links to the full page, and the sidebar has a
+  Notifications entry for every role.
+- `templates/notifications.html` uses the design-system cards, badges and
+  empty states.
+
+### 9.2 Question-level analytics
+
+- `routes/dashboard.py::teacher_analytics` now aggregates `QuizAttemptAnswer`
+  rows per question (answered, correct, correct rate).
+- `templates/teacher_analytics.html` exposes a collapsible
+  “Question-level accuracy” breakdown under each quiz.
+- Access remains restricted to the course owner and admins.
+
+### 9.3 Verification
+
+```text
+python -m compileall -q app.py models routes tests
+python -m pytest -q
+153 passed
+```
+
+New regressions:
+
+- `tests/test_notifications.py`: login required, own-notifications scoping,
+  mark-all scoping, single-read ownership and the unread filter.
+- `tests/test_dashboard.py`: question-level accuracy renders for the course
+  owner.
+
+### 9.4 Database changes
+
+None. This increment reuses existing tables and the `quiz_attempt_answers`
+table added in section 8.

@@ -90,6 +90,23 @@
               <span style="color: {% if s.pass_rate >= 60 %}var(--secondary){% elif s.pass_rate >= 30 %}var(--accent){% else %}#ef4444{% endif %};">{{ s.pass_rate }}%</span>
             </td>
           </tr>
+          {% if s.question_stats %}
+          <tr>
+            <td colspan="6" style="padding: 0 0.5rem 0.75rem; border-bottom: 1px solid var(--border-color);">
+              <details>
+                <summary style="cursor: pointer; font-size: 0.8rem; color: var(--primary); font-weight: 600;">Question-level accuracy</summary>
+                <ul style="list-style: none; margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem;">
+                  {% for qs in s.question_stats %}
+                    <li class="flex-between flex-wrap gap-2" style="font-size: 0.8rem; background: var(--bg-app); border-radius: var(--radius-sm); padding: 0.4rem 0.6rem;">
+                      <span style="min-width: 0;">{{ qs.question.text[:90] }}{% if qs.question.text|length > 90 %}…{% endif %}</span>
+                      <span class="text-muted">{{ qs.correct }}/{{ qs.answered }} correct · <strong>{{ qs.correct_rate }}%</strong></span>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </details>
+            </td>
+          </tr>
+          {% endif %}
           {% endfor %}
         </tbody>
       </table>

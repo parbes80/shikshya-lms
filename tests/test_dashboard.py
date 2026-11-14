@@ -1,7 +1,7 @@
 from database import db
 from models.course import Category, Course
 from models.interaction import Notification, Payment
-from models.learning import Enrollment, LessonProgress, Submission
+from models.learning import Enrollment, LessonProgress, QuizAttempt, QuizAttemptAnswer, Submission
 from models.user import User
 
 
@@ -201,6 +201,45 @@ def test_course_owner_can_export_progress_csv(
     assert response.mimetype == 'text/csv'
     assert b'Student,Email,Progress' in response.data
     assert student.username.encode() in response.data
+
+
+def test_teacher_analytics_shows_question_level_accuracy(
+    client, auth, make_user, make_course, enroll
+):
+    from datetime import datetime
+
+    owner = make_user(role='Teacher')
+    student = make_user()
+    data = make_course(teacher=owner, quiz=True)
+    enroll(student, data.course)
+
+    attempt = QuizAttempt(
+        quiz_id=data.quiz.id,
+        student_id=student.id,
+        score=100.0,
+        is_passed=True,
+        completed_at=datetime.utcnow(),
+    )
+    db.session.add(attempt)
+    db.session.flush()
+    db.session.add(QuizAttemptAnswer(
+        attempt_id=attempt.id,
+        question_id=data.question.id,
+        selected_choice_id=data.choices[0].id,
+        is_correct=True,
+        points_awarded=float(data.question.points),
+    ))
+    db.session.commit()
+    auth.login(owner)
+
+    response = client.get(
+        f'/dashboard/teacher/analytics/{data.course.id}'
+    )
+
+    assert response.status_code == 200
+    assert b'Question-level accuracy' in response.data
+    assert data.question.text.encode() in response.data
+    assert b'100.0%' in response.data
 
 
 def test_student_can_view_gradebook(

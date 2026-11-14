@@ -7,7 +7,7 @@ from flask_login import login_required, current_user
 from database import db
 from models.user import User, Role, UserProfile
 from models.course import Course, Category, Review
-from models.learning import Enrollment, Quiz, QuizAttempt, Submission, Assignment, LessonProgress, LiveClass
+from models.learning import Enrollment, Quiz, QuizAttempt, QuizAttemptAnswer, Submission, Assignment, LessonProgress, LiveClass
 from models.evaluation import Evaluation, EvaluationSubmission
 from models.interaction import (Certificate, Payment, Notification, MembershipPlan, UserSubscription,
                                 DiscussionTopic, DiscussionReply, Attendance, Notice, Lab,
@@ -677,13 +677,31 @@ def teacher_analytics(course_id):
         passed = sum(1 for a in attempts if a.is_passed)
         avg_score = round(sum(a.score for a in attempts) / total_attempts, 1) if attempts else 0
         unique_students = len(set(a.student_id for a in attempts))
+
+        question_stats = []
+        for question in q.questions:
+            answers = QuizAttemptAnswer.query.filter_by(
+                question_id=question.id
+            ).all()
+            answered = len(answers)
+            correct = sum(1 for answer in answers if answer.is_correct)
+            question_stats.append({
+                'question': question,
+                'answered': answered,
+                'correct': correct,
+                'correct_rate': (
+                    round(correct / answered * 100, 1) if answered else 0
+                ),
+            })
+
         quiz_stats.append({
             'quiz': q,
             'total_attempts': total_attempts,
             'unique_students': unique_students,
             'passed': passed,
             'avg_score': avg_score,
-            'pass_rate': round(passed / total_attempts * 100, 1) if attempts else 0
+            'pass_rate': round(passed / total_attempts * 100, 1) if attempts else 0,
+            'question_stats': question_stats,
         })
 
     # recent activity
