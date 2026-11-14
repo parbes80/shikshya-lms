@@ -541,3 +541,130 @@ def test_other_teacher_and_students_cannot_grade_submission(
     assert other_teacher_response.status_code == 403
     assert student_response.status_code == 403
     assert db.session.get(Submission, submission.id).is_graded is False
+
+
+def test_assignment_text_only_submission_stores_content(
+    client, auth, make_user, make_course, enroll
+):
+    from datetime import datetime, timedelta
+
+    student = make_user()
+    data = make_course(assignment=True)
+    data.assignment.due_date = datetime.utcnow() + timedelta(days=2)
+    db.session.commit()
+    enroll(student, data.course)
+    auth.login(student)
+
+    response = client.post(
+        f'/api/assignments/{data.assignment.id}/submit',
+        data={'text_content': 'My written answer.'},
+    )
+
+    assert response.status_code == 200
+    submission = Submission.query.filter_by(
+        assignment_id=data.assignment.id, student_id=student.id
+    ).first()
+    assert submission is not None
+    assert submission.text_content == 'My written answer.'
+    assert not submission.file_url
+    assert submission.is_late is False
+
+
+def test_assignment_late_submission_rejected_when_disabled(
+    client, auth, make_user, make_course, enroll
+):
+    from datetime import datetime, timedelta
+
+    student = make_user()
+    data = make_course(assignment=True)
+    data.assignment.due_date = datetime.utcnow() - timedelta(days=1)
+    data.assignment.allow_late_submission = False
+    db.session.commit()
+    enroll(student, data.course)
+    auth.login(student)
+
+    response = client.post(
+        f'/api/assignments/{data.assignment.id}/submit',
+        data={'text_content': 'Too late.'},
+    )
+
+    assert response.status_code == 400
+    assert Submission.query.filter_by(
+        assignment_id=data.assignment.id, student_id=student.id
+    ).first() is None
+
+
+def test_assignment_late_submission_allowed_and_flagged(
+    client, auth, make_user, make_course, enroll
+):
+    from datetime import datetime, timedelta
+
+    student = make_user()
+    data = make_course(assignment=True)
+    data.assignment.due_date = datetime.utcnow() - timedelta(days=1)
+    data.assignment.allow_late_submission = True
+    db.session.commit()
+    enroll(student, data.course)
+    auth.login(student)
+
+    response = client.post(
+        f'/api/assignments/{data.assignment.id}/submit',
+        data={'text_content': 'Late but allowed.'},
+    )
+
+    assert response.status_code == 200
+    submission = Submission.query.filter_by(
+        assignment_id=data.assignment.id, student_id=student.id
+    ).first()
+    assert submission is not None
+    assert submission.is_late is True
+
+
+def test_grade_submission_clamps_marks_to_max(
+    client, auth, make_user, make_course, enroll
+):
+    student = make_user()
+    data = make_course(assignment=True)
+    enroll(student, data.course)
+    submission = Submission(
+        assignment_id=data.assignment.id,
+        student_id=student.id,
+        text_content='Answer',
+    )
+    db.session.add(submission)
+    db.session.commit()
+    auth.login(data.teacher)
+
+    response = client.post(
+        f'/submissions/{submission.id}/grade',
+        data={'marks': '999', 'feedback': 'Too generous'},
+    )
+
+    assert response.status_code == 302
+    refreshed = db.session.get(Submission, submission.id)
+    assert refreshed.is_graded is True
+    assert refreshed.marks_obtained == float(data.assignment.max_marks)
+
+
+def test_grade_submission_rejects_non_numeric_marks(
+    client, auth, make_user, make_course, enroll
+):
+    student = make_user()
+    data = make_course(assignment=True)
+    enroll(student, data.course)
+    submission = Submission(
+        assignment_id=data.assignment.id,
+        student_id=student.id,
+        text_content='Answer',
+    )
+    db.session.add(submission)
+    db.session.commit()
+    auth.login(data.teacher)
+
+    response = client.post(
+        f'/submissions/{submission.id}/grade',
+        data={'marks': 'not-a-number'},
+    )
+
+    assert response.status_code == 302
+    assert db.session.get(Submission, submission.id).is_graded is False

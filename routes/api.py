@@ -420,8 +420,19 @@ def grade_submission(submission_id):
     if sub.assignment.course.teacher_id != current_user.id:
         abort(403)
 
-    marks = float(request.form.get('marks', 0.0))
-    feedback = request.form.get('feedback', '')
+    try:
+        marks = float(request.form.get('marks', 0.0))
+    except (TypeError, ValueError):
+        flash('Marks must be a number.', 'danger')
+        return redirect(url_for('dashboard.teacher'))
+
+    max_marks = sub.assignment.max_marks or 0
+    if marks < 0:
+        marks = 0.0
+    if max_marks and marks > max_marks:
+        marks = float(max_marks)
+
+    feedback = (request.form.get('feedback', '') or '').strip()
 
     sub.marks_obtained = marks
     sub.feedback = feedback
@@ -531,10 +542,20 @@ def submit_assignment(assignment_id):
         return jsonify({'error': 'You are not enrolled in this course.'}), 403
 
     file_url = safe_url(request.form.get('file_url', ''))
+    text_content = (request.form.get('text_content') or '').strip()
     uploaded_file = request.files.get('submission_file')
 
-    if not file_url and (not uploaded_file or not uploaded_file.filename):
-        return jsonify({'error': 'Please upload a file or provide a solution URL.'}), 400
+    if len(text_content) > 20000:
+        return jsonify({'error': 'Text responses must be 20,000 characters or fewer.'}), 400
+
+    if not file_url and not text_content and (not uploaded_file or not uploaded_file.filename):
+        return jsonify({'error': 'Please upload a file, provide a solution URL, or write a text response.'}), 400
+
+    now = datetime.utcnow()
+    is_late = now > assignment.due_date
+
+    if is_late and not assignment.allow_late_submission:
+        return jsonify({'error': 'The due date has passed and late submissions are not allowed for this assignment.'}), 400
 
     if uploaded_file and uploaded_file.filename:
         try:
@@ -549,11 +570,10 @@ def submit_assignment(assignment_id):
 
     submission = Submission.query.filter_by(assignment_id=assignment_id, student_id=current_user.id).first()
 
-    is_late = datetime.utcnow() > assignment.due_date
-
     if submission:
         submission.file_url = file_url
-        submission.submitted_at = datetime.utcnow()
+        submission.text_content = text_content or None
+        submission.submitted_at = now
         submission.is_graded = False
         submission.is_late = is_late
     else:
@@ -561,6 +581,7 @@ def submit_assignment(assignment_id):
             assignment_id=assignment_id,
             student_id=current_user.id,
             file_url=file_url,
+            text_content=text_content or None,
             is_late=is_late
         )
         db.session.add(submission)

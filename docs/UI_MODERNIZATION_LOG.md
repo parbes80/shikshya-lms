@@ -198,3 +198,78 @@ None. No schema changes or migrations are required.
 - Phase 6: notifications, analytics, discussions and certificates.
 - Phase 7: central authorization, audit logging, versioned migrations and CSP
   enforcement.
+
+---
+
+## 7. Phase 3 completion + assignment depth (2026-11-14)
+
+### 7.1 Searchable course catalogue
+
+`routes/course.py::index` and `templates/courses.html` now support:
+
+- Keyword search across course title and description.
+- Category and difficulty filters.
+- Sort options: newest, oldest, title, price low/high.
+- Server-side pagination (9 per page) that preserves active filters.
+- A result count, active-filter badges, responsive filter sidebar, and a real
+  empty state with a reset action.
+
+### 7.2 Course detail page
+
+`routes/course.py::details` now computes `total_lessons` and `total_minutes`.
+`templates/course_details.html` shows module/lesson/duration metadata and a
+sticky purchase card with a truthful “Course includes” checklist driven by the
+course’s actual modules, lessons, assignments and quizzes.
+
+### 7.3 Lesson player
+
+`routes/course.py::player` now:
+
+- Rejects lesson IDs that belong to another course with `404`.
+- Computes `prev_lesson` / `next_lesson` across visible lessons.
+- Passes the real `certificate` record and `enrollment` to the template.
+
+`templates/course_player.html` adds a sidebar progress bar, previous/next lesson
+navigation, and replaces the fake “Refresh & Claim Certificate” `alert()` with
+real certificate state or honest progress guidance.
+
+### 7.4 Assignment and submission depth
+
+- `Assignment.allow_late_submission` (default `True`).
+- `Submission.text_content` for written responses; `Submission.file_url` is now
+  nullable and text-only submissions store an empty value.
+- `routes/course.py::create_assignment` validates marks (1–10000), parses the
+  due date safely and persists the late-submission setting.
+- `routes/api.py::submit_assignment` accepts text responses, requires at least
+  one of file/URL/text, rejects late submissions when the policy is disabled,
+  and flags late submissions.
+- `routes/api.py::grade_submission` validates numeric marks and clamps them to
+  `[0, max_marks]`.
+- The player assignment tab, student dashboard and teacher dashboard show
+  written responses and late flags.
+
+### 7.5 Verification
+
+```text
+python -m compileall -q app.py config.py extensions.py routes utils tests
+python -m pytest -q
+140 passed
+```
+
+New regressions:
+
+- `tests/test_catalog_player.py`: catalogue search, pagination/filter
+  preservation, empty state, player prev/next links, cross-course lesson
+  rejection, real certificate state, assignment creation validation and
+  late-submission persistence.
+- `tests/test_api.py`: text-only submission, late rejection, late flagging and
+  grade clamping/non-numeric rejection.
+
+### 7.6 Database changes
+
+`app.py` startup migrations add:
+
+- `assignments.allow_late_submission BOOLEAN DEFAULT TRUE`
+- `submissions.text_content TEXT`
+
+Both are additive and safe for existing rows.

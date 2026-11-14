@@ -264,6 +264,9 @@
                         {% else %}
                           <span class="ds-badge ds-badge--warning">Pending</span>
                         {% endif %}
+                        {% if sub.is_late %}
+                          <span class="ds-badge ds-badge--danger">Late</span>
+                        {% endif %}
                       </td>
                     </tr>
                   {% endfor %}
@@ -555,15 +558,21 @@
                     <small class="text-muted">Submitted by: <strong>{{ sub.student.username }}</strong> · {{ sub.assignment.course.title }}</small>
                   </div>
                   <div style="font-size: 0.8rem; margin-bottom: 0.75rem;">
+                    {% if sub.is_late %}<span class="ds-badge ds-badge--danger" style="margin-bottom: 0.4rem;">Late submission</span>{% endif %}
                     Submitted file:
                     {% if sub.file_url %}
                       <a href="{{ sub.file_url|asset_url }}" target="_blank" rel="noopener noreferrer" style="color: var(--primary); font-weight: 600;">
                         <i class="fas fa-file-download"></i> View submission
                       </a>
+                    {% elif sub.text_content %}
+                      <span class="text-muted">Written response</span>
                     {% else %}
                       <span class="text-muted">No file attached.</span>
                     {% endif %}
                   </div>
+                  {% if sub.text_content %}
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem 1rem; font-size: 0.85rem; white-space: pre-wrap; margin-bottom: 0.75rem;">{{ sub.text_content }}</div>
+                  {% endif %}
                   <form action="{{ url_for('api.grade_submission', submission_id=sub.id) }}" method="POST" style="background: var(--bg-app); padding: 1rem; border-radius: var(--radius-md);">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="form-group" style="margin-bottom: 0.75rem;">

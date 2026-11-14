@@ -16,9 +16,12 @@
           <div><i class="fas fa-tag"></i> {{ course.category.name }}</div>
           <div class="rating-stars">
             <i class="fas fa-star"></i>
-            <span>{{ avg_rating }} ({{ reviews|length }} reviews)</span>
+            <span>{{ avg_rating }} ({{ reviews|length }} review{% if reviews|length != 1 %}s{% endif %})</span>
           </div>
           <div><i class="fas fa-user-tie"></i> Teacher: <strong>{{ course.teacher.username }}</strong></div>
+          <div><i class="fas fa-layer-group"></i> {{ course.modules|length }} module{% if course.modules|length != 1 %}s{% endif %}</div>
+          <div><i class="fas fa-play-circle"></i> {{ total_lessons }} lesson{% if total_lessons != 1 %}s{% endif %}</div>
+          <div><i class="fas fa-clock"></i> {{ total_minutes }} minutes of content</div>
         </div>
 
         <!-- Mobile: enroll button shown inline, hidden on desktop -->
@@ -53,7 +56,7 @@
       </div>
       
       <!-- Checkout purchase preview box -->
-      <div class="course-hero-preview">
+      <div class="course-hero-preview" style="align-self: start; position: sticky; top: 1rem;">
         <div class="w-full" style="aspect-ratio: 16/9; border-radius: var(--radius-md); overflow: hidden; margin-bottom: 1.5rem;">
             {% if course.thumbnail_url and course.thumbnail_url != 'course_default.jpg' %}
               <img src="{{ course.thumbnail_url|asset_url }}" alt="{{ course.title }}" class="w-full h-full" style="object-fit: cover;">
@@ -65,11 +68,19 @@
         </div>
         
         <div class="mb-4">
-          <span class="text-sm text-muted" style="text-transform: uppercase; font-weight: bold; display: block;">Course Cost</span>
+          <span class="text-sm text-muted" style="text-transform: uppercase; font-weight: bold; display: block;">Course cost</span>
           <h2 style="font-size: 2.2rem; font-weight: 800;">
             {% if course.price == 0.0 %}Free{% else %}Rs. {{ "{:,.0f}".format(course.price) }}{% endif %}
           </h2>
         </div>
+
+        <ul class="ds-check-list" style="text-align: left; margin-bottom: 1.25rem;">
+          <li><i class="fas fa-check"></i> {{ total_lessons }} lesson{% if total_lessons != 1 %}s{% endif %} across {{ course.modules|length }} module{% if course.modules|length != 1 %}s{% endif %}</li>
+          <li><i class="fas fa-check"></i> {{ total_minutes }} minutes of learning content</li>
+          {% if course.assignments %}<li><i class="fas fa-check"></i> {{ course.assignments|length }} assignment{% if course.assignments|length != 1 %}s{% endif %}</li>{% endif %}
+          {% if course.quizzes %}<li><i class="fas fa-check"></i> {{ course.quizzes|length }} quiz{% if course.quizzes|length != 1 %}zes{% endif %}</li>{% endif %}
+          <li><i class="fas fa-check"></i> Verifiable certificate on completion</li>
+        </ul>
 
         {% if is_enrolled %}
           <div class="badge-success" style="padding: 0.75rem 1rem; margin-bottom: 1rem; border-radius: var(--radius-md); font-weight: bold;">

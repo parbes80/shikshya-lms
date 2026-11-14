@@ -8,7 +8,7 @@ from flask_login import login_required, current_user
 from database import db
 from models.course import Course, Category, Module, Lesson, Review
 from models.learning import Enrollment, LessonProgress, Quiz, Question, Choice, Assignment, LiveClass
-from models.interaction import Payment, DiscussionTopic, Attendance, Coupon, Notification, LabManual
+from models.interaction import Payment, DiscussionTopic, Attendance, Coupon, Notification, LabManual, Certificate
 from utils.mail import send_notification_email
 from utils.sanitize import safe_url, sanitize_html, sanitize_rich_content
 from utils.uploads import (
@@ -89,9 +89,10 @@ def slugify(text):
 
 @course_bp.route('/courses')
 def index():
-    query = request.args.get('q', '')
-    cat_slug = request.args.get('category', '')
-    difficulty = request.args.get('difficulty', '')
+    query = request.args.get('q', '').strip()
+    cat_slug = request.args.get('category', '').strip()
+    difficulty = request.args.get('difficulty', '').strip()
+    sort = request.args.get('sort', 'newest')
 
     courses_query = Course.query.filter_by(is_published=True)
 
@@ -105,9 +106,32 @@ def index():
     if difficulty:
         courses_query = courses_query.filter(Course.difficulty_level == difficulty)
 
-    courses = courses_query.all()
+    sort_options = {
+        'newest': Course.created_at.desc(),
+        'oldest': Course.created_at.asc(),
+        'title': Course.title.asc(),
+        'price_low': Course.price.asc(),
+        'price_high': Course.price.desc(),
+    }
+    courses_query = courses_query.order_by(
+        sort_options.get(sort, sort_options['newest'])
+    )
+
+    page = request.args.get('page', 1, type=int)
+    pagination = courses_query.paginate(page=page, per_page=9, error_out=False)
+    courses = pagination.items
+
     categories = Category.query.all()
-    return render_template('courses.html', courses=courses, categories=categories, query=query, cat_slug=cat_slug, difficulty=difficulty)
+    return render_template(
+        'courses.html',
+        courses=courses,
+        categories=categories,
+        query=query,
+        cat_slug=cat_slug,
+        difficulty=difficulty,
+        sort=sort,
+        pagination=pagination,
+    )
 
 
 @course_bp.route('/courses/<int:course_id>/edit', methods=['GET', 'POST'])
@@ -177,6 +201,13 @@ def details(slug):
     reviews = Review.query.filter_by(course_id=course.id).all()
     avg_rating = round(sum(r.rating for r in reviews) / len(reviews), 1) if reviews else 0.0
 
+    total_lessons = sum(len(module.lessons) for module in course.modules)
+    total_minutes = sum(
+        lesson.duration_minutes or 0
+        for module in course.modules
+        for lesson in module.lessons
+    )
+
     return render_template(
         'course_details.html',
         course=course,
@@ -184,7 +215,9 @@ def details(slug):
         enrollment=enrollment,
         pending_payment=pending_payment,
         reviews=reviews,
-        avg_rating=avg_rating
+        avg_rating=avg_rating,
+        total_lessons=total_lessons,
+        total_minutes=total_minutes,
     )
 
 
@@ -306,6 +339,9 @@ def player(slug):
 
     if lesson_id:
         active_lesson = Lesson.query.get_or_404(lesson_id)
+        # Never serve a lesson that belongs to another course.
+        if active_lesson.module.course_id != course.id:
+            abort(404)
         # teachers/admin can view any lesson; students only if published
         if not is_admin and not is_teacher and not is_lesson_visible(active_lesson):
             flash('This lesson is not published yet.', 'warning')
@@ -332,6 +368,27 @@ def player(slug):
                     break
 
     active_progress = progress_map.get(active_lesson.id) if active_lesson else None
+
+    visible_lessons = [
+        lesson
+        for module in course.modules
+        for lesson in module.lessons
+        if is_lesson_visible(lesson)
+    ]
+    prev_lesson = None
+    next_lesson = None
+    if active_lesson in visible_lessons:
+        index = visible_lessons.index(active_lesson)
+        if index > 0:
+            prev_lesson = visible_lessons[index - 1]
+        if index < len(visible_lessons) - 1:
+            next_lesson = visible_lessons[index + 1]
+
+    certificate = None
+    if enrollment:
+        certificate = Certificate.query.filter_by(
+            student_id=current_user.id, course_id=course.id
+        ).first()
 
     # process lesson text for sub-topic navigation
     lesson_headings = []
@@ -369,6 +426,7 @@ def player(slug):
     return render_template(
         'course_player.html',
         course=course,
+        enrollment=enrollment,
         active_lesson=active_lesson,
         active_progress=active_progress,
         progress_map=progress_map,
@@ -384,6 +442,9 @@ def player(slug):
         lesson_completed=lesson_completed,
         is_teacher=is_teacher,
         is_admin=is_admin,
+        prev_lesson=prev_lesson,
+        next_lesson=next_lesson,
+        certificate=certificate,
         now=now
     )
 
@@ -902,22 +963,37 @@ def create_assignment(course_id):
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
-        max_marks = int(request.form.get('max_marks', 100))
-        due_date_str = request.form.get('due_date')
+        due_date_str = request.form.get('due_date', '').strip()
+        allow_late_submission = request.form.get('allow_late_submission') in ('on', 'true', '1', 'yes')
 
         if not title or not description or not due_date_str:
             flash('Title, description, and due date are required.', 'danger')
             return redirect(url_for('course.create_assignment', course_id=course_id))
 
+        try:
+            max_marks = int(request.form.get('max_marks', 100))
+        except (TypeError, ValueError):
+            flash('Maximum marks must be a whole number.', 'danger')
+            return redirect(url_for('course.create_assignment', course_id=course_id))
+
+        if max_marks < 1 or max_marks > 10000:
+            flash('Maximum marks must be between 1 and 10000.', 'danger')
+            return redirect(url_for('course.create_assignment', course_id=course_id))
+
         from datetime import datetime as dt
-        due_date = dt.strptime(due_date_str, '%Y-%m-%dT%H:%M')
+        try:
+            due_date = dt.strptime(due_date_str, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            flash('Please provide a valid due date and time.', 'danger')
+            return redirect(url_for('course.create_assignment', course_id=course_id))
 
         assignment = Assignment(
             course_id=course.id,
             title=title,
             description=description,
             max_marks=max_marks,
-            due_date=due_date
+            due_date=due_date,
+            allow_late_submission=allow_late_submission
         )
         db.session.add(assignment)
         db.session.commit()

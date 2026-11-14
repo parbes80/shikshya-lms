@@ -292,6 +292,9 @@
                     <td>
                       <strong>{{ sub.assignment.title }}</strong><br>
                       <small class="text-muted">{{ sub.assignment.course.title }}</small>
+                      {% if sub.is_late %}
+                        <span class="ds-badge ds-badge--danger" style="margin-left: 0.35rem;">Late</span>
+                      {% endif %}
                     </td>
                     <td>{{ sub.submitted_at.strftime('%Y-%m-%d') }}</td>
                     <td>

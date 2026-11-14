@@ -298,6 +298,11 @@
   color: var(--ds-error);
 }
 
+.ds-badge--danger {
+  background: color-mix(in srgb, var(--ds-error) 14%, transparent);
+  color: var(--ds-error);
+}
+
 /* ---------- Alerts ---------- */
 
 .ds-alert {

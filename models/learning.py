@@ -43,6 +43,7 @@ class Assignment(db.Model):
     file_url = db.Column(db.String(255), nullable=True)
     max_marks = db.Column(db.Integer, default=100)
     due_date = db.Column(db.DateTime, nullable=False)
+    allow_late_submission = db.Column(db.Boolean, default=True)
 
     submissions = db.relationship('Submission', backref='assignment', lazy=True, cascade="all, delete-orphan")
 
@@ -56,7 +57,8 @@ class Submission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     assignment_id = db.Column(db.Integer, db.ForeignKey('assignments.id', ondelete='CASCADE'), nullable=False)
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    file_url = db.Column(db.String(255), nullable=False)
+    file_url = db.Column(db.String(255), nullable=True)
+    text_content = db.Column(db.Text, nullable=True)
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
     marks_obtained = db.Column(db.Float, default=0.0)
     feedback = db.Column(db.Text, nullable=True)

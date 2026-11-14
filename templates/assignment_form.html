@@ -28,12 +28,20 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
         <div class="form-group">
           <label class="form-label" for="assign-marks">Maximum Marks</label>
-          <input type="number" name="max_marks" id="assign-marks" class="form-control" value="100" min="1" required>
+          <input type="number" name="max_marks" id="assign-marks" class="form-control" value="100" min="1" max="10000" required>
         </div>
         <div class="form-group">
           <label class="form-label" for="assign-due">Due Date & Time</label>
           <input type="datetime-local" name="due_date" id="assign-due" class="form-control" required>
         </div>
+      </div>
+
+      <div class="form-group">
+        <label class="filter-option" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" name="allow_late_submission" id="assign-late" checked>
+          <span>Allow submissions after the due date</span>
+        </label>
+        <p class="text-sm text-muted" style="margin-top: 0.35rem;">Late submissions are flagged for you when grading.</p>
       </div>
 
       <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem; padding: 0.75rem;">

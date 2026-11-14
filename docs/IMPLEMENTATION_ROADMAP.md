@@ -199,9 +199,10 @@ Route `/files/<kind>/<name>` validating ownership/enrollment and streaming from 
 
 ## 5. Phase 3 - UI/UX modernization (4-6 weeks)
 
-**Status:** design-system foundation, public homepage refresh and student/teacher/admin
-dashboard refresh implemented (`docs/UI_MODERNIZATION_LOG.md`). Catalogue and
-player work remain.
+**Status:** design-system foundation, public homepage refresh, student/teacher/admin
+dashboard refresh, searchable catalogue, richer course-detail page and player
+navigation implemented (`docs/UI_MODERNIZATION_LOG.md`). Remaining Phase 3 work:
+server-synced notes, bookmarks, styleguide route and full WCAG gate.
 
 Execute `docs/UX_UI_IMPROVEMENT_PLAN.md` in this order:
 
@@ -228,6 +229,12 @@ Execute `docs/UX_UI_IMPROVEMENT_PLAN.md` in this order:
 ### 4B. Assignments
 - `SubmissionVersion` history, multiple files (`SubmissionFile`), rubric + criteria + levels, late policy (penalty/closed), resubmission rules, annotations.
 - Bulk download and CSV export for teachers.
+
+**Implemented in this increment:** per-assignment `allow_late_submission` policy,
+late flags on submissions, text-only responses (`Submission.text_content`),
+server-side numeric validation and score clamping on grading, and teacher/student
+surfaces for written responses and late indicators. Rubrics, version history,
+multi-file uploads and exports remain.
 
 ### 4C. Attendance
 - Class/section/subject model, monthly matrix, CSV/PDF export, absence notifications, teacher attendance if required.

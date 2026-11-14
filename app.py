@@ -268,6 +268,14 @@ def create_app(config_overrides=None):
                     db.session.execute(sa.text('ALTER TABLE lessons ADD COLUMN publish_at TIMESTAMP'))
                     db.session.commit()
                     app.logger.info('Added publish_at column to lessons')
+                if 'assignments' in existing_tables and 'allow_late_submission' not in [c['name'] for c in insp.get_columns('assignments')]:
+                    db.session.execute(sa.text('ALTER TABLE assignments ADD COLUMN allow_late_submission BOOLEAN DEFAULT TRUE'))
+                    db.session.commit()
+                    app.logger.info('Added allow_late_submission column to assignments')
+                if 'submissions' in existing_tables and 'text_content' not in [c['name'] for c in insp.get_columns('submissions')]:
+                    db.session.execute(sa.text('ALTER TABLE submissions ADD COLUMN text_content TEXT'))
+                    db.session.commit()
+                    app.logger.info('Added text_content column to submissions')
             # Roles are infrastructure, not demo data: always ensure they exist
             # so registration and the create-admin CLI work on a fresh database.
             from seed import ensure_roles, seed_database
