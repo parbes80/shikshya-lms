@@ -7,7 +7,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from database import db
 from models.course import Course, Category, Module, Lesson, Review
-from models.learning import Enrollment, LessonProgress, Quiz, Question, Choice, Assignment, LiveClass
+from models.learning import Enrollment, LessonProgress, Quiz, Question, Choice, Assignment, LiveClass, QuizAttemptAnswer
 from models.interaction import Payment, DiscussionTopic, Attendance, Coupon, Notification, LabManual, Certificate
 from utils.mail import send_notification_email
 from utils.sanitize import safe_url, sanitize_html, sanitize_rich_content
@@ -693,10 +693,42 @@ def create_quiz(course_id):
         redirect_back = url_for('eval.index', course_id=course_id) if from_eval else url_for('dashboard.teacher')
 
         title = request.form.get('title', '').strip()
-        time_limit = int(request.form.get('time_limit_minutes', 10))
-        passing_score = int(request.form.get('passing_score', 60))
-        max_attempts = int(request.form.get('max_attempts', 0))
+        try:
+            time_limit = int(request.form.get('time_limit_minutes', 10))
+            passing_score = int(request.form.get('passing_score', 60))
+            max_attempts = int(request.form.get('max_attempts', 0))
+        except (TypeError, ValueError):
+            flash('Time limit, passing score and attempts must be whole numbers.', 'danger')
+            return redirect(url_for('course.create_quiz', course_id=course_id, from_eval=from_eval, type=eval_type))
         lesson_id = request.form.get('lesson_id', type=int)
+        results_published = request.form.get('results_published') in ('on', 'true', '1', 'yes')
+
+        opens_raw = request.form.get('opens_at', '').strip()
+        closes_raw = request.form.get('closes_at', '').strip()
+        opens_at = None
+        closes_at = None
+        try:
+            if opens_raw:
+                opens_at = datetime.strptime(opens_raw, '%Y-%m-%dT%H:%M')
+            if closes_raw:
+                closes_at = datetime.strptime(closes_raw, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            flash('Please provide valid opening and closing times.', 'danger')
+            return redirect(url_for('course.create_quiz', course_id=course_id, from_eval=from_eval, type=eval_type))
+
+        if opens_at and closes_at and closes_at <= opens_at:
+            flash('The closing time must be after the opening time.', 'danger')
+            return redirect(url_for('course.create_quiz', course_id=course_id, from_eval=from_eval, type=eval_type))
+
+        if time_limit < 1 or time_limit > 600:
+            flash('Time limit must be between 1 and 600 minutes.', 'danger')
+            return redirect(url_for('course.create_quiz', course_id=course_id, from_eval=from_eval, type=eval_type))
+        if passing_score < 0 or passing_score > 100:
+            flash('Passing score must be between 0 and 100.', 'danger')
+            return redirect(url_for('course.create_quiz', course_id=course_id, from_eval=from_eval, type=eval_type))
+        if max_attempts < 0:
+            flash('Max attempts cannot be negative.', 'danger')
+            return redirect(url_for('course.create_quiz', course_id=course_id, from_eval=from_eval, type=eval_type))
 
         if not title:
             flash(f'{label} title is required.', 'danger')
@@ -708,7 +740,10 @@ def create_quiz(course_id):
             title=title,
             time_limit_minutes=time_limit,
             passing_score=passing_score,
-            max_attempts=max_attempts
+            max_attempts=max_attempts,
+            opens_at=opens_at,
+            closes_at=closes_at,
+            results_published=results_published,
         )
         db.session.add(quiz)
         db.session.flush()
@@ -829,10 +864,42 @@ def edit_quiz(course_id, quiz_id):
         redirect_back = url_for('eval.index', course_id=course_id) if from_eval else url_for('dashboard.teacher')
 
         title = request.form.get('title', '').strip()
-        time_limit = int(request.form.get('time_limit_minutes', 10))
-        passing_score = int(request.form.get('passing_score', 60))
-        max_attempts = int(request.form.get('max_attempts', 0))
+        try:
+            time_limit = int(request.form.get('time_limit_minutes', 10))
+            passing_score = int(request.form.get('passing_score', 60))
+            max_attempts = int(request.form.get('max_attempts', 0))
+        except (TypeError, ValueError):
+            flash('Time limit, passing score and attempts must be whole numbers.', 'danger')
+            return redirect(url_for('course.edit_quiz', course_id=course_id, quiz_id=quiz_id, from_eval=from_eval, type=eval_type))
         lesson_id = request.form.get('lesson_id', type=int)
+        results_published = request.form.get('results_published') in ('on', 'true', '1', 'yes')
+
+        opens_raw = request.form.get('opens_at', '').strip()
+        closes_raw = request.form.get('closes_at', '').strip()
+        opens_at = None
+        closes_at = None
+        try:
+            if opens_raw:
+                opens_at = datetime.strptime(opens_raw, '%Y-%m-%dT%H:%M')
+            if closes_raw:
+                closes_at = datetime.strptime(closes_raw, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            flash('Please provide valid opening and closing times.', 'danger')
+            return redirect(url_for('course.edit_quiz', course_id=course_id, quiz_id=quiz_id, from_eval=from_eval, type=eval_type))
+
+        if opens_at and closes_at and closes_at <= opens_at:
+            flash('The closing time must be after the opening time.', 'danger')
+            return redirect(url_for('course.edit_quiz', course_id=course_id, quiz_id=quiz_id, from_eval=from_eval, type=eval_type))
+
+        if time_limit < 1 or time_limit > 600:
+            flash('Time limit must be between 1 and 600 minutes.', 'danger')
+            return redirect(url_for('course.edit_quiz', course_id=course_id, quiz_id=quiz_id, from_eval=from_eval, type=eval_type))
+        if passing_score < 0 or passing_score > 100:
+            flash('Passing score must be between 0 and 100.', 'danger')
+            return redirect(url_for('course.edit_quiz', course_id=course_id, quiz_id=quiz_id, from_eval=from_eval, type=eval_type))
+        if max_attempts < 0:
+            flash('Max attempts cannot be negative.', 'danger')
+            return redirect(url_for('course.edit_quiz', course_id=course_id, quiz_id=quiz_id, from_eval=from_eval, type=eval_type))
 
         if not title:
             flash(f'{label} title is required.', 'danger')
@@ -843,6 +910,15 @@ def edit_quiz(course_id, quiz_id):
         quiz.passing_score = passing_score
         quiz.max_attempts = max_attempts
         quiz.lesson_id = lesson_id or None
+        quiz.opens_at = opens_at
+        quiz.closes_at = closes_at
+        quiz.results_published = results_published
+
+        question_ids = [q.id for q in quiz.questions]
+        if question_ids:
+            QuizAttemptAnswer.query.filter(
+                QuizAttemptAnswer.question_id.in_(question_ids)
+            ).delete(synchronize_session=False)
 
         for q in quiz.questions[:]:
             db.session.delete(q)

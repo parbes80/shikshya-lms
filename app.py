@@ -264,6 +264,23 @@ def create_app(config_overrides=None):
                     db.session.execute(sa.text('ALTER TABLE quizzes ADD COLUMN max_attempts INTEGER DEFAULT 0'))
                     db.session.commit()
                     app.logger.info('Added max_attempts column to quizzes')
+                if 'quizzes' in existing_tables:
+                    quiz_cols = [c['name'] for c in insp.get_columns('quizzes')]
+                    if 'opens_at' not in quiz_cols:
+                        db.session.execute(sa.text('ALTER TABLE quizzes ADD COLUMN opens_at TIMESTAMP'))
+                        db.session.commit()
+                        app.logger.info('Added opens_at column to quizzes')
+                    if 'closes_at' not in quiz_cols:
+                        db.session.execute(sa.text('ALTER TABLE quizzes ADD COLUMN closes_at TIMESTAMP'))
+                        db.session.commit()
+                        app.logger.info('Added closes_at column to quizzes')
+                    if 'results_published' not in quiz_cols:
+                        db.session.execute(sa.text('ALTER TABLE quizzes ADD COLUMN results_published BOOLEAN DEFAULT TRUE'))
+                        db.session.commit()
+                        app.logger.info('Added results_published column to quizzes')
+                if 'quiz_attempt_answers' not in existing_tables:
+                    db.create_all()
+                    app.logger.info('Created new tables (quiz_attempt_answers)')
                 if 'lessons' in existing_tables and 'publish_at' not in [c['name'] for c in insp.get_columns('lessons')]:
                     db.session.execute(sa.text('ALTER TABLE lessons ADD COLUMN publish_at TIMESTAMP'))
                     db.session.commit()

@@ -398,9 +398,13 @@
                   <strong>{{ att.quiz.title }}</strong><br>
                   <small class="text-muted">{{ att.completed_at.strftime('%Y-%m-%d %H:%M') }}</small>
                 </div>
-                <span class="ds-badge {% if att.is_passed %}ds-badge--success{% else %}ds-badge--error{% endif %}">
-                  {{ att.score }}% · {{ 'Passed' if att.is_passed else 'Failed' }}
-                </span>
+                {% if att.quiz.results_published %}
+                  <span class="ds-badge {% if att.is_passed %}ds-badge--success{% else %}ds-badge--error{% endif %}">
+                    {{ att.score }}% · {{ 'Passed' if att.is_passed else 'Failed' }}
+                  </span>
+                {% else %}
+                  <span class="ds-badge ds-badge--warning">Awaiting results</span>
+                {% endif %}
               </li>
             {% endfor %}
           </ul>

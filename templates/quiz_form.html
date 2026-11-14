@@ -44,16 +44,35 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
         <div class="form-group">
           <label class="form-label" for="quiz-time">Time Limit (minutes)</label>
-          <input type="number" name="time_limit_minutes" id="quiz-time" class="form-control" value="{{ quiz.time_limit_minutes if quiz else 10 }}" min="1" required>
+          <input type="number" name="time_limit_minutes" id="quiz-time" class="form-control" value="{{ quiz.time_limit_minutes if quiz else 10 }}" min="1" max="600" required>
         </div>
         <div class="form-group">
           <label class="form-label" for="quiz-passing">Passing Score (%)</label>
-          <input type="number" name="passing_score" id="quiz-passing" class="form-control" value="{{ quiz.passing_score if quiz else 60 }}" min="1" max="100" required>
+          <input type="number" name="passing_score" id="quiz-passing" class="form-control" value="{{ quiz.passing_score if quiz else 60 }}" min="0" max="100" required>
         </div>
         <div class="form-group">
           <label class="form-label" for="quiz-max-attempts">Max Attempts <small style="color: var(--text-muted); font-weight: normal;">(0 = unlimited)</small></label>
           <input type="number" name="max_attempts" id="quiz-max-attempts" class="form-control" value="{{ quiz.max_attempts if quiz else 0 }}" min="0">
         </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label" for="quiz-opens">Opens At <small style="color: var(--text-muted); font-weight: normal;">(optional)</small></label>
+          <input type="datetime-local" name="opens_at" id="quiz-opens" class="form-control" value="{{ quiz.opens_at.strftime('%Y-%m-%dT%H:%M') if quiz and quiz.opens_at else '' }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="quiz-closes">Closes At <small style="color: var(--text-muted); font-weight: normal;">(optional)</small></label>
+          <input type="datetime-local" name="closes_at" id="quiz-closes" class="form-control" value="{{ quiz.closes_at.strftime('%Y-%m-%dT%H:%M') if quiz and quiz.closes_at else '' }}">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="filter-option" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+          <input type="checkbox" name="results_published" id="quiz-results-published" {% if not quiz or quiz.results_published %}checked{% endif %}>
+          <span>Publish results and correct answers immediately after submission</span>
+        </label>
+        <p class="text-sm text-muted" style="margin-top: 0.35rem;">When unchecked, students see a confirmation but not their score until you publish results.</p>
       </div>
 
       <hr style="border-color: var(--border-color); margin: 1.5rem 0;">

@@ -3,7 +3,7 @@ from models.interaction import (
     DiscussionTopic,
     Notification,
 )
-from models.learning import QuizAttempt, Submission
+from models.learning import QuizAttempt, QuizAttemptAnswer, Submission
 
 
 def test_api_requires_login(client):
@@ -668,3 +668,122 @@ def test_grade_submission_rejects_non_numeric_marks(
 
     assert response.status_code == 302
     assert db.session.get(Submission, submission.id).is_graded is False
+
+
+def test_quiz_submission_stores_per_question_answers(
+    client, auth, make_user, make_course, enroll
+):
+    student = make_user()
+    data = make_course(quiz=True)
+    enroll(student, data.course)
+    auth.login(student)
+
+    response = client.post('/api/quiz/submit', json={
+        'quiz_id': data.quiz.id,
+        'answers': {str(data.question.id): data.choices[0].id},
+    })
+
+    assert response.status_code == 200
+    attempt = QuizAttempt.query.filter_by(
+        quiz_id=data.quiz.id, student_id=student.id
+    ).one()
+    rows = QuizAttemptAnswer.query.filter_by(attempt_id=attempt.id).all()
+    assert len(rows) == 1
+    assert rows[0].question_id == data.question.id
+    assert rows[0].selected_choice_id == data.choices[0].id
+    assert rows[0].is_correct is True
+    assert rows[0].points_awarded == float(data.question.points)
+
+
+def test_quiz_submission_rejects_before_open(
+    client, auth, make_user, make_course, enroll
+):
+    from datetime import datetime, timedelta
+
+    student = make_user()
+    data = make_course(quiz=True)
+    data.quiz.opens_at = datetime.utcnow() + timedelta(days=1)
+    db.session.commit()
+    enroll(student, data.course)
+    auth.login(student)
+
+    response = client.post('/api/quiz/submit', json={
+        'quiz_id': data.quiz.id,
+        'answers': {},
+    })
+
+    assert response.status_code == 403
+    assert QuizAttempt.query.filter_by(
+        quiz_id=data.quiz.id, student_id=student.id
+    ).count() == 0
+
+
+def test_quiz_submission_rejects_after_close(
+    client, auth, make_user, make_course, enroll
+):
+    from datetime import datetime, timedelta
+
+    student = make_user()
+    data = make_course(quiz=True)
+    data.quiz.closes_at = datetime.utcnow() - timedelta(hours=1)
+    db.session.commit()
+    enroll(student, data.course)
+    auth.login(student)
+
+    response = client.post('/api/quiz/submit', json={
+        'quiz_id': data.quiz.id,
+        'answers': {},
+    })
+
+    assert response.status_code == 403
+
+
+def test_quiz_results_hidden_until_published(
+    client, auth, make_user, make_course, enroll
+):
+    student = make_user()
+    data = make_course(quiz=True)
+    data.quiz.results_published = False
+    db.session.commit()
+    enroll(student, data.course)
+    auth.login(student)
+
+    response = client.post('/api/quiz/submit', json={
+        'quiz_id': data.quiz.id,
+        'answers': {str(data.question.id): data.choices[0].id},
+    })
+
+    payload = response.get_json()
+    assert response.status_code == 200
+    assert payload['results_published'] is False
+    assert payload['score'] is None
+    assert payload['results'] == {}
+
+    attempt = QuizAttempt.query.filter_by(
+        quiz_id=data.quiz.id, student_id=student.id
+    ).one()
+    assert attempt.score == 100.0
+
+
+def test_quiz_submission_rejects_choice_from_another_question(
+    client, auth, make_user, make_course, enroll
+):
+    student = make_user()
+    data = make_course(quiz=True)
+    other = make_course(quiz=True)
+    enroll(student, data.course)
+    auth.login(student)
+
+    response = client.post('/api/quiz/submit', json={
+        'quiz_id': data.quiz.id,
+        # choice id from a different quiz must not be accepted
+        'answers': {str(data.question.id): other.choices[0].id},
+    })
+
+    assert response.status_code == 200
+    attempt = QuizAttempt.query.filter_by(
+        quiz_id=data.quiz.id, student_id=student.id
+    ).one()
+    row = QuizAttemptAnswer.query.filter_by(attempt_id=attempt.id).one()
+    assert row.selected_choice_id is None
+    assert row.is_correct is False

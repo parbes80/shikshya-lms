@@ -273,3 +273,60 @@ New regressions:
 - `submissions.text_content TEXT`
 
 Both are additive and safe for existing rows.
+
+---
+
+## 8. Examination depth (2026-11-14)
+
+### 8.1 Quiz scheduling and result visibility
+
+- `Quiz.opens_at`, `Quiz.closes_at` and `Quiz.results_published`.
+- `Quiz.is_open(at)` centralises the window check.
+- `routes/course.py::create_quiz` and `edit_quiz` validate numeric fields,
+  parse opening/closing times, reject a closing time before the opening time
+  and persist result visibility.
+- `routes/api.py::take_quiz_view` blocks students outside the window with a
+  clear message; teachers can still preview.
+- `routes/api.py::submit_quiz` re-checks the window server-side so a stale page
+  cannot submit late.
+
+### 8.2 Per-question attempt records
+
+- New `QuizAttemptAnswer` model stores the selected choice, correctness and
+  points awarded for every question in an attempt.
+- Choice IDs from another question/quiz are rejected and stored as no answer.
+- Editing a quiz deletes its old questions, so existing attempt-answer rows for
+  those questions are removed first to avoid integrity errors.
+
+### 8.3 Result gating
+
+- When `results_published` is false, submission responses omit the score,
+  pass/fail and correct answers, and the notification says results are pending.
+- The quiz page and student dashboard show an “Awaiting results” state instead
+  of revealing scores.
+
+### 8.4 Verification
+
+```text
+python -m compileall -q app.py models routes tests
+python -m pytest -q
+147 passed
+```
+
+New regressions:
+
+- `tests/test_api.py`: per-question answers stored, submissions rejected before
+  opening/after closing, hidden results, and cross-question choice rejection.
+- `tests/test_catalog_player.py`: quiz schedule/result visibility saved and
+  invalid windows rejected.
+
+### 8.5 Database changes
+
+`app.py` startup migrations add:
+
+- `quizzes.opens_at TIMESTAMP`
+- `quizzes.closes_at TIMESTAMP`
+- `quizzes.results_published BOOLEAN DEFAULT TRUE`
+- `quiz_attempt_answers` table (created via `db.create_all()`)
+
+All additive and safe for existing rows.

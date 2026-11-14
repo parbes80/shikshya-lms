@@ -79,11 +79,23 @@ class Quiz(db.Model):
     time_limit_minutes = db.Column(db.Integer, default=15)
     passing_score = db.Column(db.Integer, default=60)
     max_attempts = db.Column(db.Integer, default=0)  # 0 = unlimited
+    opens_at = db.Column(db.DateTime, nullable=True)
+    closes_at = db.Column(db.DateTime, nullable=True)
+    results_published = db.Column(db.Boolean, default=True)
 
     questions = db.relationship('Question', backref='quiz', lazy=True, cascade="all, delete-orphan")
     attempts = db.relationship('QuizAttempt', backref='quiz', lazy=True, cascade="all, delete-orphan")
 
     lesson = db.relationship('Lesson', backref=db.backref('quizzes', lazy=True))
+
+    def is_open(self, at=None):
+        """Return True when the quiz is inside its scheduled window."""
+        at = at or datetime.utcnow()
+        if self.opens_at and at < self.opens_at:
+            return False
+        if self.closes_at and at > self.closes_at:
+            return False
+        return True
 
     def __repr__(self):
         return f'<Quiz {self.title}>'
@@ -128,9 +140,50 @@ class QuizAttempt(db.Model):
     completed_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     student = db.relationship('User', backref=db.backref('quiz_attempts', lazy='dynamic'))
+    answers = db.relationship(
+        'QuizAttemptAnswer',
+        backref='attempt',
+        lazy=True,
+        cascade='all, delete-orphan',
+    )
 
     def __repr__(self):
         return f'<QuizAttempt Student {self.student_id} Score: {self.score}>'
+
+
+class QuizAttemptAnswer(db.Model):
+    __tablename__ = 'quiz_attempt_answers'
+    __table_args__ = (
+        db.UniqueConstraint('attempt_id', 'question_id', name='uq_attempt_question'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    attempt_id = db.Column(
+        db.Integer,
+        db.ForeignKey('quiz_attempts.id', ondelete='CASCADE'),
+        nullable=False,
+    )
+    question_id = db.Column(
+        db.Integer,
+        db.ForeignKey('questions.id', ondelete='CASCADE'),
+        nullable=False,
+    )
+    selected_choice_id = db.Column(
+        db.Integer,
+        db.ForeignKey('choices.id', ondelete='SET NULL'),
+        nullable=True,
+    )
+    is_correct = db.Column(db.Boolean, default=False)
+    points_awarded = db.Column(db.Float, default=0.0)
+
+    question = db.relationship('Question')
+    selected_choice = db.relationship('Choice')
+
+    def __repr__(self):
+        return (
+            f'<QuizAttemptAnswer Attempt {self.attempt_id} '
+            f'Question {self.question_id} Correct: {self.is_correct}>'
+        )
 
 
 class LiveClass(db.Model):

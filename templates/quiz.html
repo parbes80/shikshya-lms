@@ -14,7 +14,7 @@
 <div style="max-width: 700px; margin: 2rem auto; padding: 1rem;">
   
   <!-- Interactive Timed Quiz Box Panel -->
-  <div class="card" id="quiz-box" data-quiz-id="{{ quiz.id }}" data-duration="{{ quiz.time_limit_minutes }}" style="padding: 2.5rem; position: relative;">
+  <div class="card" id="quiz-box" data-quiz-id="{{ quiz.id }}" data-duration="{{ quiz.time_limit_minutes }}" data-results-published="{{ 'true' if quiz.results_published else 'false' }}" style="padding: 2.5rem; position: relative;">
     <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: var(--primary);"></div>
     
     <!-- Timer Indicator header -->
@@ -24,6 +24,9 @@
         <h2 style="font-size: 1.4rem; font-weight: 800;">{{ quiz.title }}</h2>
         {% if quiz.max_attempts %}
         <small style="color: var(--text-muted);">Attempt {{ attempts_count + 1 }} of {{ quiz.max_attempts }}</small>
+        {% endif %}
+        {% if quiz.closes_at %}
+        <small style="color: var(--text-muted); display: block; margin-top: 0.25rem;"><i class="far fa-calendar-times"></i> Closes {{ quiz.closes_at.strftime('%b %d, %Y at %I:%M %p') }}</small>
         {% endif %}
       </div>
       <div id="quiz-timer-box" style="background: var(--bg-app); border: 1px solid var(--border-color); padding: 0.5rem 1rem; border-radius: var(--radius-md); font-family: monospace; font-size: 1.15rem; font-weight: bold; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">

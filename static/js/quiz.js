@@ -134,6 +134,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const finalScore = document.getElementById('quiz-final-score');
     const finalStatus = document.getElementById('quiz-final-status');
+    const reviewList = document.getElementById('quiz-corrections-review');
+    const resultsPublished = quizBox.getAttribute('data-results-published') !== 'false';
+
+    if (!resultsPublished || data.results_published === false) {
+      finalScore.textContent = 'Pending';
+      finalStatus.textContent = 'Awaiting results';
+      finalStatus.className = 'status-badge';
+      finalStatus.style.background = 'var(--bg-app)';
+      finalStatus.style.color = 'var(--text-muted)';
+      reviewList.innerHTML = '<p style="color: var(--text-muted);">Your submission was received. Your instructor will publish results and feedback.</p>';
+      return;
+    }
 
     finalScore.textContent = `${round(data.score, 1)}%`;
 
@@ -149,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
       finalStatus.style.color = '#fff';
     }
 
-    const reviewList = document.getElementById('quiz-corrections-review');
     reviewList.innerHTML = '';
 
     questionCards.forEach((card, idx) => {

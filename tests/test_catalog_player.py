@@ -1,5 +1,5 @@
 from database import db
-from models.learning import Assignment
+from models.learning import Assignment, Quiz
 
 
 def test_catalog_search_filters_by_keyword(client, make_course):
@@ -147,3 +147,54 @@ def test_create_assignment_rejects_invalid_due_date(
 
     assert response.status_code == 302
     assert Assignment.query.filter_by(title='Bad date').first() is None
+
+
+def test_create_quiz_saves_schedule_and_result_visibility(
+    client, auth, make_course
+):
+    data = make_course()
+    auth.login(data.teacher)
+
+    response = client.post(
+        f'/courses/{data.course.id}/quiz/create',
+        data={
+            'title': 'Scheduled quiz',
+            'time_limit_minutes': '20',
+            'passing_score': '70',
+            'max_attempts': '2',
+            'opens_at': '2027-01-01T09:00',
+            'closes_at': '2027-01-01T11:00',
+            # results_published omitted => hidden until published
+        },
+    )
+
+    assert response.status_code == 302
+    quiz = Quiz.query.filter_by(title='Scheduled quiz').one()
+    assert quiz.time_limit_minutes == 20
+    assert quiz.passing_score == 70
+    assert quiz.max_attempts == 2
+    assert quiz.opens_at is not None
+    assert quiz.closes_at is not None
+    assert quiz.results_published is False
+
+
+def test_create_quiz_rejects_close_before_open(
+    client, auth, make_course
+):
+    data = make_course()
+    auth.login(data.teacher)
+
+    response = client.post(
+        f'/courses/{data.course.id}/quiz/create',
+        data={
+            'title': 'Bad window',
+            'time_limit_minutes': '20',
+            'passing_score': '70',
+            'max_attempts': '0',
+            'opens_at': '2027-01-01T11:00',
+            'closes_at': '2027-01-01T09:00',
+        },
+    )
+
+    assert response.status_code == 302
+    assert Quiz.query.filter_by(title='Bad window').first() is None

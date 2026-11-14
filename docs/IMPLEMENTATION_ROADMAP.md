@@ -226,6 +226,12 @@ Execute `docs/UX_UI_IMPROVEMENT_PLAN.md` in this order:
 - Quiz scheduling (`opens_at`, `closes_at`), result publishing (`results_published`), manual grading queue for long answers.
 - **Security:** answers never sent to the client before submission; server-side scoring; attempt ownership checks; audit every grade override.
 
+**Implemented in this increment:** `QuizAttemptAnswer` per-question records,
+`Quiz.opens_at` / `closes_at` scheduling enforced on view and submit,
+`Quiz.results_published` gating on submission responses, quiz page and student
+dashboard, and cross-question choice rejection. Question banks, short/long
+answer types, randomization flags and manual grading queues remain.
+
 ### 4B. Assignments
 - `SubmissionVersion` history, multiple files (`SubmissionFile`), rubric + criteria + levels, late policy (penalty/closed), resubmission rules, annotations.
 - Bulk download and CSV export for teachers.

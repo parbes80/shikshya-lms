@@ -9,7 +9,7 @@ from flask import (Blueprint, jsonify, request, abort, render_template, redirect
                    url_for, flash, send_file, send_from_directory, current_app)
 from flask_login import login_required, current_user
 from database import db
-from models.learning import Enrollment, LessonProgress, Quiz, QuizAttempt, Assignment, Submission, Question, Choice
+from models.learning import Enrollment, LessonProgress, Quiz, QuizAttempt, QuizAttemptAnswer, Assignment, Submission, Question, Choice
 from models.course import Course, Review, Lesson
 from models.interaction import Notification, DiscussionTopic, DiscussionReply, Certificate
 from utils.sanitize import safe_url
@@ -191,6 +191,10 @@ def submit_quiz():
     if not enrollment:
         return jsonify({'error': 'You are not enrolled in this course.'}), 403
 
+    now = datetime.utcnow()
+    if not quiz.is_open(now):
+        return jsonify({'error': 'This quiz is not open for submission right now.'}), 403
+
     # lesson-gated quiz: must complete the lesson first
     if quiz.lesson_id:
         lp = LessonProgress.query.filter_by(
@@ -214,21 +218,40 @@ def submit_quiz():
     correct_count = 0
 
     results = {}
+    attempt_rows = []
     for q in questions:
         selected_choice_id = _coerce_int(answers.get(str(q.id)))
+        # Only accept a choice that actually belongs to this question.
+        if selected_choice_id is not None:
+            owned = Choice.query.filter_by(
+                id=selected_choice_id, question_id=q.id
+            ).first()
+            if owned is None:
+                selected_choice_id = None
+
         correct_choice = Choice.query.filter_by(question_id=q.id, is_correct=True).first()
 
-        is_correct = False
-        if selected_choice_id is not None and correct_choice and selected_choice_id == correct_choice.id:
+        is_correct = bool(
+            selected_choice_id is not None
+            and correct_choice is not None
+            and selected_choice_id == correct_choice.id
+        )
+        points_awarded = float(q.points or 0) if is_correct else 0.0
+        if is_correct:
             score_obtained += q.points or 0
             correct_count += 1
-            is_correct = True
 
         results[q.id] = {
             'is_correct': is_correct,
             'correct_choice_id': correct_choice.id if correct_choice else None,
             'correct_choice_text': correct_choice.text if correct_choice else ''
         }
+        attempt_rows.append(QuizAttemptAnswer(
+            question_id=q.id,
+            selected_choice_id=selected_choice_id,
+            is_correct=is_correct,
+            points_awarded=points_awarded,
+        ))
 
     percent_score = (score_obtained / total_points * 100) if total_points > 0 else 0.0
     is_passed = percent_score >= quiz.passing_score
@@ -238,29 +261,47 @@ def submit_quiz():
         student_id=current_user.id,
         score=percent_score,
         is_passed=is_passed,
-        completed_at=datetime.utcnow()
+        completed_at=now
     )
     db.session.add(attempt)
+    db.session.flush()
+
+    for row in attempt_rows:
+        row.attempt_id = attempt.id
+        db.session.add(row)
 
     if is_passed:
         _update_course_progress(enrollment)
 
+    reveal = bool(quiz.results_published)
+    if reveal:
+        message = (
+            f"You scored {round(percent_score, 1)}% in the '{quiz.title}' quiz. "
+            f"Result: {'PASSED' if is_passed else 'FAILED'}."
+        )
+    else:
+        message = (
+            f"Your submission for '{quiz.title}' was received. "
+            "Your instructor will publish the results."
+        )
+
     notif = Notification(
         user_id=current_user.id,
         title="Quiz Completed!",
-        message=f"You scored {round(percent_score, 1)}% in the '{quiz.title}' quiz. Result: {'PASSED' if is_passed else 'FAILED'}.",
-        notif_type="success" if is_passed else "warning"
+        message=message,
+        notif_type="success" if (reveal and is_passed) else "info",
     )
     db.session.add(notif)
 
     db.session.commit()
 
     return jsonify({
-        'score': percent_score,
-        'is_passed': is_passed,
-        'correct_count': correct_count,
+        'score': percent_score if reveal else None,
+        'is_passed': is_passed if reveal else None,
+        'correct_count': correct_count if reveal else None,
         'total_questions': len(questions),
-        'results': results
+        'results': results if reveal else {},
+        'results_published': reveal,
     })
 
 
@@ -464,6 +505,19 @@ def take_quiz_view(quiz_id):
     if not enrollment and quiz.course.teacher_id != current_user.id:
         abort(403)
 
+    now = datetime.utcnow()
+    if current_user.role.name == 'Student' and not quiz.is_open(now):
+        if quiz.opens_at and now < quiz.opens_at:
+            flash(
+                'This quiz opens on '
+                + quiz.opens_at.strftime('%b %d, %Y at %I:%M %p')
+                + '.',
+                'warning',
+            )
+        else:
+            flash('This quiz is now closed.', 'warning')
+        return redirect(url_for('course.player', slug=quiz.course.slug))
+
     # lesson-gated quiz: must complete the lesson first
     if quiz.lesson_id and current_user.role.name == 'Student':
         lp = LessonProgress.query.filter_by(enrollment_id=enrollment.id, lesson_id=quiz.lesson_id).first()
@@ -486,7 +540,13 @@ def take_quiz_view(quiz_id):
         random.shuffle(choices)
         q._shuffled_choices = choices
 
-    return render_template('quiz.html', quiz=quiz, questions=questions, attempts_count=attempts_count)
+    return render_template(
+        'quiz.html',
+        quiz=quiz,
+        questions=questions,
+        attempts_count=attempts_count,
+        now=now,
+    )
 
 
 @api_bp.route('/api/quizzes/<int:quiz_id>/report')
